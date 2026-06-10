@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudei - Planilha Inteligente PRF</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght=300;400;500;700;900&family=Segoe+UI&display=swap" rel="stylesheet">
+    <!-- ChartJS para Métricas Avançadas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+
+
+
+    <style>
+        body {
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            background-color: #0d1e36; /* Azul Escuro Tático */
+            color: #f3f4f6;
+        }
+        .prf-blue { background-color: #003366; }
+        .prf-yellow { background-color: #FFD400; }
+        .text-prf-yellow { color: #FFD400; }
+        .border-prf-yellow { border-color: #FFD400; }
+        .bg-card-dark { background-color: #15294a; }
+        .bg-input-dark { background-color: #1d355c; }
+        
+        /* Barra de rolagem personalizada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1e36; }
+        ::-webkit-scrollbar-thumb { background: #1d355c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FFD400; }
+
+        /* Animação de pulsação do cronómetro */
+        @keyframes timerPulse {
+            0%, 100% { text-shadow: 0 0 10px rgba(255, 212, 0, 0.4); }
+            50% { text-shadow: 0 0 25px rgba(255, 212, 0, 0.8); }
+        }
+        .active-timer { animation: timerPulse 2s infinite; color: #FFD400 !important; }
+
+        /* Estilo do Canvas do Editor de Resumos */
+        .editor-canvas {
+            min-height: 500px;
+            outline: none;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Correção para o reset do CSS do Tailwind que some com os marcadores de listas */
+        .editor-canvas ul { list-style-type: disc !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
+        .editor-canvas ol { list-style-type: decimal !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
+        .editor-canvas li { display: list-item !important; margin-bottom: 6px; }
+
+        /* Suporte a tabelas no editor */
+        .editor-canvas table { border-collapse: collapse; width: 100%; margin: 1rem 0; display: table !important; }
+        .editor-canvas th, .editor-canvas td { border: 1px solid #3b82f6; padding: 8px; text-align: left; }
+
+        /* Temas Claro/Escuro do papel do editor */
+        .editor-paper-dark { background-color: #1d355c; color: #f3f4f6; }
+        .editor-paper-light { background-color: #ffffff; color: #0f172a; }
+        .editor-paper-light th, .editor-paper-light td { border: 1px solid #cbd5e1; color: #0f172a; }
+
+        /* MODO ALTA REVISÃO (Destaque Inteligente) */
+        .high-revision-mode {
+            background-color: #0b1426 !important; 
+            color: #4b5563 !important; 
+        }
+        .high-revision-mode .study-hl {
+            font-size: 1.05em;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border-radius: 4px;
+            color: #fff !important; 
+            transition: all 0.3s ease;
+        }
+
+        /* Cores Dinâmicas das Disciplinas na Sidebar */
+        .disc-color-default { color: #94a3b8; border-left-color: #94a3b8; }
+        .disc-color-const { color: #3b82f6; border-left-color: #3b82f6; } 
+        .disc-color-admin { color: #10b981; border-left-color: #10b981; } 
+        .disc-color-port { color: #f97316; border-left-color: #f97316; } 
+        .disc-color-info { color: #a855f7; border-left-color: #a855f7; } 
+        .disc-color-penal { color: #ef4444; border-left-color: #ef4444; } 
+
+        /* Estilos de Impressão para Exportação PDF */
+        @media print {
+            body * { visibility: hidden; }
+            #summary-print-container, #summary-print-container * { visibility: visible; }
+            #summary-print-container { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff;}
+            .study-hl { border: 1px solid #000; } 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-12">
+
+    <!-- BARRA DE NAVEGAÇÃO -->
+    <nav class="prf-blue border-b-4 border-prf-yellow shadow-lg px-4 py-3 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col xl:flex-row justify-between items-center gap-4">
+            <div class="flex items-center justify-between w-full xl:w-auto gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-yellow-400 p-2 rounded-lg text-slate-900 font-extrabold flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-road-shield text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-black tracking-wider text-white">ESTUDEI <span class="text-prf-yellow">| PRF</span></h1>
+                        <p class="text-xs text-blue-200">Plataforma Inteligente de Controlo de Alto Rendimento</p>
+                    </div>
+                </div>
+                
+                <button onclick="openSyncCenterModal()" class="xl:hidden bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow transition">
+                    <i class="fa-solid fa-cloud-arrow-up animate-pulse"></i> Sincronizar
+                </button>
+            </div>
+            
+            <div class="flex flex-wrap xl:flex-nowrap gap-1 bg-blue-950 p-1 rounded-xl justify-center w-full xl:w-auto">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 bg-yellow-400 text-slate-900 shadow relative">
+                    <i class="fa-solid fa-chart-line mr-1"></i> Painel Principal
+                </button>
+                <button onclick="switchTab('edital')" id="tab-edital" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-list-check mr-1"></i> Edital Verticalizado
+                </button>
+                <button onclick="switchTab('ciclo')" id="tab-ciclo" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-arrows-spin mr-1"></i> Ciclo de Estudos
+                </button>
+                <button onclick="switchTab('cronometro')" id="tab-cronometro" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-stopwatch mr-1"></i> Estudar Agora
+                </button>
+                <button onclick="switchTab('resumos')" id="tab-resumos" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-book-bookmark mr-1"></i> Meus Resumos
+                </button>
+                <button onclick="switchTab('revisoes')" id="tab-revisoes" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-calendar-check mr-1"></i> Revisões
+                    <span id="revision-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xxs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="switchTab('historico')" id="tab-historico" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
+                    <i class="fa-solid fa-history mr-1"></i> Histórico
+                </button>
+            </div>
+
+            <div class="hidden xl:flex items-center gap-2">
+                <button onclick="openSyncCenterModal()" class="bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg transition">
+                    <i class="fa-solid fa-cloud-arrow-up text-base animate-bounce"></i>
+                    <span>Sincronizar Conta</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CORPO DE CONTEÚDO -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 mt-2 space-y-6">
+
+        <!-- 1. TAB DASHBOARD / PAINEL PRINCIPAL -->
+        <section id="pane-dashboard" class="tab-pane active space-y-6">
+            <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 rounded-2xl border-2 border-yellow-400/50 shadow-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex-shrink-0 flex items-center justify-center bg-blue-950/60 p-4 rounded-full border border-yellow-400/20 shadow-inner">
+                    <svg class="w-24 h-24 md:w-32 md:h-32 drop-shadow-[0_0_15px_rgba(255,212,0,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 5C76 5 86 16 86 46C86 71 66 89 50 96C34 89 14 71 14 46C14 16 24 5 50 5Z" fill="#002244" stroke="#FFD400" stroke-width="4.5"/>
+                        <path d="M36 78L47 43H53L64 78" stroke="#FFD400" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M50 43V78" stroke="#FFFFFF" stroke-dasharray="3 3" stroke-width="2"/>
+                        <circle cx="50" cy="27" r="11" fill="#003366" stroke="#FFD400" stroke-width="1.5"/>
+                        <polygon points="50,19 52.5,24 58,24 53.5,27.5 55,33 50,29.5 45,33 46.5,27.5 42,24 47.5,24" fill="#FFD400"/>
+                        <text x="50" y="91" fill="#FFFFFF" font-family="'Roboto', sans-serif" font-weight="900" font-size="7" text-anchor="middle" letter-spacing="1">POLÍCIA RODOVIÁRIA FEDERAL</text>
+                    </svg>
+                </div>
+
+                <div class="flex-grow space-y-3 text-center md:text-left z-10">
+                    <span class="text-xs font-black bg-yellow-400 text-slate-950 px-3 py-1 rounded-full uppercase tracking-widest inline-block">
+                        <i class="fa-solid fa-star mr-1"></i> Rumo à PRF
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">Sob a Proteção de Deus</h2>
+                    <div class="p-4 bg-blue-950/40 rounded-xl border border-blue-900 min-h-[75px] flex items-center justify-center md:justify-start">
+                        <p id="motivational-quote-display" class="text-sm italic text-blue-100 font-medium leading-relaxed">
+                            "A farda não é apenas uma veste, é o escudo dos fracos e a marca indelével do dever cumprido."
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                        <button onclick="cycleMotivationalQuote()" class="text-xxs font-bold text-yellow-400 hover:text-white transition flex items-center gap-1 bg-blue-900/40 hover:bg-blue-900/80 px-3 py-1.5 rounded-lg border border-yellow-400/20">
+                            <i class="fa-solid fa-arrows-rotate animate-spin-slow"></i> Nova Inspiração
+                        </button>
+                        <span class="text-xxs text-gray-400 font-medium">| Pátria, Segurança e Cidadania</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
+                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-syllabus-progress">0.0%</h3>
+                        <div class="w-full bg-blue-950 rounded-full h-1.5 mt-2">
+                            <div class="bg-yellow-400 h-1.5 rounded-full transition-all duration-500" id="stat-syllabus-progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="text-yellow-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+                </div>
+
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Questões Resolvidas</span>
+                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-total-questions">0</h3>
+                        <p class="text-xs text-emerald-400 mt-1" id="stat-accuracy-fraction">0 corretas de 0</p>
+                    </div>
+                    <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-circle-question"></i></div>
+                </div>
+
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Revisões para Hoje</span>
+                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-pending-revisions">0</h3>
+                        <p class="text-xs text-amber-400 mt-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Spaced Repetition</p>
+                    </div>
+                    <div class="text-amber-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-circle-exclamation"></i></div>
+                </div>
+
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Ciclo de Estudos</span>
+                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-cycle-status">0% Completo</h3>
+                        <p class="text-xs text-blue-300 mt-1" id="stat-cycle-next-sub">Seguinte: Carregando...</p>
+                    </div>
+                    <div class="text-sky-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-arrows-spin"></i></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Gráfico de Evolução -->
+                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-area text-prf-yellow mr-2"></i>Evolução de Estudos</h3>
+                            <p class="text-xxs text-gray-400">Total acumulado de minutos produtivos</p>
+                        </div>
+                        <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 self-stretch sm:self-auto justify-center">
+                            <button onclick="setChartPeriod('weekly')" id="btn-period-weekly" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Semana</button>
+                            <button onclick="setChartPeriod('monthly')" id="btn-period-monthly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
+                            <button onclick="setChartPeriod('yearly')" id="btn-period-yearly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
+                        </div>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="weeklyStudyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Tipo de Estudo -->
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Foco de Preparação</h3>
+                        <p class="text-xxs text-gray-400 mb-4">Divisão analítica em minutos</p>
+                    </div>
+                    <div class="h-44 relative flex items-center justify-center">
+                        <canvas id="studyTypeChart"></canvas>
+                    </div>
+                    <div class="flex justify-around text-xxs mt-4 border-t border-blue-950 pt-3">
+                        <div class="text-center">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400 mr-1"></span>
+                            <span class="text-gray-400 block font-bold">Teoria</span>
+                            <span id="legend-theory-mins" class="font-bold text-white">0 min</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1"></span>
+                            <span class="text-gray-400 block font-bold">Questões</span>
+                            <span id="legend-questions-mins" class="font-bold text-white">0 min</span>
+                        </div>
+                        <div class="text-center">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400 mr-1"></span>
+                            <span class="text-gray-400 block font-bold">Revisões</span>
+                            <span id="legend-revisions-mins" class="font-bold text-white">0 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Planeamento Ativo -->
+                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between gap-4">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Planeamento Ativo</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-blue-950 p-4 rounded-xl border border-blue-800 space-y-2">
+                                <span class="text-xxs font-bold text-yellow-400 uppercase tracking-widest block"><i class="fa-solid fa-road mr-1"></i>Sugerido para Estudar Agora:</span>
+                                <span class="text-xs font-bold bg-yellow-400 text-slate-900 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block" id="dash-next-subject">--</span>
+                                <h4 class="text-sm font-bold text-white mt-1" id="dash-next-topic">Selecione ou inicie uma disciplina</h4>
+                                <p class="text-xs text-gray-400">Tempo planeado: <strong id="dash-next-time">--</strong></p>
+                            </div>
+
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                                <span class="text-xxs font-bold text-emerald-400 uppercase tracking-widest block"><i class="fa-solid fa-circle-check mr-1"></i>Última Matéria Concluída:</span>
+                                <h5 class="text-xs font-bold text-white truncate" id="dash-last-subject">Aguardando registo</h5>
+                                <p class="text-xxs text-gray-300" id="dash-last-topic">Complete uma sessão para atualizar permanentemente este bloco.</p>
+                                <div class="flex justify-between items-center pt-1 border-t border-slate-800/60 mt-1">
+                                    <span class="text-xxs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-semibold" id="dash-last-status">Aguardando</span>
+                                    <span class="text-xxs text-gray-400" id="dash-last-time">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <button onclick="startNextCycleSubject()" class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition duration-200 shadow-lg flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-play"></i> Iniciar Próxima Matéria do Ciclo
+                        </button>
+                        <button onclick="switchTab('cronometro')" class="w-full py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition duration-200 border border-blue-700 flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-stopwatch"></i> Ir para o Cronómetro Tático
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rascunho -->
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-sticky-note text-prf-yellow mr-2"></i>Rascunho de Dúvidas</h3>
+                        <p class="text-xxs text-gray-400 mb-3">Anotações salvas em tempo real neste aparelho.</p>
+                    </div>
+                    <textarea id="local-scratchpad" rows="6" class="w-full bg-input-dark border border-blue-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-yellow-400 flex-grow" placeholder="Escreva mnemónicas, dúvidas para resolver ou fórmulas..." oninput="saveScratchpad()"></textarea>
+                </div>
+            </div>
+
+            <!-- Aproveitamento -->
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-gauge-high text-prf-yellow mr-2"></i>Aproveitamento por Disciplina (Questões)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. TAB EDITAL VERTICALIZADO -->
+        <section id="pane-edital" class="tab-pane hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-lg">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-white"><i class="fa-solid fa-list-check text-prf-yellow mr-2"></i>Edital Verticalizado PRF</h2>
+                    <p class="text-sm text-gray-400 font-medium">As suas matérias continuam sempre salvas aqui, mesmo depois de concluídas.</p>
+                </div>
+                
+                <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
+                    <label class="flex items-center gap-2 bg-blue-950 border border-blue-800 px-4 py-2.5 rounded-xl text-xs font-bold text-gray-300 cursor-pointer hover:text-white transition">
+                        <input type="checkbox" id="toggle-hide-studied" onchange="renderSyllabusTab()" class="accent-yellow-400 w-4 h-4 rounded">
+                        <span>Ocultar Já Estudados</span>
+                    </label>
+                    <button onclick="openAddTopicModal()" class="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition shadow flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus"></i> Adicionar Matéria / Tópico
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2" id="edital-subject-filters">
+                <!-- Preenchido dinamicamente -->
+            </div>
+            <div id="edital-content-accordion" class="space-y-4">
+                <!-- Preenchido dinamicamente -->
+            </div>
+        </section>
+
+        <!-- 3. TAB CICLO DE ESTUDOS -->
+        <section id="pane-ciclo" class="tab-pane hidden space-y-6">
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-white"><i class="fa-solid fa-arrows-spin text-prf-yellow mr-2"></i>Ciclo de Estudos Dinâmico</h2>
+                    <p class="text-sm text-gray-400 font-medium">Controle a ordem sequencial das matérias e determine os tempos ideais de estudo.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="resetCycleProgress()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition border border-slate-700 text-sm">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Reiniciar Ciclo
+                    </button>
+                    <button onclick="openConfigureCycleModal()" class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition text-sm">
+                        <i class="fa-solid fa-gear mr-1"></i> Configurar Ciclo
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                <h3 class="text-lg font-black text-white mb-4">Avanço do Ciclo Atual</h3>
+                <div class="flex flex-wrap items-center gap-3" id="cycle-steps-visual-container">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                    <h3 class="text-lg font-black text-white mb-3">Ordem de Matérias</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs uppercase bg-blue-950 text-gray-400">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Ordem</th>
+                                    <th scope="col" class="px-4 py-3">Disciplina</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Tempo Estipulado</th>
+                                    <th scope="col" class="px-4 py-3 text-center">Status</th>
+                                    <th scope="col" class="px-4 py-3 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cycle-table-body" class="divide-y divide-blue-950">
+                                <!-- Preenchido dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                    <h3 class="text-lg font-black text-white"><i class="fa-solid fa-circle-info text-prf-yellow mr-2"></i>Como funciona o Ciclo?</h3>
+                    <div class="space-y-3 text-sm text-gray-300">
+                        <div class="p-3 bg-blue-950 rounded-lg border-l-4 border-yellow-400">
+                            <p class="font-bold text-white">Não estude por horas fixas por dia</p>
+                            <p class="text-xs text-gray-400 mt-1">O ciclo permite que se for interrompido hoje, continue exatamente de onde parou amanhã.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TAB CRONÓMETRO -->
+        <section id="pane-cronometro" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-gradient-to-br from-blue-950 via-indigo-950 to-blue-900 p-8 rounded-2xl border-4 border-prf-yellow shadow-2xl relative overflow-hidden">
+                        <div class="absolute -right-16 -bottom-16 text-blue-900/10 text-9xl font-black select-none pointer-events-none">PRF</div>
+                        
+                        <div class="text-center relative z-10">
+                            <span class="text-xs font-bold uppercase tracking-widest text-prf-yellow bg-blue-900/60 px-4 py-1.5 rounded-full border border-yellow-400/30">SESSÃO ATIVA</span>
+                            <div class="text-6xl md:text-8xl font-black text-white font-mono tracking-tight my-6 transition-all duration-300" id="timer-display">00:00:00</div>
+
+                            <div class="flex justify-center gap-3">
+                                <button onclick="startTimer()" id="btn-timer-start" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition duration-150 shadow-lg flex items-center gap-2">
+                                    <i class="fa-solid fa-play"></i> Iniciar
+                                </button>
+                                <button onclick="pauseTimer()" id="btn-timer-pause" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition duration-150 shadow-lg flex items-center gap-2 hidden">
+                                    <i class="fa-solid fa-pause"></i> Pausar
+                                </button>
+                                <button onclick="resetTimer()" id="btn-timer-reset" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition duration-150 shadow flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-left"></i> Zerar
+                                </button>
+                            </div>
+
+                            <div class="mt-4 text-xs text-gray-400 font-semibold" id="procrastination-container">
+                                Tempo em pausa: <span class="text-amber-400 font-mono" id="pause-timer-display">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-pen-to-square text-prf-yellow mr-2"></i>Registar Sessão de Estudos</h3>
+                        <form id="study-session-form" class="space-y-4" onsubmit="saveStudySession(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Disciplina</label>
+                                    <select id="form-subject" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" onchange="updateFormTopics()" required>
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Tópico / Assunto</label>
+                                    <select id="form-topic" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" required>
+                                        <option value="">Selecione a disciplina primeiro</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Tempo (Minutos)</label>
+                                    <input type="number" id="form-duration" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 90" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Páginas Lidas</label>
+                                    <input type="number" id="form-pages" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 15">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Tipo de Estudo</label>
+                                    <select id="form-study-type" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" required>
+                                        <option value="Teoria">Teoria + Lei Seca</option>
+                                        <option value="Questões">Só Questões</option>
+                                        <option value="Revisão">Revisão Periódica</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-blue-950/60 rounded-xl border border-blue-800 space-y-3">
+                                <span class="text-xs font-bold text-prf-yellow uppercase tracking-wider block"><i class="fa-solid fa-list-ol mr-1"></i>Controle de Questões</span>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-1">Questões Resolvidas</label>
+                                        <input type="number" id="form-questions-total" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 20" oninput="calculateAccuracyPreview()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-1">Respostas Corretas</label>
+                                        <input type="number" id="form-questions-correct" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 17" oninput="calculateAccuracyPreview()">
+                                    </div>
+                                    <div class="col-span-2 md:col-span-1 flex flex-col justify-end">
+                                        <div class="bg-blue-900/40 p-2.5 rounded-lg text-center font-bold text-sm text-gray-300">
+                                            Aproveitamento: <span class="text-emerald-400" id="form-accuracy-preview">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Observações Rápidas</label>
+                                <textarea id="form-notes" rows="2" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" placeholder="Escreva pontos fracos..."></textarea>
+                            </div>
+
+                            <div class="flex justify-end gap-2">
+                                <button type="reset" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Limpar</button>
+                                <button type="submit" class="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition shadow-lg">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Registo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-award text-prf-yellow mr-2"></i>Dica do Dia</h3>
+                        <div class="text-sm text-gray-300 space-y-3 leading-relaxed">
+                            <p>"Mapeie os seus erros. Se errou uma questão de trânsito ou direito constitucional hoje, não fique desanimado. Isso é um sinal brilhante de onde o seu conhecimento está falho."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. TAB MEUS RESUMOS (NOTION-LIKE) -->
+        <section id="pane-resumos" class="tab-pane hidden h-[calc(100vh-180px)] flex flex-col">
+            
+            <!-- Barra de Ferramentas Global -->
+            <div class="bg-card-dark rounded-t-2xl border border-blue-900 p-2 flex flex-wrap items-center justify-between gap-3 shadow-md z-10 relative">
+                
+                <!-- Ferramentas Básicas -->
+                <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
+                    <button onclick="execCmd('bold')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 font-bold transition shadow-sm" title="Negrito (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+                    <button onclick="execCmd('italic')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 italic transition shadow-sm" title="Itálico (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+                    <button onclick="execCmd('underline')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 underline transition shadow-sm" title="Sublinhado (Ctrl+U)"><i class="fa-solid fa-underline"></i></button>
+                    <button onclick="execCmd('strikeThrough')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 line-through transition shadow-sm" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
+                    
+                    <div class="w-px h-6 bg-blue-900 mx-1"></div>
+
+                    <!-- Cores Customizadas -->
+                    <div class="flex items-center gap-1 bg-input-dark rounded-lg px-2 py-1 border border-blue-800 shadow-sm" title="Cor da Letra">
+                        <i class="fa-solid fa-a text-xs text-gray-400"></i>
+                        <input type="color" oninput="execCmd('foreColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    </div>
+                    <div class="flex items-center gap-1 bg-input-dark rounded-lg px-2 py-1 border border-blue-800 shadow-sm" title="Cor de Fundo">
+                        <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
+                        <input type="color" oninput="execCmd('backColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    </div>
+
+                    <div class="w-px h-6 bg-blue-900 mx-1 hidden sm:block"></div>
+
+                    <!-- Estilos de Estudo Rápidos (Marcadores) -->
+                    <div class="hidden md:flex items-center gap-1 bg-input-dark rounded-lg p-1 border border-blue-800 shadow-sm">
+                        <span class="text-xxs font-bold text-gray-400 mr-1 ml-1 uppercase">Marcadores:</span>
+                        <button onclick="applyStudyHighlight('red')" class="w-5 h-5 rounded bg-red-500 hover:ring-2 ring-white transition" title="Vermelho: Erros e Pegadinhas"></button>
+                        <button onclick="applyStudyHighlight('yellow')" class="w-5 h-5 rounded bg-yellow-400 hover:ring-2 ring-white transition" title="Amarelo: Conceitos Importantes"></button>
+                        <button onclick="applyStudyHighlight('green')" class="w-5 h-5 rounded bg-emerald-500 hover:ring-2 ring-white transition" title="Verde: Exceções e Jurisprudência"></button>
+                        <button onclick="applyStudyHighlight('blue')" class="w-5 h-5 rounded bg-blue-500 hover:ring-2 ring-white transition" title="Azul: Definições"></button>
+                        <button onclick="applyStudyHighlight('purple')" class="w-5 h-5 rounded bg-purple-500 hover:ring-2 ring-white transition" title="Roxo: Artigos de Lei"></button>
+                        <button onclick="applyStudyHighlight('orange')" class="w-5 h-5 rounded bg-orange-500 hover:ring-2 ring-white transition" title="Laranja: Frequente em Provas"></button>
+                    </div>
+
+                    <div class="w-px h-6 bg-blue-900 mx-1"></div>
+
+                    <!-- Tamanhos e Alinhamentos -->
+                    <select onchange="execCmd('fontSize', this.value)" class="bg-input-dark text-xs font-bold text-white rounded-lg px-2 py-1.5 border border-blue-800 focus:outline-none shadow-sm cursor-pointer">
+                        <option value="3">Normal</option>
+                        <option value="1">Micro</option>
+                        <option value="2">Pequeno</option>
+                        <option value="4">Subtítulo</option>
+                        <option value="5">Título H2</option>
+                        <option value="6">Título H1</option>
+                    </select>
+
+                    <button onclick="execCmd('justifyLeft')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition" title="Alinhar à Esquerda"><i class="fa-solid fa-align-left"></i></button>
+                    <button onclick="execCmd('justifyCenter')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition" title="Centralizar"><i class="fa-solid fa-align-center"></i></button>
+                    <button onclick="execCmd('justifyFull')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition" title="Justificar"><i class="fa-solid fa-align-justify"></i></button>
+
+                    <div class="w-px h-6 bg-blue-900 mx-1"></div>
+
+                    <!-- Listas e Blocos Especiais -->
+                    <button onclick="execCmd('insertUnorderedList')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm" title="Lista de Marcadores"><i class="fa-solid fa-list-ul"></i></button>
+                    <button onclick="execCmd('insertOrderedList')" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm" title="Lista Numerada"><i class="fa-solid fa-list-ol"></i></button>
+                    
+                    <button onclick="insertBlockquote()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm" title="Inserir Citação/Destaque"><i class="fa-solid fa-quote-right"></i></button>
+                    <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-input-dark text-red-400 hover:bg-red-900/50 hover:text-red-300 transition shadow-sm" title="Caixa de Alerta (Atenção)"><i class="fa-solid fa-triangle-exclamation"></i></button>
+                    <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-input-dark text-yellow-400 hover:bg-yellow-900/50 hover:text-yellow-300 transition shadow-sm" title="Caixa de Observação (Dica)"><i class="fa-solid fa-thumbtack"></i></button>
+
+                    <div class="w-px h-6 bg-blue-900 mx-1 hidden lg:block"></div>
+
+                    <!-- Objetos Ricos -->
+                    <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Tabela"><i class="fa-solid fa-table"></i></button>
+                    <button onclick="insertImage()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Imagem / Esquema"><i class="fa-solid fa-image"></i></button>
+                    <button onclick="insertMindmap()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Mapa Mental (Bloco)"><i class="fa-solid fa-diagram-project"></i></button>
+                </div>
+
+                <div class="flex items-center gap-2 mt-2 md:mt-0">
+                    <button onclick="toggleRevisionMode()" id="btn-revision-mode" class="px-3 py-1.5 bg-blue-900 border border-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm" title="Destaca apenas os marcadores de estudo para revisão rápida">
+                        <i class="fa-solid fa-eye"></i> <span>Alta Revisão</span>
+                    </button>
+                    <button onclick="exportToPDF()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Exportar</span>
+                    </button>
+                    <button onclick="toggleEditorPaperTheme()" class="px-3 py-1.5 bg-input-dark hover:bg-blue-800 border border-blue-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm">
+                        <i id="paper-theme-icon" class="fa-solid fa-sun text-yellow-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row flex-grow border border-t-0 border-blue-900 rounded-b-2xl overflow-hidden bg-card-dark relative">
+                
+                <!-- PAINEL LATERAL: BIBLIOTECA -->
+                <div class="w-full lg:w-72 flex-shrink-0 bg-blue-950/30 border-r border-blue-900 flex flex-col h-64 lg:h-auto z-10">
+                    <div class="p-3 border-b border-blue-900 space-y-3 bg-blue-950/60">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-black text-white uppercase tracking-wider"><i class="fa-solid fa-layer-group text-prf-yellow mr-1.5"></i> Biblioteca</h3>
+                            <button onclick="openCreateSummaryModal()" class="text-xs bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black px-2.5 py-1 rounded transition shadow">
+                                <i class="fa-solid fa-plus"></i> Novo
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <input type="text" id="summary-search-input" oninput="filterSummariesTree()" placeholder="Pesquisar resumo, assunto..." class="w-full bg-input-dark border border-blue-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-yellow-400 transition">
+                            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-gray-500 text-xs"></i>
+                        </div>
+
+                        <div class="flex gap-1">
+                            <button onclick="setTreeFilter('all')" class="flex-1 bg-input-dark hover:bg-blue-800 text-gray-300 text-[10px] font-bold py-1 rounded border border-blue-800 transition">Todos</button>
+                            <button onclick="setTreeFilter('favorites')" class="flex-1 bg-input-dark hover:bg-yellow-900/40 text-yellow-500 text-[10px] font-bold py-1 rounded border border-blue-800 transition"><i class="fa-solid fa-star"></i> Favs</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow overflow-y-auto p-2 custom-scrollbar" id="summaries-tree-container">
+                        <!-- Preenchido dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- PAINEL CENTRAL: EDITOR -->
+                <div class="flex-grow flex flex-col relative overflow-hidden bg-card-dark">
+                    
+                    <div id="no-summary-selected-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-gray-400 bg-card-dark z-0">
+                        <div class="w-24 h-24 bg-blue-950 rounded-full flex items-center justify-center mb-4 border-4 border-blue-900 shadow-inner">
+                            <i class="fa-solid fa-book-open text-4xl text-blue-800"></i>
+                        </div>
+                        <h3 class="text-lg font-black text-white mb-2">Central de Conhecimento</h3>
+                        <p class="text-sm max-w-md">Selecione um resumo na biblioteca lateral ou crie um novo para começar a construir seu material de revisão em alto nível.</p>
+                        <button onclick="openCreateSummaryModal()" class="mt-6 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition shadow-lg">
+                            <i class="fa-solid fa-plus mr-1"></i> Criar Meu Primeiro Resumo
+                        </button>
+                    </div>
+
+                    <div id="active-summary-workspace" class="hidden flex-col h-full z-10 w-full" id="summary-print-container">
+                        
+                        <div class="px-6 pt-5 pb-3 border-b border-blue-900/50 bg-gradient-to-b from-blue-950/30 to-transparent">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-grow space-y-1">
+                                    <div class="flex items-center gap-2 text-xs font-bold">
+                                        <span id="active-summary-discipline" class="text-blue-400 uppercase tracking-wider">Disciplina</span>
+                                        <i class="fa-solid fa-chevron-right text-gray-600 text-[10px]"></i>
+                                        <span id="active-summary-topic" class="text-gray-400">Assunto Específico</span>
+                                    </div>
+                                    <input type="text" id="active-summary-title" oninput="saveActiveSummary()" class="w-full bg-transparent border-none text-2xl md:text-3xl font-black text-white focus:outline-none placeholder-gray-600 p-0 m-0" placeholder="Título do Resumo H1...">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="toggleFavoriteSummary()" id="btn-favorite-summary" class="w-10 h-10 rounded-full bg-input-dark border border-blue-800 hover:bg-blue-800 text-gray-400 transition flex items-center justify-center text-lg" title="Marcar como Favorito">
+                                        <i class="fa-solid fa-star"></i>
+                                    </button>
+                                    <button onclick="deleteActiveSummary()" class="w-10 h-10 rounded-full bg-red-950/30 border border-red-900/50 hover:bg-red-900 text-red-400 transition flex items-center justify-center text-lg" title="Excluir Resumo">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center justify-between gap-2 mt-3 text-xs text-gray-500">
+                                <div class="flex items-center gap-3">
+                                    <span title="Data de Criação"><i class="fa-regular fa-calendar-plus mr-1"></i> <span id="active-summary-created">--</span></span>
+                                    <span title="Última Edição"><i class="fa-solid fa-pen-rotate mr-1"></i> <span id="active-summary-last-edited">Agora</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-tags text-gray-600"></i>
+                                    <input type="text" id="active-summary-tags" oninput="saveActiveSummary()" class="bg-input-dark border border-blue-800 rounded px-2 py-0.5 text-xs text-blue-300 focus:outline-none focus:border-blue-500 placeholder-gray-600 w-48" placeholder="Ex: #revisao #importante">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Canvas do Editor -->
+                        <div id="summary-editor-canvas" class="flex-grow editor-canvas editor-paper-dark p-6 md:p-10 overflow-y-auto" contenteditable="true" 
+                             oninput="saveActiveSummary()"
+                             onmouseup="saveSelection()"
+                             onkeyup="saveSelection()"
+                             onfocus="saveSelection()"
+                             onblur="saveSelection()">
+                        </div>
+
+                        <!-- Legenda de Cores Flutuante -->
+                        <div class="absolute bottom-4 right-6 bg-blue-950/90 backdrop-blur border border-blue-800 rounded-xl p-3 shadow-2xl z-20 max-w-xs hidden md:block" id="study-legend-panel">
+                            <div class="flex justify-between items-center mb-2 border-b border-blue-900 pb-1">
+                                <span class="text-[10px] font-black uppercase text-gray-400 tracking-wider">Legenda de Revisão</span>
+                                <button onclick="document.getElementById('study-legend-panel').style.display='none'" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
+                            </div>
+                            <div class="grid grid-cols-1 gap-1.5 text-xs font-semibold">
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span><span class="text-gray-300">Erros & Pegadinhas</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_5px_rgba(250,204,21,0.5)]"></span><span class="text-gray-300">Conceitos Chave</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span><span class="text-gray-300">Exceções/Jurisprudência</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span><span class="text-gray-300">Definições</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.5)]"></span><span class="text-gray-300">Artigos de Lei Seca</span></div>
+                                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.5)]"></span><span class="text-gray-300">Frequente em Provas</span></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. TAB REVISÕES -->
+        <section id="pane-revisoes" class="tab-pane hidden space-y-6">
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-white"><i class="fa-solid fa-calendar-check text-prf-yellow mr-2"></i>A sua Agenda de Revisões</h2>
+                    <p class="text-sm text-gray-400 font-medium">Não permita que a curva do esquecimento leve embora o seu aprendizado.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="cleanUpExpiredRevisions()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition border border-slate-700 text-sm">
+                        <i class="fa-solid fa-broom mr-1"></i> Limpar Concluídas
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-red-500 shadow-md">
+                    <span class="text-xs text-red-400 font-black uppercase tracking-wider block">⚠️ Atrasadas</span>
+                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-overdue">0</h4>
+                </div>
+                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-yellow-400 shadow-md">
+                    <span class="text-xs text-yellow-400 font-black uppercase tracking-wider block">⚡ Para Hoje</span>
+                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-today">0</h4>
+                </div>
+                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md">
+                    <span class="text-xs text-emerald-400 font-black uppercase tracking-wider block">📅 Futuras</span>
+                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-future">0</h4>
+                </div>
+            </div>
+
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                <h3 class="text-lg font-black text-white mb-4">Agenda de Revisão Periódica</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs uppercase bg-blue-950 text-gray-400">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">Prazo</th>
+                                <th scope="col" class="px-4 py-3">Disciplina</th>
+                                <th scope="col" class="px-4 py-3">Tópico</th>
+                                <th scope="col" class="px-4 py-3">Data</th>
+                                <th scope="col" class="px-4 py-3 text-center">Status</th>
+                                <th scope="col" class="px-4 py-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revisions-table-body" class="divide-y divide-blue-950">
+                            <!-- Preenchido dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. TAB HISTÓRICO -->
+        <section id="pane-historico" class="tab-pane hidden space-y-6">
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-white"><i class="fa-solid fa-history text-prf-yellow mr-2"></i>Histórico de Estudos</h2>
+                    <p class="text-sm text-gray-400 font-medium">O registo cronológico das suas sessões de estudo.</p>
+                </div>
+                <button onclick="exportStudyHistory()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-xl transition text-sm">
+                    <i class="fa-solid fa-file-export mr-1"></i> Exportar Dados (CSV)
+                </button>
+            </div>
+
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs uppercase bg-blue-950 text-gray-400">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">Data</th>
+                                <th scope="col" class="px-4 py-3">Disciplina</th>
+                                <th scope="col" class="px-4 py-3">Tópico</th>
+                                <th scope="col" class="px-4 py-3 text-center">Duração</th>
+                                <th scope="col" class="px-4 py-3 text-center">Tipo</th>
+                                <th scope="col" class="px-4 py-3 text-center">Acertos</th>
+                                <th scope="col" class="px-4 py-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-blue-950">
+                            <!-- Preenchido dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAIS -->
+    <!-- Modal: Central Sincronização -->
+    <div id="modal-sync-center" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-yellow-400 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative">
+            <button onclick="closeSyncCenterModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <div class="border-b border-blue-900 pb-4">
+                <h3 class="text-xl font-black text-white flex items-center gap-2"><i class="fa-solid fa-rotate text-prf-yellow"></i> Central de Sincronização</h3>
+                <p class="text-xs text-blue-300 mt-1">Os seus dados ficam guardados na nuvem e acessíveis em qualquer dispositivo.</p>
+            </div>
+
+            <!-- Estado: deslogado -->
+            <div id="auth-logged-out-form" class="space-y-4">
+                <!-- Abas Login / Criar Conta -->
+                <div class="flex gap-2 bg-blue-950 p-1 rounded-xl">
+                    <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 py-2 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition">Entrar</button>
+                    <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 py-2 text-xs font-black rounded-lg text-gray-300 hover:text-white transition">Criar Conta</button>
+                </div>
+
+                <div class="space-y-2">
+                    <input type="email" id="sync-email" placeholder="Email" autocomplete="email"
+                        class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                    <input type="password" id="sync-password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password"
+                        class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 transition">
+                    <div id="auth-error-msg" class="hidden text-xs text-red-400 font-bold bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2"></div>
+                    <button onclick="loginWithEmail()" id="btn-email-login"
+                        class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-sm shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> <span>Entrar na Conta</span>
+                    </button>
+                    <button onclick="registerWithEmail()" id="btn-email-register"
+                        class="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-lg text-sm border border-blue-700 transition hidden flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> <span>Criar Conta</span>
+                    </button>
+                </div>
+
+                <div class="border-t border-blue-900 pt-4">
+                    <p class="text-xxs text-gray-500 text-center mb-3 font-bold uppercase tracking-wider">— ou use Cópia Local —</p>
+                    <div class="flex gap-2">
+                        <button onclick="generateTextSyncCode()" class="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-lg text-xs shadow">
+                            <i class="fa-solid fa-copy mr-1"></i> Copiar Código
+                        </button>
+                        <button onclick="openImportModal()" class="flex-1 py-2 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-lg text-xs border border-blue-700">
+                            <i class="fa-solid fa-file-import mr-1"></i> Importar Código
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado: logado -->
+            <div id="auth-logged-in-info" class="hidden space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                    <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center text-slate-900 font-black text-lg" id="logged-user-avatar">?</div>
+                    <div>
+                        <p class="text-xs text-emerald-400 font-bold uppercase">Conta Conectada</p>
+                        <p class="text-sm text-white font-bold" id="logged-user-email"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="manualSyncNow()" id="btn-manual-sync"
+                        class="py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-xs shadow flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar Agora
+                    </button>
+                    <button onclick="loadFromCloud()"
+                        class="py-2.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-lg text-xs border border-blue-700 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Carregar da Nuvem
+                    </button>
+                </div>
+                <div class="border-t border-blue-900 pt-3 flex gap-2">
+                    <button onclick="generateEncryptedSyncCode()" class="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-lg text-xs border border-emerald-800">
+                        <i class="fa-solid fa-copy mr-1"></i> Gerar Código de Sync
+                    </button>
+                    <button onclick="logoutEmail()" class="flex-1 py-2 text-red-400 font-bold text-xs border border-red-900/50 rounded-lg hover:bg-red-900/20 transition">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> Sair da Conta
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xxs text-gray-400 border-t border-blue-900 pt-3 font-mono">
+                <span>Estado: <strong id="sync-status-text" class="text-yellow-400">Local</strong></span>
+                <span>Último sync: <strong class="text-white" id="last-sync-time">Nunca</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Criar Resumo -->
+    <div id="modal-create-summary" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-file-signature text-prf-yellow mr-2"></i>Novo Resumo / Material</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Disciplina Principal</label>
+                    <select id="modal-summary-subject" onchange="populateSummaryTopicsDropdown()" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-yellow-400"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Assunto / Tópico</label>
+                    <select id="modal-summary-topic" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-yellow-400"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Título do Resumo</label>
+                    <input type="text" id="modal-summary-title" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-yellow-400" placeholder="Digite o título...">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeCreateSummaryModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-sm">Cancelar</button>
+                <button onclick="saveNewSummary()" class="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-sm shadow">Criar Resumo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar Tópico -->
+    <div id="modal-add-topic" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-plus text-prf-yellow mr-2"></i>Adicionar Matéria ou Tópico</h3>
+            <form onsubmit="saveCustomTopic(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Selecione a Disciplina</label>
+                    <select id="modal-add-subject-select" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" onchange="toggleNewSubjectInput()" required></select>
+                </div>
+                <div id="new-subject-input-wrapper" class="hidden">
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Nome da Nova Disciplina</label>
+                    <input type="text" id="modal-new-subject-name" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" placeholder="Nova Disciplina">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Nome do Novo Tópico</label>
+                    <input type="text" id="modal-new-topic-name" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" placeholder="Novo Tópico" required>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeAddTopicModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Configurar Ciclo -->
+    <div id="modal-config-cycle" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <h3 class="text-lg font-black text-white mb-2">Configurar Ciclo</h3>
+            <p class="text-xs text-gray-400 mb-4">Monte a sequência de estudos em minutos.</p>
+            <div class="space-y-4 max-h-[300px] overflow-y-auto pr-2" id="modal-cycle-items-list"></div>
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-blue-900">
+                <button onclick="addSubjectToCycleConfig()" class="bg-blue-900 hover:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Inserir Etapa</button>
+                <div class="flex gap-2">
+                    <button onclick="closeConfigureCycleModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold">Fechar</button>
+                    <button onclick="saveCycleConfig()" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 px-5 py-2 font-black rounded-xl text-sm shadow">Salvar Ciclo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Renomear Disciplina -->
+    <div id="modal-rename-subject" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-pen text-prf-yellow mr-2"></i>Renomear Disciplina</h3>
+            <input type="hidden" id="modal-rename-subject-index">
+            <input type="text" id="modal-rename-subject-input" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" required>
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="closeRenameSubjectModal()" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl">Cancelar</button>
+                <button type="button" onclick="saveRenamedSubject()" class="px-5 py-2 bg-yellow-400 text-slate-950 font-black rounded-xl">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Renomear Tópico -->
+    <div id="modal-rename-topic" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-pen text-prf-yellow mr-2"></i>Renomear Tópico</h3>
+            <input type="hidden" id="modal-rename-topic-sidx">
+            <input type="hidden" id="modal-rename-topic-tidx">
+            <input type="text" id="modal-rename-topic-input" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2 text-white focus:outline-none" required>
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="closeRenameTopicModal()" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl">Cancelar</button>
+                <button type="button" onclick="saveRenamedTopic()" class="px-5 py-2 bg-yellow-400 text-slate-950 font-black rounded-xl">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Importar Progresso -->
+    <div id="modal-import-code" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-emerald-500 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-file-import text-emerald-400 mr-2"></i>Importar Progresso</h3>
+            <textarea id="paste-text-code" rows="5" class="w-full bg-input-dark border border-blue-800 rounded-xl p-3 text-xs text-white font-mono focus:outline-none" placeholder="Cole o código gigante aqui..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeImportModal()" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl text-xs">Cancelar</button>
+                <button onclick="importManualCodeFromModal()" class="px-5 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs shadow">Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas Customizados -->
+    <div id="custom-alert" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-sm w-full p-6 text-center">
+            <div class="text-yellow-400 text-4xl mb-3"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h4 class="text-lg font-black text-white mb-2">Atenção</h4>
+            <p id="custom-alert-text" class="text-sm text-gray-300 leading-relaxed mb-5"></p>
+            <button onclick="closeAlert()" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 px-6 py-2 rounded-xl font-bold w-full transition">OK</button>
+        </div>
+    </div>
+    
+    <div id="custom-confirm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border-2 border-red-500 rounded-2xl max-w-sm w-full p-6 text-center">
+            <div class="text-red-500 text-4xl mb-3"><i class="fa-solid fa-circle-question"></i></div>
+            <h4 class="text-lg font-black text-white mb-2">Confirmação</h4>
+            <p id="custom-confirm-text" class="text-sm text-gray-300 leading-relaxed mb-5"></p>
+            <div class="flex gap-3">
+                <button onclick="handleConfirm(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition font-bold">Cancelar</button>
+                <button onclick="handleConfirm(true)" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold transition shadow">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA DO SCRIPT (100% COMPLETA RESTAURADA) -->
+    <script>
+        // === VARIÁVEIS GLOBAIS ===
+        let db = null;
+        let auth = null;
+        let appId = 'default-app-id';
+        let isCloudEnabled = false;
+        let activeUserEmail = null;
+        let activeUserPass = null;
+        let pendingConflictState = null;
+
+        let activeSummaryId = null;
+        let isEditorPaperLight = false;
+        let savedRange = null; 
+        let isHighRevisionMode = false;
+        let treeFilterMode = 'all';
+
+        // Gráficos e Cronômetro
+        let studyChart = null;
+        let studyTypeChart = null;
+        let currentChartPeriod = 'weekly';
+        let timerInterval = null, pauseInterval = null;
+        let totalSeconds = 0, pauseSeconds = 0;
+        let isTimerRunning = false, isTimerPaused = false;
+
+        const motivationalQuotes = [
+            "\"Sob a proteção de Deus, garantindo a segurança com cidadania nas rodovias federais.\"",
+            "\"Estude enquanto eles dormem, a farda está a caminho!\"",
+            "\"A farda não é apenas uma veste, é o escudo dos fracos e a marca indelével do dever cumprido.\"",
+            "\"O caminho do concurso é árduo, mas a glória compensará cada madrugada de estudo.\""
+        ];
+        let currentQuoteIdx = 0;
+
+        function cycleMotivationalQuote() {
+            currentQuoteIdx = (currentQuoteIdx + 1) % motivationalQuotes.length;
+            const quoteEl = document.getElementById('motivational-quote-display');
+            if (quoteEl) quoteEl.innerText = motivationalQuotes[currentQuoteIdx];
+        }
+
+        // === ALERTAS E MODAIS ===
+        function showAlert(message) {
+            document.getElementById('custom-alert-text').innerText = message;
+            document.getElementById('custom-alert').classList.remove('hidden');
+        }
+        function closeAlert() { document.getElementById('custom-alert').classList.add('hidden'); }
+        
+        let confirmCallback = null;
+        function showConfirm(message, callback) {
+            confirmCallback = callback;
+            document.getElementById('custom-confirm-text').innerText = message;
+            document.getElementById('custom-confirm').classList.remove('hidden');
+        }
+        function handleConfirm(approved) {
+            document.getElementById('custom-confirm').classList.add('hidden');
+            if (approved && confirmCallback) confirmCallback();
+            confirmCallback = null;
+        }
+
+        function openSyncCenterModal() { document.getElementById('modal-sync-center').classList.remove('hidden'); }
+        function closeSyncCenterModal() { document.getElementById('modal-sync-center').classList.add('hidden'); }
+
+        // === BANCO DE DADOS PADRÃO PRF ===
+        let studyDb = {
+            syncCode: "",
+            syllabus: [
+                { subject: "Língua Portuguesa", topics: [{ name: "Compreensão de Textos", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Ortografia e Acentuação", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Sintaxe da Oração", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Raciocínio Lógico-Matemático", topics: [{ name: "Proposições e Tabelas-Verdade", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Análise Combinatória", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Probabilidade", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Informática", topics: [{ name: "Sistemas Operacionais", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Redes e Protocolos", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Segurança da Informação", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Física", topics: [{ name: "Cinemática (MRU, MRUV)", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Leis de Newton", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Trabalho e Energia", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Ética e Cidadania", topics: [{ name: "Ética no Serviço Público", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Decreto 1.171/1994", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Geopolítica Brasileira", topics: [{ name: "Transportes e Comunicações", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Segurança de Fronteira", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Legislação de Trânsito", topics: [{ name: "SNT - Sistema Nacional de Trânsito", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Normas de Circulação e Conduta", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Infrações e Penalidades", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Crimes de Trânsito", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Direito Administrativo", topics: [{ name: "Organização Administrativa", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Poderes Administrativos", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Atos Administrativos", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Lei 8.112/1990", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Direito Constitucional", topics: [{ name: "Direitos e Deveres Individuais (Art. 5º)", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Organização do Estado", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Segurança Pública (Art. 144)", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Direito Penal", topics: [{ name: "Teoria do Crime", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Crimes Contra a Pessoa", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Crimes Contra o Patrimônio", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Crimes Contra a Administração", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Direito Processual Penal", topics: [{ name: "Inquérito Policial", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Prisão em Flagrante", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Busca e Apreensão", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Legislação Especial", topics: [{ name: "Lei de Drogas", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Estatuto do Desarmamento", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Lei de Abuso de Autoridade", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] },
+                { subject: "Direitos Humanos", topics: [{ name: "Teoria Geral e Histórica", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "DUDH", status: "Não Estudado", qCorrect: 0, qTotal: 0 }, { name: "Pacto de San José da Costa Rica", status: "Não Estudado", qCorrect: 0, qTotal: 0 }] }
+            ],
+            studyCycle: [
+                { subject: "Legislação de Trânsito", duration: 90, status: "A Fazer" },
+                { subject: "Língua Portuguesa", duration: 60, status: "A Fazer" },
+                { subject: "Direito Penal", duration: 60, status: "A Fazer" },
+                { subject: "Raciocínio Lógico-Matemático", duration: 60, status: "A Fazer" }
+            ],
+            currentCycleStep: 0,
+            history: [],
+            revisions: [],
+            summaries: [] 
+        };
+
+        // === INICIALIZAÇÃO ===
+        window.onload = async function() {
+            try { await loadDatabase(); } catch(e) { console.error(e); }
+            try { renderAllTabs(); } catch(e) { console.error(e); }
+            try { initCharts(); initStudyTypeChart(); } catch(e) { console.error(e); }
+            checkUrlHash();
+            cycleMotivationalQuote();
+            try { restoreSessionIfLoggedIn(); } catch(e) {}
+        };
+
+        function generateRandomSyncCode() {
+            return `PRF-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
+        }
+
+        // === STORAGE: usa window.storage (Artifacts) com fallback para localStorage ===
+        const STORAGE_KEY = 'estudei_prf_database';
+
+        async function storageGet(key) {
+            if (window.storage) {
+                try {
+                    const result = await window.storage.get(key);
+                    return result ? result.value : null;
+                } catch(e) { /* chave não existe */ return null; }
+            }
+            try { return localStorage.getItem(key); } catch(e) { return null; }
+        }
+
+        async function storageSet(key, value) {
+            if (window.storage) {
+                try {
+                    await window.storage.set(key, value);
+                    return true;
+                } catch(e) { console.error("window.storage falhou:", e); }
+            }
+            try { localStorage.setItem(key, value); return true; } catch(e) { return false; }
+        }
+
+        async function loadDatabase() {
+            const savedDb = await storageGet(STORAGE_KEY);
+            if (savedDb) {
+                try {
+                    const parsed = JSON.parse(savedDb);
+                    if (!parsed.summaries) parsed.summaries = [];
+                    if (!parsed.history) parsed.history = [];
+                    if (!parsed.revisions) parsed.revisions = [];
+                    if (!parsed.syllabus) parsed.syllabus = [];
+                    
+                    parsed.summaries.forEach(s => {
+                        if(s.isFavorite === undefined) s.isFavorite = false;
+                        if(s.tags === undefined) s.tags = "";
+                        if(s.created === undefined) s.created = s.lastEdited || "Antigo";
+                    });
+                    studyDb = parsed;
+                } catch(e) { console.error("Erro no Parse DB", e); }
+            }
+            if (!studyDb.syncCode) { studyDb.syncCode = generateRandomSyncCode(); await saveDatabase(); }
+        }
+
+        async function saveDatabase() {
+            const ok = await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+            updateSyncStatusDisplay(ok);
+        }
+
+        function updateSyncStatusDisplay(ok) {
+            const el = document.getElementById('sync-status-text');
+            const timeEl = document.getElementById('last-sync-time');
+            if (el) el.innerText = ok ? 'Salvo ✓' : 'Erro ao Salvar ⚠';
+            if (el) el.style.color = ok ? '#10b981' : '#ef4444';
+            if (timeEl && ok) {
+                const now = new Date();
+                timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+            }
+        }
+
+        // === NAVEGAÇÃO ===
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative");
+            
+            const targetPane = document.getElementById(`pane-${tabId}`);
+            if (targetPane) targetPane.classList.remove('hidden');
+            
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 bg-yellow-400 text-slate-900 shadow relative";
+            
+            renderAllTabs();
+        }
+
+        function checkUrlHash() {
+            const hash = window.location.hash.substring(1);
+            if (['dashboard', 'edital', 'ciclo', 'cronometro', 'revisoes', 'historico', 'resumos'].includes(hash)) switchTab(hash);
+        }
+
+        function renderAllTabs() {
+            updateDashboardMetrics();
+            renderSyllabusTab();
+            renderStudyCycleTab();
+            renderRevisionsTab();
+            renderHistoryTab();
+            populateFormDropdowns();
+            renderSummariesTree();
+            updateChartData();
+        }
+
+        // === 1. DASHBOARD COMPONENT ===
+        function updateDashboardMetrics() {
+            let totalMinutes = studyDb.history.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
+            
+            let totalQuestions = 0;
+            let correctQuestions = 0;
+            let totalTopics = 0;
+            let completedTopics = 0;
+
+            studyDb.syllabus.forEach(sub => {
+                const topicsList = sub.topics || [];
+                topicsList.forEach(t => {
+                    totalTopics++;
+                    if (t.status !== "Não Estudado") completedTopics++;
+                    totalQuestions += (t.qTotal || 0);
+                    correctQuestions += (t.qCorrect || 0);
+                });
+            });
+
+            // Metricas Top
+            document.getElementById('stat-total-questions').innerText = totalQuestions;
+            document.getElementById('stat-accuracy-fraction').innerText = `${correctQuestions} corretas de ${totalQuestions}`;
+
+            let syllabusProgress = totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : "0.0";
+            document.getElementById('stat-syllabus-progress').innerText = `${syllabusProgress}%`;
+            document.getElementById('stat-syllabus-progress-bar').style.width = `${syllabusProgress}%`;
+
+            const today = new Date().toISOString().split('T')[0];
+            let pendingRevCount = (studyDb.revisions || []).filter(r => !r.done && r.dueDate <= today).length;
+            document.getElementById('stat-pending-revisions').innerText = pendingRevCount;
+            
+            const badge = document.getElementById('revision-badge');
+            if (pendingRevCount > 0) { badge.innerText = pendingRevCount; badge.classList.remove('hidden'); } 
+            else { badge.classList.add('hidden'); }
+
+            let cycleDone = studyDb.studyCycle.filter(s => s.status === "Concluído").length;
+            let cycleCompletion = studyDb.studyCycle.length > 0 ? Math.round((cycleDone / studyDb.studyCycle.length) * 100) : 0;
+            document.getElementById('stat-cycle-status').innerText = `${cycleCompletion}% Completo`;
+
+            const nextSubObj = studyDb.studyCycle[studyDb.currentCycleStep];
+            if (nextSubObj) {
+                document.getElementById('stat-cycle-next-sub').innerText = `Seguinte: ${nextSubObj.subject}`;
+                document.getElementById('dash-next-subject').innerText = nextSubObj.subject;
+                document.getElementById('dash-next-time').innerText = `${nextSubObj.duration} min`;
+                
+                const sData = studyDb.syllabus.find(s => s.subject === nextSubObj.subject);
+                let nextTop = "Qualquer Assunto";
+                if(sData) {
+                    const unstudied = sData.topics.find(t => t.status === "Não Estudado");
+                    if(unstudied) nextTop = unstudied.name;
+                }
+                document.getElementById('dash-next-topic').innerText = nextTop;
+            } else {
+                document.getElementById('stat-cycle-next-sub').innerText = "Ciclo Concluído";
+                document.getElementById('dash-next-subject').innerText = "Tudo Feito";
+                document.getElementById('dash-next-time').innerText = "--";
+                document.getElementById('dash-next-topic').innerText = "Reinicie o Ciclo";
+            }
+
+            if (studyDb.history.length > 0) {
+                const lastSession = studyDb.history[studyDb.history.length - 1];
+                document.getElementById('dash-last-subject').innerText = lastSession.subject;
+                document.getElementById('dash-last-topic').innerText = lastSession.topic;
+                document.getElementById('dash-last-status').innerText = lastSession.type;
+                document.getElementById('dash-last-time').innerText = `${lastSession.duration} min`;
+            }
+
+            // Grid de Desempenho (Questões por Matéria)
+            let performanceGrid = document.getElementById('subject-performance-grid');
+            if (performanceGrid) {
+                performanceGrid.innerHTML = '';
+                studyDb.syllabus.forEach(sub => {
+                    let sQ = 0, sC = 0;
+                    sub.topics.forEach(t => { sQ += (t.qTotal || 0); sC += (t.qCorrect || 0); });
+                    let sAcc = sQ > 0 ? Math.round((sC/sQ)*100) : null;
+                    
+                    let color = "text-gray-400";
+                    if (sAcc !== null) {
+                        if (sAcc >= 80) color = "text-emerald-400";
+                        else if (sAcc >= 60) color = "text-yellow-400";
+                        else color = "text-red-400";
+                    }
+
+                    let mins = studyDb.history.filter(s => s.subject === sub.subject).reduce((acc, curr) => acc + parseInt(curr.duration || 0), 0);
+
+                    performanceGrid.innerHTML += `
+                        <div class="bg-blue-950 p-4 rounded-xl border border-blue-900 shadow-sm flex flex-col justify-between">
+                            <div class="flex justify-between items-start">
+                                <span class="font-bold text-sm text-white block truncate w-3/4">${sub.subject}</span>
+                                <span class="font-mono font-black text-base ${color}">${sAcc !== null ? sAcc + '%' : '--'}</span>
+                            </div>
+                            <div class="mt-2 flex justify-between text-xxs text-gray-400">
+                                <span>⏱️ ${Math.round(mins/60)}h ${(mins%60).toString().padStart(2,'0')}m</span>
+                                <span>🎯 ${sC}/${sQ} q.</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Rascunho
+            const scratch = document.getElementById('local-scratchpad');
+            if(scratch) {
+                storageGet('estudei_prf_scratchpad').then(val => { if(val) scratch.value = val; });
+            }
+        }
+
+        function saveScratchpad() {
+            storageSet('estudei_prf_scratchpad', document.getElementById('local-scratchpad').value);
+        }
+
+        // === 2. EDITAL VERTICALIZADO COMPONENT ===
+        function renderSyllabusTab() {
+            const filterContainer = document.getElementById('edital-subject-filters');
+            if (filterContainer) {
+                filterContainer.innerHTML = `
+                    <button onclick="filterEditalSubject('all')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-yellow-400 text-slate-900 shadow">Todos</button>
+                `;
+                studyDb.syllabus.forEach((sub, index) => {
+                    filterContainer.innerHTML += `
+                        <button onclick="filterEditalSubject('${index}')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-950 border border-blue-900 text-gray-300 hover:text-white transition">${sub.subject}</button>
+                    `;
+                });
+            }
+            renderSyllabusAccordion('all');
+        }
+
+        function filterEditalSubject(index) {
+            renderSyllabusAccordion(index);
+        }
+
+        function renderSyllabusAccordion(filterIdx) {
+            const accordion = document.getElementById('edital-content-accordion');
+            if (!accordion) return;
+            accordion.innerHTML = '';
+            
+            const hideStudied = document.getElementById('toggle-hide-studied') ? document.getElementById('toggle-hide-studied').checked : false;
+
+            studyDb.syllabus.forEach((sub, sIdx) => {
+                if (filterIdx !== 'all' && filterIdx != sIdx) return;
+                
+                let sTopicsCount = sub.topics.length;
+                let sCompleted = sub.topics.filter(t => t.status !== "Não Estudado").length;
+                let sPercentage = sTopicsCount > 0 ? Math.round((sCompleted/sTopicsCount)*100) : 0;
+
+                let topicsRowsHtml = '';
+                let rowsCount = 0;
+
+                sub.topics.forEach((topic, tIdx) => {
+                    if (hideStudied && topic.status !== "Não Estudado") return;
+                    rowsCount++;
+
+                    let accText = "--";
+                    let accColor = "text-gray-400";
+                    if (topic.qTotal > 0) {
+                        let accVal = Math.round((topic.qCorrect / topic.qTotal) * 100);
+                        accText = `${accVal}% (${topic.qCorrect}/${topic.qTotal})`;
+                        if (accVal >= 80) accColor = "text-emerald-400 font-bold";
+                        else if (accVal >= 60) accColor = "text-yellow-400 font-bold";
+                        else accColor = "text-red-400 font-bold";
+                    }
+
+                    let badgeClass = "bg-input-dark border-blue-900";
+                    if (topic.status === "Teoria Vista") badgeClass = "bg-emerald-500/20 text-emerald-300";
+                    else if (topic.status === "Questões Feitas") badgeClass = "bg-yellow-400/20 text-yellow-400";
+                    else if (topic.status === "Revisado") badgeClass = "bg-blue-500/20 text-blue-300";
+
+                    topicsRowsHtml += `
+                        <tr class="hover:bg-blue-950/40 transition">
+                            <td class="px-4 py-3 text-sm text-gray-200 font-medium">${topic.name}</td>
+                            <td class="px-4 py-3 text-center">
+                                <select onchange="updateTopicStatus(${sIdx}, ${tIdx}, this.value)" class="bg-input-dark text-xs font-semibold rounded-lg px-2.5 py-1 text-white border border-blue-900 ${badgeClass}">
+                                    <option value="Não Estudado" ${topic.status === 'Não Estudado' ? 'selected' : ''}>❌ Não Estudado</option>
+                                    <option value="Teoria Vista" ${topic.status === 'Teoria Vista' ? 'selected' : ''}>📖 Teoria</option>
+                                    <option value="Questões Feitas" ${topic.status === 'Questões Feitas' ? 'selected' : ''}>📝 Questões</option>
+                                    <option value="Revisado" ${topic.status === 'Revisado' ? 'selected' : ''}>🔁 Revisado</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3 text-center ${accColor} font-mono text-xs">${accText}</td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="quickStudyTopic(${sIdx}, ${tIdx})" class="text-xs bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black px-3 py-1.5 rounded-lg">Estudar</button>
+                                    <button onclick="openRenameTopicModal(${sIdx}, ${tIdx})" class="text-gray-300 hover:text-yellow-400 p-1.5 bg-blue-900/40 rounded"><i class="fa-solid fa-pencil text-xxs"></i></button>
+                                    <button onclick="deleteTopic(${sIdx}, ${tIdx})" class="text-gray-300 hover:text-red-400 p-1.5 bg-blue-900/40 rounded"><i class="fa-solid fa-trash-can text-xxs"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                if (rowsCount > 0) {
+                    accordion.innerHTML += `
+                        <div class="bg-card-dark rounded-2xl border border-blue-900 overflow-hidden shadow">
+                            <div class="px-5 py-4 prf-blue flex justify-between items-center border-b border-blue-900">
+                                <div>
+                                    <span class="text-xs font-bold text-prf-yellow uppercase">Disciplina</span>
+                                    <h3 class="text-lg font-black text-white">${sub.subject}</h3>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="text-right hidden sm:block">
+                                        <span class="text-xs text-blue-200">Avanço: ${sPercentage}%</span>
+                                        <div class="w-24 bg-blue-950 rounded-full h-1.5 mt-1"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${sPercentage}%"></div></div>
+                                    </div>
+                                    <div class="flex gap-1.5">
+                                        <button onclick="openRenameSubjectModal(${sIdx})" class="text-yellow-400 p-2 bg-blue-950/40 rounded-lg hover:bg-blue-950"><i class="fa-solid fa-pen-to-square"></i></button>
+                                        <button onclick="deleteSubject(${sIdx})" class="text-red-400 p-2 bg-blue-950/40 rounded-lg hover:bg-blue-950"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <tbody class="divide-y divide-blue-950">${topicsRowsHtml}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function updateTopicStatus(sIdx, tIdx, val) {
+            studyDb.syllabus[sIdx].topics[tIdx].status = val;
+            saveDatabase(); updateDashboardMetrics(); renderSyllabusAccordion('all');
+        }
+
+        function deleteSubject(sIdx) {
+            showConfirm("Remover matéria inteira?", () => {
+                studyDb.syllabus.splice(sIdx, 1);
+                saveDatabase(); renderAllTabs();
+            });
+        }
+        function deleteTopic(sIdx, tIdx) {
+            showConfirm("Apagar este assunto?", () => {
+                studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
+                saveDatabase(); renderAllTabs();
+            });
+        }
+
+        // Modais de Adição e Edição
+        function openAddTopicModal() { populateFormDropdowns(); document.getElementById('modal-add-topic').classList.remove('hidden'); }
+        function closeAddTopicModal() { document.getElementById('modal-add-topic').classList.add('hidden'); }
+        function toggleNewSubjectInput() {
+            const v = document.getElementById('modal-add-subject-select').value;
+            const wrap = document.getElementById('new-subject-input-wrapper');
+            if (v === 'NEW_SUBJECT') wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
+        }
+        function saveCustomTopic(e) {
+            e.preventDefault();
+            const sel = document.getElementById('modal-add-subject-select').value;
+            const newSub = document.getElementById('modal-new-subject-name').value.trim();
+            const newTop = document.getElementById('modal-new-topic-name').value.trim();
+            
+            let targetSub = sel;
+            if (sel === 'NEW_SUBJECT') {
+                targetSub = newSub;
+                if (!studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase())) {
+                    studyDb.syllabus.push({ subject: targetSub, topics: [] });
+                }
+            }
+
+            const subObj = studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase());
+            if (subObj) {
+                subObj.topics.push({ name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
+                saveDatabase(); closeAddTopicModal(); renderAllTabs(); showAlert("Tópico adicionado!");
+            }
+        }
+
+        function openRenameSubjectModal(idx) {
+            document.getElementById('modal-rename-subject-index').value = idx;
+            document.getElementById('modal-rename-subject-input').value = studyDb.syllabus[idx].subject;
+            document.getElementById('modal-rename-subject').classList.remove('hidden');
+        }
+        function closeRenameSubjectModal() { document.getElementById('modal-rename-subject').classList.add('hidden'); }
+        function saveRenamedSubject() {
+            const idx = document.getElementById('modal-rename-subject-index').value;
+            const val = document.getElementById('modal-rename-subject-input').value.trim();
+            if (val) {
+                const old = studyDb.syllabus[idx].subject;
+                studyDb.syllabus[idx].subject = val;
+                studyDb.studyCycle.forEach(c => { if(c.subject === old) c.subject = val; });
+                saveDatabase(); closeRenameSubjectModal(); renderAllTabs();
+            }
+        }
+
+        function openRenameTopicModal(sIdx, tIdx) {
+            document.getElementById('modal-rename-topic-sidx').value = sIdx;
+            document.getElementById('modal-rename-topic-tidx').value = tIdx;
+            document.getElementById('modal-rename-topic-input').value = studyDb.syllabus[sIdx].topics[tIdx].name;
+            document.getElementById('modal-rename-topic').classList.remove('hidden');
+        }
+        function closeRenameTopicModal() { document.getElementById('modal-rename-topic').classList.add('hidden'); }
+        function saveRenamedTopic() {
+            const sIdx = document.getElementById('modal-rename-topic-sidx').value;
+            const tIdx = document.getElementById('modal-rename-topic-tidx').value;
+            const val = document.getElementById('modal-rename-topic-input').value.trim();
+            if (val) {
+                studyDb.syllabus[sIdx].topics[tIdx].name = val;
+                saveDatabase(); closeRenameTopicModal(); renderAllTabs();
+            }
+        }
+
+        // === 3. CICLO DE ESTUDOS COMPONENT ===
+        function renderStudyCycleTab() {
+            const stepsDiv = document.getElementById('cycle-steps-visual-container');
+            const tbody = document.getElementById('cycle-table-body');
+            if(!stepsDiv || !tbody) return;
+
+            stepsDiv.innerHTML = ''; tbody.innerHTML = '';
+
+            studyDb.studyCycle.forEach((item, idx) => {
+                let isCurrent = (studyDb.currentCycleStep === idx);
+                
+                // Visual Steps
+                let stepClass = isCurrent ? "bg-yellow-400 text-slate-900 font-bold scale-105" : 
+                               (item.status === "Concluído" ? "bg-emerald-500/20 text-emerald-300" : "bg-blue-950 text-gray-300");
+                stepsDiv.innerHTML += `
+                    <div class="px-3 py-2 rounded-xl text-xs flex items-center gap-2 border border-blue-800 ${stepClass}">
+                        <span class="font-mono">${idx + 1}</span> <span>${item.subject} (${item.duration}m)</span>
+                    </div>
+                `;
+
+                // Table
+                let rowBgClass = isCurrent ? "bg-yellow-400/10 border-l-4 border-yellow-400" : "";
+                let badge = isCurrent ? `<span class="bg-yellow-400 text-slate-900 px-2 rounded text-xs font-black animate-pulse">AGORA</span>` :
+                            (item.status === "Concluído" ? `<span class="bg-emerald-500/20 text-emerald-400 px-2 rounded text-xs">Feito</span>` : `<span class="bg-slate-800 text-slate-400 px-2 rounded text-xs">Fila</span>`);
+
+                tbody.innerHTML += `
+                    <tr class="${rowBgClass} hover:bg-blue-950/20">
+                        <td class="px-4 py-3 font-mono text-gray-400">${idx + 1}º</td>
+                        <td class="px-4 py-3 font-bold text-white">${item.subject}</td>
+                        <td class="px-4 py-3 text-center">${item.duration} min</td>
+                        <td class="px-4 py-3 text-center">${badge}</td>
+                        <td class="px-4 py-3 text-right"><button onclick="startSpecificCycleStep(${idx})" class="text-xs bg-blue-900 text-white px-3 py-1 rounded">Estudar</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function resetCycleProgress() {
+            studyDb.studyCycle.forEach(c => c.status = "A Fazer");
+            studyDb.currentCycleStep = 0;
+            saveDatabase(); renderAllTabs();
+        }
+
+        function startSpecificCycleStep(idx) {
+            studyDb.currentCycleStep = idx; saveDatabase(); renderStudyCycleTab(); startNextCycleSubject();
+        }
+
+        function startNextCycleSubject() {
+            const step = studyDb.studyCycle[studyDb.currentCycleStep];
+            if (!step) { showAlert("Ciclo finalizado!"); return; }
+
+            const selSub = document.getElementById('form-subject');
+            if (selSub) {
+                selSub.value = step.subject;
+                updateFormTopics();
+                document.getElementById('form-duration').value = step.duration;
+            }
+            switchTab('cronometro');
+        }
+
+        function openConfigureCycleModal() {
+            const list = document.getElementById('modal-cycle-items-list');
+            list.innerHTML = '';
+            studyDb.studyCycle.forEach((item, idx) => {
+                let opts = '';
+                studyDb.syllabus.forEach(s => opts += `<option value="${s.subject}" ${s.subject===item.subject?'selected':''}>${s.subject}</option>`);
+                list.innerHTML += `
+                    <div class="flex items-center gap-2 bg-blue-950 p-2 rounded-xl border border-blue-900" id="cycle-row-${idx}">
+                        <select class="cycle-sub flex-grow bg-input-dark text-white text-xs rounded p-1">${opts}</select>
+                        <input type="number" class="cycle-dur w-16 bg-input-dark text-white text-xs rounded p-1 text-center" value="${item.duration}">
+                        <button onclick="document.getElementById('cycle-row-${idx}').remove()" class="text-red-400 p-1"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+            });
+            document.getElementById('modal-config-cycle').classList.remove('hidden');
+        }
+
+        function addSubjectToCycleConfig() {
+            const list = document.getElementById('modal-cycle-items-list');
+            const idx = list.children.length;
+            let opts = ''; studyDb.syllabus.forEach(s => opts += `<option value="${s.subject}">${s.subject}</option>`);
+            
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-2 bg-blue-950 p-2 rounded-xl border border-blue-900";
+            div.id = `cycle-row-${idx}`;
+            div.innerHTML = `
+                <select class="cycle-sub flex-grow bg-input-dark text-white text-xs rounded p-1">${opts}</select>
+                <input type="number" class="cycle-dur w-16 bg-input-dark text-white text-xs rounded p-1 text-center" value="60">
+                <button onclick="document.getElementById('cycle-row-${idx}').remove()" class="text-red-400 p-1"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            list.appendChild(div);
+        }
+
+        function saveCycleConfig() {
+            const list = document.getElementById('modal-cycle-items-list');
+            let newCycle = [];
+            for (let row of list.children) {
+                newCycle.push({
+                    subject: row.querySelector('.cycle-sub').value,
+                    duration: parseInt(row.querySelector('.cycle-dur').value) || 60,
+                    status: "A Fazer"
+                });
+            }
+            studyDb.studyCycle = newCycle; studyDb.currentCycleStep = 0;
+            saveDatabase(); closeConfigureCycleModal(); renderAllTabs(); showAlert("Ciclo Salvo!");
+        }
+
+        function closeConfigureCycleModal() { document.getElementById('modal-config-cycle').classList.add('hidden'); }
+
+
+        // === 4. CRONÔMETRO COMPONENT ===
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            document.getElementById('btn-timer-start').classList.add('hidden');
+            document.getElementById('btn-timer-pause').classList.remove('hidden');
+            document.getElementById('timer-display').classList.add('active-timer');
+
+            if (isTimerPaused) { clearInterval(pauseInterval); isTimerPaused = false; }
+            timerInterval = setInterval(() => { totalSeconds++; updateTimerDisplays(); }, 1000);
+        }
+
+        function pauseTimer() {
+            if (!isTimerRunning) return;
+            isTimerRunning = false; isTimerPaused = true;
+            document.getElementById('btn-timer-pause').classList.add('hidden');
+            document.getElementById('btn-timer-start').classList.remove('hidden');
+            document.getElementById('timer-display').classList.remove('active-timer');
+
+            clearInterval(timerInterval);
+            pauseInterval = setInterval(() => { pauseSeconds++; updateTimerDisplays(); }, 1000);
+        }
+
+        function resetTimer() {
+            showConfirm("Zerar cronômetro?", () => {
+                clearInterval(timerInterval); clearInterval(pauseInterval);
+                totalSeconds = 0; pauseSeconds = 0; isTimerRunning = false; isTimerPaused = false;
+                document.getElementById('btn-timer-pause').classList.add('hidden');
+                document.getElementById('btn-timer-start').classList.remove('hidden');
+                document.getElementById('timer-display').classList.remove('active-timer');
+                updateTimerDisplays();
+            });
+        }
+
+        function updateTimerDisplays() {
+            let h = Math.floor(totalSeconds / 3600);
+            let m = Math.floor((totalSeconds % 3600) / 60);
+            let s = totalSeconds % 60;
+            document.getElementById('timer-display').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+            let ph = Math.floor(pauseSeconds / 3600);
+            let pm = Math.floor((pauseSeconds % 3600) / 60);
+            let ps = pauseSeconds % 60;
+            document.getElementById('pause-timer-display').innerText = `${ph.toString().padStart(2, '0')}:${pm.toString().padStart(2, '0')}:${ps.toString().padStart(2, '0')}`;
+
+            document.getElementById('form-duration').value = Math.max(1, Math.round(totalSeconds / 60));
+        }
+
+        function updateFormTopics() {
+            const sub = document.getElementById('form-subject').value;
+            const topicSel = document.getElementById('form-topic');
+            topicSel.innerHTML = '<option value="">Selecione...</option>';
+            const sData = studyDb.syllabus.find(s => s.subject === sub);
+            if (sData) sData.topics.forEach(t => topicSel.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+        }
+
+        function calculateAccuracyPreview() {
+            const c = parseInt(document.getElementById('form-questions-correct').value) || 0;
+            const t = parseInt(document.getElementById('form-questions-total').value) || 0;
+            document.getElementById('form-accuracy-preview').innerText = (t > 0 && c <= t) ? `${Math.round((c/t)*100)}%` : `0%`;
+        }
+
+        function saveStudySession(e) {
+            e.preventDefault();
+            const subject = document.getElementById('form-subject').value;
+            const topic = document.getElementById('form-topic').value;
+            const duration = parseInt(document.getElementById('form-duration').value) || 0;
+            const type = document.getElementById('form-study-type').value;
+            const qC = parseInt(document.getElementById('form-questions-correct').value) || 0;
+            const qT = parseInt(document.getElementById('form-questions-total').value) || 0;
+            
+            const sData = studyDb.syllabus.find(s => s.subject === subject);
+            if (sData) {
+                const tData = sData.topics.find(t => t.name === topic);
+                if (tData) {
+                    tData.qCorrect += qC; tData.qTotal += qT;
+                    if (type === "Teoria") tData.status = "Teoria Vista";
+                    else if (type === "Questões") tData.status = "Questões Feitas";
+                    else if (type === "Revisão") tData.status = "Revisado";
+                }
+            }
+
+            studyDb.history.push({
+                id: Date.now(), date: new Date().toISOString().split('T')[0],
+                subject, topic, duration, type, qCorrect: qC, qTotal: qT
+            });
+
+            scheduleAutomaticRevisions(subject, topic, new Date().toISOString().split('T')[0]);
+
+            const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
+            if (cStep && cStep.subject === subject) {
+                cStep.status = "Concluído";
+                studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
+            }
+
+            saveDatabase(); renderAllTabs(); switchTab('dashboard');
+            
+            // Reset
+            document.getElementById('study-session-form').reset();
+            clearInterval(timerInterval); clearInterval(pauseInterval);
+            totalSeconds = 0; pauseSeconds = 0; isTimerRunning = false; isTimerPaused = false;
+            updateTimerDisplays();
+            showAlert("Sessão salva com sucesso!");
+        }
+
+        function quickStudyTopic(sIdx, tIdx) {
+            const sub = studyDb.syllabus[sIdx];
+            const top = sub.topics[tIdx];
+            document.getElementById('form-subject').value = sub.subject;
+            updateFormTopics();
+            document.getElementById('form-topic').value = top.name;
+            switchTab('cronometro');
+        }
+
+
+        // === 5. MEUS RESUMOS (NOTION-LIKE) ===
+        // Popular o form global
+        function populateFormDropdowns() {
+            const modalAddSubSelect = document.getElementById('modal-add-subject-select');
+            const formSubSelect = document.getElementById('form-subject');
+            const resSubSelect = document.getElementById('modal-summary-subject');
+
+            if (modalAddSubSelect) modalAddSubSelect.innerHTML = '<option value="">Selecione...</option><option value="NEW_SUBJECT">+ Criar Nova Disciplina...</option>';
+            if (formSubSelect) formSubSelect.innerHTML = '<option value="">Selecione...</option>';
+            if (resSubSelect) resSubSelect.innerHTML = '';
+
+            studyDb.syllabus.forEach(sub => {
+                const opt = `<option value="${sub.subject}">${sub.subject}</option>`;
+                if (modalAddSubSelect) modalAddSubSelect.innerHTML += opt;
+                if (formSubSelect) formSubSelect.innerHTML += opt;
+                if (resSubSelect) resSubSelect.innerHTML += opt;
+            });
+            populateSummaryTopicsDropdown();
+        }
+
+        function getDisciplineColorClass(subjectName) {
+            const sub = subjectName.toLowerCase();
+            if (sub.includes('constitucional')) return 'disc-color-const';
+            if (sub.includes('administrativo')) return 'disc-color-admin';
+            if (sub.includes('português') || sub.includes('portugues')) return 'disc-color-port';
+            if (sub.includes('informática') || sub.includes('informatica')) return 'disc-color-info';
+            if (sub.includes('penal') || sub.includes('especial')) return 'disc-color-penal';
+            return 'disc-color-default';
+        }
+
+        function setTreeFilter(mode) { treeFilterMode = mode; filterSummariesTree(); }
+        function filterSummariesTree() { renderSummariesTree(); }
+
+        function renderSummariesTree() {
+            const container = document.getElementById('summaries-tree-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const searchTerm = (document.getElementById('summary-search-input')?.value || "").toLowerCase();
+
+            let filteredSummaries = studyDb.summaries.filter(sum => {
+                let matchesSearch = true;
+                if (searchTerm) {
+                    matchesSearch = (sum.title.toLowerCase().includes(searchTerm) || 
+                                     sum.subject.toLowerCase().includes(searchTerm) || 
+                                     sum.topic.toLowerCase().includes(searchTerm) || 
+                                     (sum.tags && sum.tags.toLowerCase().includes(searchTerm)));
+                }
+                let matchesMode = true;
+                if (treeFilterMode === 'favorites') matchesMode = sum.isFavorite;
+                return matchesSearch && matchesMode;
+            });
+
+            if (filteredSummaries.length === 0) {
+                container.innerHTML = `<p class="text-[11px] text-gray-500 text-center py-6 font-bold uppercase tracking-wider">Nenhum resumo encontrado.</p>`; return;
+            }
+
+            const groups = {};
+            filteredSummaries.forEach(sum => {
+                if (!groups[sum.subject]) groups[sum.subject] = {};
+                if (!groups[sum.subject][sum.topic]) groups[sum.subject][sum.topic] = [];
+                groups[sum.subject][sum.topic].push(sum);
+            });
+
+            for (const subject in groups) {
+                const colorClass = getDisciplineColorClass(subject);
+                let subjectHtml = `<div class="mb-3"><div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider ${colorClass} py-1.5 border-b border-blue-900/50 mb-1"><i class="fa-solid fa-book"></i> <span>${subject}</span></div><div class="pl-2 space-y-2">`;
+                
+                for (const topic in groups[subject]) {
+                    subjectHtml += `<div><div class="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold py-1"><i class="fa-regular fa-folder-open text-yellow-500"></i> <span class="truncate">${topic}</span></div><div class="pl-3 space-y-0.5 mt-0.5 border-l border-blue-900/60">`;
+                    
+                    groups[subject][topic].forEach(sum => {
+                        const activeClass = (sum.id === activeSummaryId) ? 'bg-blue-900/60 text-white font-bold border-blue-500' : 'text-gray-400 hover:bg-blue-900/30 hover:text-gray-200 border-transparent';
+                        const favIcon = sum.isFavorite ? '<i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>' : '';
+                        subjectHtml += `<div onclick="selectActiveSummary(${sum.id})" class="text-[11px] cursor-pointer truncate py-1.5 px-2 rounded-r transition flex items-center justify-between border-l-2 ${activeClass}"><div class="flex items-center gap-1.5 truncate"><i class="fa-regular fa-file-lines opacity-60"></i> <span class="truncate">${sum.title || 'Sem Título'}</span></div>${favIcon}</div>`;
+                    });
+                    subjectHtml += `</div></div>`;
+                }
+                subjectHtml += `</div></div>`;
+                container.innerHTML += subjectHtml;
+            }
+        }
+
+        function openCreateSummaryModal() { document.getElementById('modal-create-summary').classList.remove('hidden'); }
+        function closeCreateSummaryModal() { document.getElementById('modal-create-summary').classList.add('hidden'); }
+
+        function populateSummaryTopicsDropdown() {
+            const subjSelect = document.getElementById('modal-summary-subject');
+            const topicSelect = document.getElementById('modal-summary-topic');
+            if (!subjSelect || !topicSelect) return;
+            const subjectVal = subjSelect.value;
+            topicSelect.innerHTML = '';
+            const subObj = studyDb.syllabus.find(s => s.subject === subjectVal);
+            if (subObj) { subObj.topics.forEach(t => { topicSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`; }); }
+        }
+
+        function saveNewSummary() {
+            const subject = document.getElementById('modal-summary-subject').value;
+            const topic = document.getElementById('modal-summary-topic').value;
+            const title = document.getElementById('modal-summary-title').value.trim() || "Resumo Sem Título";
+            if (!subject || !topic) { showAlert("Selecione Disciplina e Assunto."); return; }
+            
+            const newSummary = {
+                id: Date.now(), subject, topic, title,
+                content: "<h2>Introdução</h2><p>Comece a digitar os pontos principais do seu material aqui...</p>",
+                created: new Date().toLocaleDateString(), lastEdited: "Agora", tags: "", isFavorite: false
+            };
+            studyDb.summaries.push(newSummary); saveDatabase();
+            closeCreateSummaryModal(); document.getElementById('modal-summary-title').value = '';
+            document.getElementById('summary-search-input').value = ''; treeFilterMode = 'all';
+            renderSummariesTree(); selectActiveSummary(newSummary.id); showAlert("Resumo criado!");
+        }
+
+        function selectActiveSummary(id) {
+            activeSummaryId = id; savedRange = null; 
+            const summary = studyDb.summaries.find(s => s.id === id);
+            if (summary) {
+                document.getElementById('no-summary-selected-state').classList.add('hidden');
+                document.getElementById('active-summary-workspace').classList.remove('hidden');
+                document.getElementById('active-summary-workspace').classList.add('flex');
+
+                document.getElementById('active-summary-discipline').innerText = summary.subject;
+                document.getElementById('active-summary-topic').innerText = summary.topic;
+                document.getElementById('active-summary-title').value = summary.title;
+                document.getElementById('active-summary-created').innerText = summary.created || "--";
+                document.getElementById('active-summary-last-edited').innerText = summary.lastEdited || "Agora";
+                document.getElementById('active-summary-tags').value = summary.tags || "";
+                
+                const favBtn = document.getElementById('btn-favorite-summary');
+                if (summary.isFavorite) { favBtn.classList.add('text-yellow-400'); favBtn.classList.remove('text-gray-400'); } 
+                else { favBtn.classList.remove('text-yellow-400'); favBtn.classList.add('text-gray-400'); }
+
+                document.getElementById('summary-editor-canvas').innerHTML = summary.content || '';
+                renderSummariesTree(); 
+            }
+        }
+
+        function toggleFavoriteSummary() {
+            if (!activeSummaryId) return;
+            const summary = studyDb.summaries.find(s => s.id === activeSummaryId);
+            if (summary) { summary.isFavorite = !summary.isFavorite; saveDatabase(); selectActiveSummary(activeSummaryId); }
+        }
+
+        function saveActiveSummary() {
+            if (!activeSummaryId) return;
+            const summary = studyDb.summaries.find(s => s.id === activeSummaryId);
+            if (summary) {
+                summary.title = document.getElementById('active-summary-title').value.trim() || "Resumo Sem Título";
+                summary.tags = document.getElementById('active-summary-tags').value.trim();
+                summary.content = document.getElementById('summary-editor-canvas').innerHTML;
+                const now = new Date();
+                summary.lastEdited = `${now.toLocaleDateString()} às ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                document.getElementById('active-summary-last-edited').innerText = summary.lastEdited;
+                saveDatabase();
+            }
+        }
+
+        function deleteActiveSummary() {
+            if (!activeSummaryId) return;
+            showConfirm("Excluir este resumo permanentemente?", () => {
+                studyDb.summaries = studyDb.summaries.filter(s => s.id !== activeSummaryId);
+                saveDatabase(); activeSummaryId = null;
+                document.getElementById('active-summary-workspace').classList.add('hidden');
+                document.getElementById('active-summary-workspace').classList.remove('flex');
+                document.getElementById('no-summary-selected-state').classList.remove('hidden');
+                renderSummariesTree(); showAlert("Resumo movido para a lixeira digital.");
+            });
+        }
+
+        function saveSelection() {
+            const canvas = document.getElementById('summary-editor-canvas');
+            const sel = window.getSelection();
+            if (sel.getRangeAt && sel.rangeCount && canvas.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        }
+
+        function restoreSelection() {
+            const canvas = document.getElementById('summary-editor-canvas');
+            canvas.focus();
+            if (savedRange) { const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); } 
+            else { const range = document.createRange(); range.selectNodeContents(canvas); range.collapse(false); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+        }
+
+        function execCmd(command, value = null) {
+            restoreSelection(); document.execCommand(command, false, value); saveSelection(); saveActiveSummary();
+        }
+
+        function insertHTMLAtCursor(html) {
+            restoreSelection();
+            const sel = window.getSelection();
+            const canvas = document.getElementById('summary-editor-canvas');
+            if (sel.getRangeAt && sel.rangeCount && canvas.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                const range = sel.getRangeAt(0); range.deleteContents();
+                const el = document.createElement("div"); el.innerHTML = html;
+                const frag = document.createDocumentFragment();
+                let node, lastNode; while ((node = el.firstChild)) lastNode = frag.appendChild(node);
+                range.insertNode(frag);
+                if (lastNode) { const newRange = range.cloneRange(); newRange.setStartAfter(lastNode); newRange.collapse(true); sel.removeAllRanges(); sel.addRange(newRange); }
+            } else { canvas.innerHTML += html; }
+            saveSelection(); saveActiveSummary();
+        }
+
+        function insertBlockquote() { insertHTMLAtCursor(`<blockquote style="border-left: 4px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #94a3b8; background: rgba(59,130,246,0.1); padding: 10px; border-radius: 0 8px 8px 0;">"Sua citação aqui..."</blockquote><p><br></p>`); }
+        function insertAlertBox() { insertHTMLAtCursor(`<div style="background-color: rgba(153, 27, 27, 0.2); border-left: 4px solid #ef4444; padding: 12px; border-radius: 4px; margin: 16px 0;" contenteditable="true"><strong style="color: #f87171; display: block; margin-bottom: 4px;">🚨 CUIDADO - PEGADINHA:</strong><span style="color: #fecaca;">Erro comum aqui...</span></div><p><br></p>`); }
+        function insertObsBox() { insertHTMLAtCursor(`<div style="background-color: rgba(133, 77, 14, 0.2); border-left: 4px solid #eab308; padding: 12px; border-radius: 4px; margin: 16px 0;" contenteditable="true"><strong style="color: #facc15; display: block; margin-bottom: 4px;">📌 OBSERVAÇÃO TÁTICA:</strong><span style="color: #fef08a;">Dica importante aqui...</span></div><p><br></p>`); }
+        function insertTable() { insertHTMLAtCursor('<table style="width:100%; border-collapse:collapse; margin:15px 0; background: rgba(15,23,42,0.5);"><tr style="background-color: rgba(30,58,138,0.5);"><th style="border:1px solid #3b82f6; padding:8px;">A</th><th style="border:1px solid #3b82f6; padding:8px;">B</th></tr><tr><td style="border:1px solid #3b82f6; padding:8px;">1</td><td style="border:1px solid #3b82f6; padding:8px;">2</td></tr></table><p><br></p>'); }
+        function insertImage() { const url = prompt("Cole a URL:", "https://"); if (url) insertHTMLAtCursor(`<div style="text-align:center; margin:20px 0;" contenteditable="false"><img src="${url}" style="max-width:100%; border-radius:8px; border:2px solid #3b82f6;" onerror="this.src='https://placehold.co/600x300/15294a/ffd400?text=Erro'"><p contenteditable="true" style="font-size:12px; color:#94a3b8;">[Legenda]</p></div><p><br></p>`); }
+        function insertMindmap() { insertHTMLAtCursor(`<div style="background-color:#0f172a; border:2px solid #3b82f6; border-radius:12px; padding:15px; margin:20px 0; font-family:'Roboto', sans-serif;"><div style="text-align:center; margin-bottom:15px;"><span style="background-color:#3b82f6; color:#ffffff; padding:4px 12px; border-radius:9999px; font-size:11px; font-weight:bold;">🧠 MAPA MENTAL</span><h4 style="color:#ffffff; margin:10px 0 0 0; font-size:16px; font-weight:bold;">TEMA</h4></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px;"><div style="background-color:#1e293b; border:1px solid #10b981; padding:10px; border-radius:8px;"><strong style="color:#34d399; font-size:12px; display:block;">1</strong><span style="color:#e2e8f0; font-size:12px;">Texto...</span></div></div></div><p><br></p>`); }
+
+        function applyStudyHighlight(type) {
+            restoreSelection(); const sel = window.getSelection();
+            if (!sel.rangeCount || sel.isCollapsed) { showAlert("Selecione um texto!"); return; }
+            let bgColor = "", color = "#ffffff";
+            switch(type) { case 'red': bgColor = "#ef4444"; break; case 'yellow': bgColor = "#facc15"; color="#1e293b"; break; case 'green': bgColor = "#10b981"; break; case 'blue': bgColor = "#3b82f6"; break; case 'purple': bgColor = "#a855f7"; break; case 'orange': bgColor = "#f97316"; break; }
+            
+            const span = document.createElement('span');
+            span.style.backgroundColor = bgColor; span.style.color = color; span.style.padding = "2px 4px"; span.style.borderRadius = "4px"; span.className = "study-hl hl-" + type; 
+            
+            const range = sel.getRangeAt(0);
+            span.appendChild(range.extractContents());
+            range.insertNode(span);
+            
+            const newRange = document.createRange(); newRange.setStartAfter(span); newRange.collapse(true);
+            sel.removeAllRanges(); sel.addRange(newRange);
+            saveSelection(); saveActiveSummary();
+            document.getElementById('study-legend-panel').style.display = 'block';
+        }
+
+        function toggleRevisionMode() {
+            isHighRevisionMode = !isHighRevisionMode;
+            const canvas = document.getElementById('summary-editor-canvas');
+            const btn = document.getElementById('btn-revision-mode');
+            if (isHighRevisionMode) {
+                canvas.classList.add('high-revision-mode');
+                btn.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-400');
+                btn.classList.remove('bg-blue-900', 'text-white', 'border-blue-700');
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> <span class="hidden sm:inline">Modo Revisão Ativo</span>`;
+            } else {
+                canvas.classList.remove('high-revision-mode');
+                btn.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-400');
+                btn.classList.add('bg-blue-900', 'text-white', 'border-blue-700');
+                btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span class="hidden sm:inline">Alta Revisão</span>`;
+            }
+        }
+
+        function toggleEditorPaperTheme() {
+            isEditorPaperLight = !isEditorPaperLight;
+            const canvas = document.getElementById('summary-editor-canvas');
+            const icon = document.getElementById('paper-theme-icon');
+            if (isEditorPaperLight) { canvas.classList.add('editor-paper-light'); canvas.classList.remove('editor-paper-dark'); icon.className = "fa-solid fa-moon text-blue-900"; } 
+            else { canvas.classList.add('editor-paper-dark'); canvas.classList.remove('editor-paper-light'); icon.className = "fa-solid fa-sun text-yellow-400"; }
+        }
+
+        function exportToPDF() { if (activeSummaryId) window.print(); }
+
+
+        // === 6. REVISÕES COMPONENT ===
+        function scheduleAutomaticRevisions(subject, topic, dateStr) {
+            const intervals = [{l: "24h", d: 1}, {l: "7d", d: 7}, {l: "15d", d: 15}, {l: "30d", d: 30}];
+            const baseDate = new Date(dateStr);
+            intervals.forEach(i => {
+                let d = new Date(baseDate); d.setDate(d.getDate() + i.d);
+                studyDb.revisions.push({ id: Date.now()+Math.random(), subject, topic, dueDate: d.toISOString().split('T')[0], label: i.l, done: false });
+            });
+        }
+
+        function renderRevisionsTab() {
+            const tbody = document.getElementById('revisions-table-body');
+            if (!tbody) return; tbody.innerHTML = '';
+            
+            const today = new Date().toISOString().split('T')[0];
+            let sorted = studyDb.revisions.filter(r => !r.done).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 font-bold">🎉 Nenhuma revisão pendente!</td></tr>`; return;
+            }
+
+            sorted.forEach(rev => {
+                let badgeClass = "bg-blue-900/50 text-blue-300"; let statusText = "Agendado";
+                if (rev.dueDate < today) { badgeClass = "bg-red-500/20 text-red-400 border border-red-500/30"; statusText = "ATRASADO"; } 
+                else if (rev.dueDate === today) { badgeClass = "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"; statusText = "HOJE"; }
+
+                const dParts = rev.dueDate.split('-');
+                tbody.innerHTML += `
+                    <tr class="hover:bg-blue-950/20">
+                        <td class="px-4 py-3 font-bold text-prf-yellow">${rev.label}</td>
+                        <td class="px-4 py-3 text-white">${rev.subject}</td>
+                        <td class="px-4 py-3 text-gray-300">${rev.topic}</td>
+                        <td class="px-4 py-3 text-gray-400 text-xs">${dParts[2]}/${dParts[1]}/${dParts[0]}</td>
+                        <td class="px-4 py-3 text-center"><span class="${badgeClass} text-xxs px-2.5 py-1 rounded-full">${statusText}</span></td>
+                        <td class="px-4 py-3 text-right"><button onclick="concludeRevision('${rev.id}')" class="text-xs bg-emerald-500 text-slate-900 font-bold px-3 py-1 rounded">Feito</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function concludeRevision(id) {
+            const rev = studyDb.revisions.find(r => r.id.toString() === id.toString());
+            if (rev) {
+                rev.done = true;
+                studyDb.history.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], subject: rev.subject, topic: rev.topic + ` (Revisão ${rev.label})`, duration: 15, type: "Revisão", qCorrect: 0, qTotal: 0 });
+                saveDatabase(); renderAllTabs(); showAlert("Revisão marcada como concluída!");
+            }
+        }
+
+        function cleanUpExpiredRevisions() {
+            showConfirm("Limpar revisões concluídas?", () => {
+                studyDb.revisions = studyDb.revisions.filter(r => !r.done);
+                saveDatabase(); renderAllTabs();
+            });
+        }
+
+
+        // === 7. HISTÓRICO COMPONENT ===
+        function renderHistoryTab() {
+            const tbody = document.getElementById('history-table-body');
+            if (!tbody) return; tbody.innerHTML = '';
+            
+            let sorted = [...studyDb.history].sort((a,b) => b.id - a.id);
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 font-bold">Nenhum registo ainda.</td></tr>`; return;
+            }
+
+            sorted.forEach(s => {
+                const d = s.date.split('-');
+                let typeBadge = s.type === "Questões" ? "bg-yellow-400/20 text-yellow-400" : (s.type === "Revisão" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-900/40 text-blue-300");
+                let qStats = s.qTotal > 0 ? `${s.qCorrect}/${s.qTotal} (${Math.round(s.qCorrect/s.qTotal*100)}%)` : "--";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-blue-950/20">
+                        <td class="px-4 py-3 text-gray-400 text-xs">${d[2]}/${d[1]}/${d[0]}</td>
+                        <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
+                        <td class="px-4 py-3 text-gray-300 text-xs">${s.topic}</td>
+                        <td class="px-4 py-3 text-center text-prf-yellow">${s.duration}m</td>
+                        <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
+                        <td class="px-4 py-3 text-right"><button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function deleteHistorySession(id) {
+            showConfirm("Apagar registo?", () => { studyDb.history = studyDb.history.filter(s => s.id !== id); saveDatabase(); renderAllTabs(); });
+        }
+
+        function exportStudyHistory() {
+            if(studyDb.history.length === 0) return showAlert("Sem dados.");
+            let csv = "Data,Disciplina,Topico,Duracao_Min,Tipo,Questoes_Total,Questoes_Corretas\n";
+            studyDb.history.forEach(s => csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${s.type},${s.qTotal},${s.qCorrect}\n`);
+            const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `historico_prf.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        // === 8. CHART JS ===
+        function initCharts() {
+            const canvas = document.getElementById('weeklyStudyChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.color = '#94a3b8';
+                if (studyChart) studyChart.destroy();
+                studyChart = new Chart(ctx, { type: 'bar', data: { labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], datasets: [{ label: 'Tempo Líquido (min)', data: [0,0,0,0,0,0,0], backgroundColor: '#FFD400', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#1d355c' } } } } });
+            }
+        }
+
+        function setChartPeriod(period) {
+            currentChartPeriod = period;
+            ['weekly', 'monthly', 'yearly'].forEach(p => {
+                const btn = document.getElementById(`btn-period-${p}`);
+                if(btn) btn.className = p === period ? "px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow" : "px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition";
+            });
+            updateChartData();
+        }
+
+        function updateChartData() {
+            if (!studyChart) return;
+            const today = new Date(); const year = today.getFullYear();
+            
+            if (currentChartPeriod === 'weekly') {
+                let weekData = [0,0,0,0,0,0,0];
+                const start = new Date(today); start.setDate(today.getDate() - today.getDay() + (today.getDay()===0?-6:1)); start.setHours(0,0,0,0);
+                studyDb.history.forEach(s => { const d = new Date(s.date+"T12:00:00"); if(d>=start) { let idx = d.getDay()===0?6:d.getDay()-1; weekData[idx]+=s.duration; } });
+                studyChart.data.labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']; studyChart.data.datasets[0].data = weekData;
+            } 
+            else if (currentChartPeriod === 'monthly') {
+                let monthData = Array(12).fill(0);
+                studyDb.history.forEach(s => { const d = new Date(s.date+"T12:00:00"); if(d.getFullYear()===year) monthData[d.getMonth()]+=s.duration; });
+                studyChart.data.labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']; studyChart.data.datasets[0].data = monthData;
+            }
+            else if (currentChartPeriod === 'yearly') {
+                const years = [year-4, year-3, year-2, year-1, year]; let yearData = [0,0,0,0,0];
+                studyDb.history.forEach(s => { const y = new Date(s.date+"T12:00:00").getFullYear(); const idx = years.indexOf(y); if(idx!==-1) yearData[idx]+=s.duration; });
+                studyChart.data.labels = years.map(String); studyChart.data.datasets[0].data = yearData;
+            }
+            studyChart.update();
+            if(studyTypeChart) updateStudyTypeChartData();
+        }
+
+        function initStudyTypeChart() {
+            const canvas = document.getElementById('studyTypeChart');
+            if (canvas && typeof Chart !== 'undefined') {
+                if (studyTypeChart) studyTypeChart.destroy();
+                studyTypeChart = new Chart(canvas.getContext('2d'), { type: 'doughnut', data: { labels: ['Teoria', 'Questões', 'Revisão'], datasets: [{ data: [0,0,0], backgroundColor: ['#FFD400', '#10b981', '#3b82f6'], borderWidth: 0 }] }, options: { cutout: '70%', plugins: { legend: { display: false } } } });
+                updateStudyTypeChartData();
+            }
+        }
+
+        function updateStudyTypeChartData() {
+            if(!studyTypeChart) return;
+            let data = [0,0,0];
+            studyDb.history.forEach(s => { if(s.type==='Teoria') data[0]+=s.duration; else if(s.type==='Questões') data[1]+=s.duration; else if(s.type==='Revisão') data[2]+=s.duration; });
+            studyTypeChart.data.datasets[0].data = data; studyTypeChart.update();
+            document.getElementById('legend-theory-mins').innerText = data[0]+" min"; document.getElementById('legend-questions-mins').innerText = data[1]+" min"; document.getElementById('legend-revisions-mins').innerText = data[2]+" min";
+        }
+
+
+        // === 9. NUVEM / SYNC ===
+        function generateTextSyncCode() {
+            try {
+                const jsonStr = JSON.stringify(studyDb);
+                const base64Code = btoa(unescape(encodeURIComponent(jsonStr)));
+                const temp = document.createElement('textarea'); temp.value = base64Code;
+                document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp);
+                showAlert("Código copiado! Cole no outro aparelho na área 'Importar Código Local'.");
+            } catch(e) { showAlert("Erro ao gerar código."); }
+        }
+
+        function openImportModal() { document.getElementById('modal-import-code').classList.remove('hidden'); }
+        function closeImportModal() { document.getElementById('modal-import-code').classList.add('hidden'); document.getElementById('paste-text-code').value=''; }
+        function importManualCodeFromModal() {
+            const code = document.getElementById('paste-text-code').value.trim();
+            if(!code) return showAlert("Cole o código.");
+            try {
+                const decryptedStr = decodeURIComponent(escape(atob(code)));
+                const state = JSON.parse(decryptedStr);
+                if (state && state.syllabus) {
+                    studyDb = state; saveDatabase().then(() => { renderAllTabs(); closeImportModal(); showAlert("Importação concluída com sucesso!"); });
+                } else showAlert("Código inválido.");
+            } catch(e) { showAlert("Código corrompido."); }
+        }
+
+        // === FIREBASE: configuração real ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOqVATyjQGkavGPhVRskxFC30EyXmlY1o",
+            authDomain: "estudeiprf.firebaseapp.com",
+            projectId: "estudeiprf",
+            storageBucket: "estudeiprf.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "estudeiprf-app"
+        };
+        let fbApp, fbAuth, fbDb;
+        try {
+            fbApp = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb   = firebase.firestore();
+        } catch(e) { console.warn("Firebase init:", e.message); }
+
+        // === AUTENTICAÇÃO E SINCRONIZAÇÃO (Firebase) ===
+        let currentUser = null; // { email, uid }
+
+        function switchAuthTab(tab) {
+            const loginBtn   = document.getElementById('btn-email-login');
+            const registerBtn = document.getElementById('btn-email-register');
+            const tabLogin   = document.getElementById('auth-tab-login');
+            const tabReg     = document.getElementById('auth-tab-register');
+            if (tab === 'login') {
+                loginBtn.classList.remove('hidden'); registerBtn.classList.add('hidden');
+                tabLogin.className = "flex-1 py-2 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition";
+                tabReg.className   = "flex-1 py-2 text-xs font-black rounded-lg text-gray-300 hover:text-white transition";
+                document.getElementById('sync-password').placeholder = "Senha da conta";
+            } else {
+                registerBtn.classList.remove('hidden'); loginBtn.classList.add('hidden');
+                tabReg.className   = "flex-1 py-2 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition";
+                tabLogin.className = "flex-1 py-2 text-xs font-black rounded-lg text-gray-300 hover:text-white transition";
+                document.getElementById('sync-password').placeholder = "Crie uma senha (mín. 6 caracteres)";
+            }
+            document.getElementById('auth-error-msg').classList.add('hidden');
+        }
+
+        function showAuthError(msg) {
+            const el = document.getElementById('auth-error-msg');
+            el.innerText = msg; el.classList.remove('hidden');
+        }
+
+        function setAuthLoading(btn, loading) {
+            btn.disabled = loading;
+            btn.style.opacity = loading ? '0.6' : '1';
+        }
+
+        async function registerWithEmail() {
+            const email    = document.getElementById('sync-email').value.trim();
+            const password = document.getElementById('sync-password').value;
+            if (!email || !password) return showAuthError("Preencha email e senha.");
+            if (!email.includes('@')) return showAuthError("Email inválido.");
+            if (password.length < 6) return showAuthError("A senha deve ter pelo menos 6 caracteres.");
+
+            const btn = document.getElementById('btn-email-register');
+            setAuthLoading(btn, true);
+            try {
+                const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
+                currentUser = { email: cred.user.email, uid: cred.user.uid };
+                await storageSet('estudei_prf_current_user', email);
+                // Enviar dados locais para Firestore
+                await fbDb.collection('users').doc(cred.user.uid).set({ studyDb: JSON.stringify(studyDb), updatedAt: new Date().toISOString() });
+                onUserLoggedIn(email);
+                showAlert("✅ Conta criada com sucesso! Os seus dados foram guardados na nuvem.");
+            } catch(e) {
+                const msgs = {
+                    'auth/email-already-in-use': 'Este email já tem conta. Use "Entrar".',
+                    'auth/invalid-email': 'Email inválido.',
+                    'auth/weak-password': 'Senha fraca. Use pelo menos 6 caracteres.',
+                    'auth/network-request-failed': 'Sem ligação à internet.',
+                    'auth/configuration-not-found': 'Firebase não configurado. Ative Email/Password em Authentication no Firebase Console.',
+                };
+                showAuthError(msgs[e.code] || ('Erro: ' + e.message));
+                console.error(e);
+            } finally { setAuthLoading(btn, false); }
+        }
+
+        async function loginWithEmail() {
+            const email    = document.getElementById('sync-email').value.trim();
+            const password = document.getElementById('sync-password').value;
+            if (!email || !password) return showAuthError("Preencha email e senha.");
+
+            const btn = document.getElementById('btn-email-login');
+            setAuthLoading(btn, true);
+            try {
+                const cred = await fbAuth.signInWithEmailAndPassword(email, password);
+                currentUser = { email: cred.user.email, uid: cred.user.uid };
+                await storageSet('estudei_prf_current_user', email);
+                // Carregar dados da nuvem
+                const doc = await fbDb.collection('users').doc(cred.user.uid).get();
+                if (doc.exists && doc.data().studyDb) {
+                    try {
+                        const parsed = JSON.parse(doc.data().studyDb);
+                        if (parsed && parsed.syllabus) {
+                            if (!parsed.summaries)  parsed.summaries  = [];
+                            if (!parsed.history)    parsed.history    = [];
+                            if (!parsed.revisions)  parsed.revisions  = [];
+                            studyDb = parsed;
+                            await saveDatabase();
+                            renderAllTabs();
+                        }
+                    } catch(e) { console.warn("Dados da nuvem inválidos, mantendo locais."); }
+                }
+                onUserLoggedIn(email);
+                showAlert("✅ Sessão iniciada com sucesso!");
+            } catch(e) {
+                const msgs = {
+                    'auth/user-not-found': 'Conta não encontrada. Crie uma conta primeiro.',
+                    'auth/wrong-password': 'Senha incorrecta.',
+                    'auth/invalid-credential': 'Email ou senha incorrectos.',
+                    'auth/invalid-email': 'Email inválido.',
+                    'auth/network-request-failed': 'Sem ligação à internet.',
+                    'auth/configuration-not-found': 'Firebase não configurado. Ative Email/Password em Authentication no Firebase Console.',
+                    'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+                };
+                showAuthError(msgs[e.code] || ('Erro: ' + e.message));
+                console.error(e);
+            } finally { setAuthLoading(btn, false); }
+        }
+
+        function onUserLoggedIn(email) {
+            document.getElementById('auth-logged-out-form').classList.add('hidden');
+            document.getElementById('auth-logged-in-info').classList.remove('hidden');
+            document.getElementById('logged-user-email').innerText = email;
+            document.getElementById('logged-user-avatar').innerText = email[0].toUpperCase();
+            document.getElementById('sync-status-text').innerText = 'Conta Conectada ✓';
+            document.getElementById('sync-status-text').style.color = '#10b981';
+            document.getElementById('auth-error-msg').classList.add('hidden');
+        }
+
+        async function logoutEmail() {
+            try { await fbAuth.signOut(); } catch(e) {}
+            currentUser = null;
+            await storageSet('estudei_prf_current_user', '');
+            document.getElementById('auth-logged-in-info').classList.add('hidden');
+            document.getElementById('auth-logged-out-form').classList.remove('hidden');
+            document.getElementById('sync-status-text').innerText = 'Local';
+            document.getElementById('sync-status-text').style.color = '#FFD400';
+            document.getElementById('sync-email').value = '';
+            document.getElementById('sync-password').value = '';
+            switchAuthTab('login');
+        }
+
+        async function manualSyncNow() {
+            if (!currentUser) {
+                await saveDatabase();
+                showAlert("Dados guardados localmente.");
+                return;
+            }
+            const btn = document.getElementById('btn-manual-sync');
+            setAuthLoading(btn, true);
+            try {
+                await fbDb.collection('users').doc(currentUser.uid).set({
+                    studyDb: JSON.stringify(studyDb),
+                    updatedAt: new Date().toISOString()
+                });
+                await saveDatabase();
+                const now = new Date();
+                document.getElementById('last-sync-time').innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                document.getElementById('sync-status-text').innerText = 'Sincronizado ✓';
+                showAlert("✅ Dados sincronizados na nuvem!");
+            } catch(e) {
+                showAlert("Erro ao sincronizar: " + e.message);
+            } finally { setAuthLoading(btn, false); }
+        }
+
+        async function loadFromCloud() {
+            if (!currentUser) { showAlert("Inicie sessão primeiro."); return; }
+            try {
+                const doc = await fbDb.collection('users').doc(currentUser.uid).get();
+                if (!doc.exists || !doc.data().studyDb) { showAlert("Sem dados na nuvem para esta conta."); return; }
+                const parsed = JSON.parse(doc.data().studyDb);
+                if (!parsed.syllabus) { showAlert("Dados inválidos."); return; }
+                if (!parsed.summaries)  parsed.summaries  = [];
+                if (!parsed.history)    parsed.history    = [];
+                if (!parsed.revisions)  parsed.revisions  = [];
+                studyDb = parsed;
+                await saveDatabase();
+                renderAllTabs();
+                showAlert("✅ Dados carregados da nuvem com sucesso!");
+            } catch(e) {
+                showAlert("Erro ao carregar: " + e.message);
+            }
+        }
+
+        async function generateEncryptedSyncCode() {
+            generateTextSyncCode();
+        }
+
+        function restoreSessionIfLoggedIn() {
+            // Firebase Auth mantém a sessão automaticamente via onAuthStateChanged
+            if (!fbAuth) return;
+            fbAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = { email: user.email, uid: user.uid };
+                    onUserLoggedIn(user.email);
+                }
+            });
+        }
+
+        // === EXPORTS ===
+        window.switchTab = switchTab;
+        window.openCreateSummaryModal = openCreateSummaryModal; window.closeCreateSummaryModal = closeCreateSummaryModal;
+        window.populateSummaryTopicsDropdown = populateSummaryTopicsDropdown; window.saveNewSummary = saveNewSummary;
+        window.selectActiveSummary = selectActiveSummary; window.saveActiveSummary = saveActiveSummary; window.deleteActiveSummary = deleteActiveSummary;
+        window.toggleFavoriteSummary = toggleFavoriteSummary; window.setTreeFilter = setTreeFilter; window.filterSummariesTree = filterSummariesTree;
+        window.execCmd = execCmd; window.insertBlockquote = insertBlockquote; window.insertAlertBox = insertAlertBox; window.insertObsBox = insertObsBox;
+        window.insertTable = insertTable; window.insertImage = insertImage; window.insertMindmap = insertMindmap;
+        window.applyStudyHighlight = applyStudyHighlight; window.toggleRevisionMode = toggleRevisionMode; window.toggleEditorPaperTheme = toggleEditorPaperTheme;
+        window.exportToPDF = exportToPDF; window.saveSelection = saveSelection;
+        window.startTimer = startTimer; window.pauseTimer = pauseTimer; window.resetTimer = resetTimer;
+        window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
+        window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
+        window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
+        window.generateTextSyncCode = generateTextSyncCode; window.openImportModal = openImportModal; window.closeImportModal = closeImportModal; window.importManualCodeFromModal = importManualCodeFromModal;
+        window.filterEditalSubject = filterEditalSubject; window.updateTopicStatus = updateTopicStatus; window.deleteSubject = deleteSubject; window.deleteTopic = deleteTopic;
+        window.openAddTopicModal = openAddTopicModal; window.closeAddTopicModal = closeAddTopicModal; window.toggleNewSubjectInput = toggleNewSubjectInput; window.saveCustomTopic = saveCustomTopic;
+        window.openRenameSubjectModal = openRenameSubjectModal; window.closeRenameSubjectModal = closeRenameSubjectModal; window.saveRenamedSubject = saveRenamedSubject;
+        window.openRenameTopicModal = openRenameTopicModal; window.closeRenameTopicModal = closeRenameTopicModal; window.saveRenamedTopic = saveRenamedTopic;
+        window.resetCycleProgress = resetCycleProgress; window.startSpecificCycleStep = startSpecificCycleStep; window.startNextCycleSubject = startNextCycleSubject;
+        window.openConfigureCycleModal = openConfigureCycleModal; window.addSubjectToCycleConfig = addSubjectToCycleConfig; window.saveCycleConfig = saveCycleConfig; window.closeConfigureCycleModal = closeConfigureCycleModal;
+        window.saveScratchpad = saveScratchpad; window.loginWithEmail = loginWithEmail; window.registerWithEmail = registerWithEmail; window.logoutEmail = logoutEmail; window.manualSyncNow = manualSyncNow;
+        window.switchAuthTab = switchAuthTab; window.loadFromCloud = loadFromCloud; window.generateEncryptedSyncCode = generateEncryptedSyncCode;
+    </script>
+</body>
+</html>
