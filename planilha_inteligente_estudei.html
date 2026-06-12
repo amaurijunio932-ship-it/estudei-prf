@@ -33,7 +33,11 @@
         .bg-card-dark { background-color: #15294a; }
         .bg-input-dark { background-color: #1d355c; }
         
-        /* Barra de rolagem personalizada */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .sync-spinning { animation: spin 0.8s linear infinite; display: inline-block; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0d1e36; }
         ::-webkit-scrollbar-thumb { background: #1d355c; border-radius: 4px; }
@@ -123,8 +127,8 @@
                     </div>
                 </div>
                 
-                <button onclick="openSyncCenterModal()" class="xl:hidden bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow transition">
-                    <i class="fa-solid fa-cloud-arrow-up animate-pulse"></i> Sincronizar
+                <button onclick="openSyncCenterModal()" title="Sincronizar Conta" class="xl:hidden bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold p-2 rounded-lg flex items-center shadow transition">
+                    <i class="fa-solid fa-arrows-rotate text-base"></i>
                 </button>
             </div>
             
@@ -154,9 +158,8 @@
             </div>
 
             <div class="hidden xl:flex items-center gap-2">
-                <button onclick="openSyncCenterModal()" class="bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg transition">
-                    <i class="fa-solid fa-cloud-arrow-up text-base animate-bounce"></i>
-                    <span>Sincronizar Conta</span>
+                <button onclick="openSyncCenterModal()" title="Sincronizar Conta" class="bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-extrabold p-2.5 rounded-xl flex items-center shadow-lg transition">
+                    <i class="fa-solid fa-arrows-rotate text-xl"></i>
                 </button>
             </div>
         </div>
@@ -1006,15 +1009,12 @@
                         <p class="text-sm text-white font-bold" id="logged-user-email"></p>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="manualSyncNow()" id="btn-manual-sync"
-                        class="py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-xs shadow flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar Agora
+                <div class="space-y-2">
+                    <button onclick="smartSyncNow()" id="btn-manual-sync" title="Sincronizar agora"
+                        class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-xs shadow flex items-center justify-center gap-2">
+                        <i id="btn-sync-icon" class="fa-solid fa-arrows-rotate text-xl"></i>
                     </button>
-                    <button onclick="loadFromCloud()"
-                        class="py-2.5 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-lg text-xs border border-blue-700 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> Carregar da Nuvem
-                    </button>
+                    <p class="text-center text-[10px] text-gray-500">A sincronização também acontece automaticamente ao fazer login e ao salvar dados.</p>
                 </div>
                 <div class="border-t border-blue-900 pt-3 flex gap-2">
                     <button onclick="generateEncryptedSyncCode()" class="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-lg text-xs border border-emerald-800">
@@ -1310,6 +1310,7 @@
         }
 
         async function saveDatabase() {
+            studyDb.updatedAt = new Date().toISOString();
             const ok = await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
             updateSyncStatusDisplay(ok);
         }
@@ -2936,6 +2937,8 @@ function renderHistoryTab() {
                 }
                 onUserLoggedIn(email);
                 showAlert("✅ Sessão iniciada com sucesso!");
+                // Sincronização automática ao entrar
+                setTimeout(() => smartSyncNow(true), 500);
             } catch(e) {
                 const msgs = {
                     'auth/user-not-found': 'Conta não encontrada. Crie uma conta primeiro.',
@@ -2975,26 +2978,8 @@ function renderHistoryTab() {
         }
 
         async function manualSyncNow() {
-            if (!currentUser) {
-                await saveDatabase();
-                showAlert("Dados guardados localmente.");
-                return;
-            }
-            const btn = document.getElementById('btn-manual-sync');
-            setAuthLoading(btn, true);
-            try {
-                await fbDb.collection('users').doc(currentUser.uid).set({
-                    studyDb: JSON.stringify(studyDb),
-                    updatedAt: new Date().toISOString()
-                });
-                await saveDatabase();
-                const now = new Date();
-                document.getElementById('last-sync-time').innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                document.getElementById('sync-status-text').innerText = 'Sincronizado ✓';
-                showAlert("✅ Dados sincronizados na nuvem!");
-            } catch(e) {
-                showAlert("Erro ao sincronizar: " + e.message);
-            } finally { setAuthLoading(btn, false); }
+            // mantida por compatibilidade interna — use smartSyncNow()
+            return smartSyncNow();
         }
 
         async function loadFromCloud() {
@@ -3010,11 +2995,66 @@ function renderHistoryTab() {
                 studyDb = parsed;
                 await saveDatabase();
                 renderAllTabs();
-                showAlert("✅ Dados carregados da nuvem com sucesso!");
             } catch(e) {
                 showAlert("Erro ao carregar: " + e.message);
             }
         }
+
+        // Sincronização inteligente: compara timestamps local vs nuvem e usa o mais recente
+        async function smartSyncNow(silent) {
+            if (!currentUser) {
+                await saveDatabase();
+                if (!silent) showAlert("Dados guardados localmente. Faça login para sincronizar entre dispositivos.");
+                return;
+            }
+            const btn = document.getElementById('btn-manual-sync');
+            const iconEl = document.getElementById('btn-sync-icon');
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+            if (iconEl) iconEl.classList.add('sync-spinning');
+            try {
+                const cloudDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+                const localUpdatedAt = studyDb.updatedAt || '1970-01-01T00:00:00.000Z';
+                let cloudUpdatedAt = '1970-01-01T00:00:00.000Z';
+                if (cloudDoc.exists && cloudDoc.data().updatedAt) cloudUpdatedAt = cloudDoc.data().updatedAt;
+
+                const localIsNewer = new Date(localUpdatedAt) >= new Date(cloudUpdatedAt);
+
+                if (localIsNewer || !cloudDoc.exists || !cloudDoc.data().studyDb) {
+                    // Local mais recente → envia para nuvem
+                    studyDb.updatedAt = new Date().toISOString();
+                    await fbDb.collection('users').doc(currentUser.uid).set({
+                        studyDb: JSON.stringify(studyDb),
+                        updatedAt: studyDb.updatedAt
+                    });
+                    await saveDatabase();
+                } else {
+                    // Nuvem mais recente → baixa para local
+                    const parsed = JSON.parse(cloudDoc.data().studyDb);
+                    if (parsed && parsed.syllabus) {
+                        if (!parsed.summaries)  parsed.summaries  = [];
+                        if (!parsed.history)    parsed.history    = [];
+                        if (!parsed.revisions)  parsed.revisions  = [];
+                        studyDb = parsed;
+                        await saveDatabase();
+                        renderAllTabs();
+                    }
+                }
+                const now = new Date();
+                const timeEl = document.getElementById('last-sync-time');
+                if (timeEl) timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                const statusEl = document.getElementById('sync-status-text');
+                if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
+                if (!silent) showAlert("✅ Sincronizado! Todos os dispositivos estão atualizados.");
+            } catch(e) {
+                if (!silent) showAlert("Erro ao sincronizar: " + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+                if (iconEl) iconEl.classList.remove('sync-spinning');
+            }
+        }
+
+        // Auto-sync silencioso a cada 2 minutos quando logado
+        setInterval(() => { if (currentUser) smartSyncNow(true); }, 2 * 60 * 1000);
 
         async function generateEncryptedSyncCode() {
             generateTextSyncCode();
@@ -3051,6 +3091,7 @@ function renderHistoryTab() {
         window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
         window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
         window.generateTextSyncCode = generateTextSyncCode; window.openImportModal = openImportModal; window.closeImportModal = closeImportModal; window.importManualCodeFromModal = importManualCodeFromModal;
+        window.manualSyncNow = manualSyncNow; window.smartSyncNow = smartSyncNow; window.loadFromCloud = loadFromCloud;
         window.filterEditalSubject = filterEditalSubject; window.updateTopicStatus = updateTopicStatus; window.deleteSubject = deleteSubject; window.deleteTopic = deleteTopic;
         window.openAddTopicModal = openAddTopicModal; window.closeAddTopicModal = closeAddTopicModal; window.toggleNewSubjectInput = toggleNewSubjectInput; window.saveCustomTopic = saveCustomTopic;
         window.openRenameSubjectModal = openRenameSubjectModal; window.closeRenameSubjectModal = closeRenameSubjectModal; window.saveRenamedSubject = saveRenamedSubject;
