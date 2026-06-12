@@ -48,10 +48,11 @@
 
         /* Estilo do Canvas do Editor de Resumos */
         .editor-canvas {
-            min-height: 500px;
+            min-height: 700px;
             outline: none;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
+            font-size: 1rem;
         }
 
         /* Correção para o reset do CSS do Tailwind que some com os marcadores de listas */
@@ -84,11 +85,18 @@
 
         /* Cores Dinâmicas das Disciplinas na Sidebar */
         .disc-color-default { color: #94a3b8; border-left-color: #94a3b8; }
-        .disc-color-const { color: #3b82f6; border-left-color: #3b82f6; } 
-        .disc-color-admin { color: #10b981; border-left-color: #10b981; } 
-        .disc-color-port { color: #f97316; border-left-color: #f97316; } 
-        .disc-color-info { color: #a855f7; border-left-color: #a855f7; } 
-        .disc-color-penal { color: #ef4444; border-left-color: #ef4444; } 
+        .disc-color-0  { color: #ef4444; border-left-color: #ef4444; }
+        .disc-color-1  { color: #f97316; border-left-color: #f97316; }
+        .disc-color-2  { color: #eab308; border-left-color: #eab308; }
+        .disc-color-3  { color: #10b981; border-left-color: #10b981; }
+        .disc-color-4  { color: #3b82f6; border-left-color: #3b82f6; }
+        .disc-color-5  { color: #a855f7; border-left-color: #a855f7; }
+        .disc-color-6  { color: #ec4899; border-left-color: #ec4899; }
+        .disc-color-7  { color: #06b6d4; border-left-color: #06b6d4; }
+        .disc-color-8  { color: #84cc16; border-left-color: #84cc16; }
+        .disc-color-9  { color: #f43f5e; border-left-color: #f43f5e; }
+        .disc-color-10 { color: #8b5cf6; border-left-color: #8b5cf6; }
+        .disc-color-11 { color: #14b8a6; border-left-color: #14b8a6; } 
 
         /* Estilos de Impressão para Exportação PDF */
         @media print {
@@ -163,13 +171,30 @@
                 <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div class="flex-shrink-0 flex items-center justify-center bg-blue-950/60 p-4 rounded-full border border-yellow-400/20 shadow-inner">
-                    <svg class="w-24 h-24 md:w-32 md:h-32 drop-shadow-[0_0_15px_rgba(255,212,0,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M50 5C76 5 86 16 86 46C86 71 66 89 50 96C34 89 14 71 14 46C14 16 24 5 50 5Z" fill="#002244" stroke="#FFD400" stroke-width="4.5"/>
-                        <path d="M36 78L47 43H53L64 78" stroke="#FFD400" stroke-width="3" stroke-linecap="round"/>
-                        <path d="M50 43V78" stroke="#FFFFFF" stroke-dasharray="3 3" stroke-width="2"/>
-                        <circle cx="50" cy="27" r="11" fill="#003366" stroke="#FFD400" stroke-width="1.5"/>
-                        <polygon points="50,19 52.5,24 58,24 53.5,27.5 55,33 50,29.5 45,33 46.5,27.5 42,24 47.5,24" fill="#FFD400"/>
-                        <text x="50" y="91" fill="#FFFFFF" font-family="'Roboto', sans-serif" font-weight="900" font-size="7" text-anchor="middle" letter-spacing="1">POLÍCIA RODOVIÁRIA FEDERAL</text>
+                    <svg class="w-24 h-24 md:w-32 md:h-32 drop-shadow-[0_0_15px_rgba(255,212,0,0.3)]" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Coronha -->
+                        <rect x="4" y="46" width="28" height="12" rx="3" fill="#FFD400"/>
+                        <path d="M30 54 L32 58 L8 58 L8 54 Z" fill="#e6be00"/>
+                        <!-- Corpo principal -->
+                        <rect x="30" y="42" width="60" height="10" rx="2" fill="#FFD400"/>
+                        <!-- Cano -->
+                        <rect x="88" y="44" width="28" height="6" rx="2" fill="#e6be00"/>
+                        <!-- Bocal do cano -->
+                        <rect x="114" y="43" width="4" height="8" rx="1" fill="#FFD400"/>
+                        <!-- Guarda-mão -->
+                        <rect x="70" y="52" width="22" height="6" rx="1.5" fill="#e6be00"/>
+                        <!-- Pente / Carregador -->
+                        <rect x="50" y="52" width="10" height="16" rx="2" fill="#FFD400"/>
+                        <rect x="52" y="68" width="6" height="3" rx="1" fill="#e6be00"/>
+                        <!-- Gatilho -->
+                        <path d="M42 52 Q40 56 42 60 L45 60 Q43 56 45 52 Z" fill="#e6be00"/>
+                        <!-- Mira traseira -->
+                        <rect x="82" y="40" width="5" height="4" rx="1" fill="#ffffff"/>
+                        <rect x="83.5" y="39" width="2" height="2" rx="0.5" fill="#0d1e36"/>
+                        <!-- Mira dianteira -->
+                        <rect x="100" y="40" width="3" height="4" rx="1" fill="#ffffff"/>
+                        <!-- Detalhe seletor -->
+                        <circle cx="38" cy="46" r="2.5" fill="#0d1e36" stroke="#e6be00" stroke-width="1"/>
                     </svg>
                 </div>
 
@@ -241,6 +266,7 @@
                             <p class="text-xxs text-gray-400">Total acumulado de minutos produtivos</p>
                         </div>
                         <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 self-stretch sm:self-auto justify-center">
+                            <button onclick="setChartPeriod('daily')" id="btn-period-daily" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Hoje</button>
                             <button onclick="setChartPeriod('weekly')" id="btn-period-weekly" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Semana</button>
                             <button onclick="setChartPeriod('monthly')" id="btn-period-monthly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
                             <button onclick="setChartPeriod('yearly')" id="btn-period-yearly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
@@ -423,28 +449,111 @@
         <section id="pane-cronometro" class="tab-pane hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-gradient-to-br from-blue-950 via-indigo-950 to-blue-900 p-8 rounded-2xl border-4 border-prf-yellow shadow-2xl relative overflow-hidden">
-                        <div class="absolute -right-16 -bottom-16 text-blue-900/10 text-9xl font-black select-none pointer-events-none">PRF</div>
-                        
-                        <div class="text-center relative z-10">
-                            <span class="text-xs font-bold uppercase tracking-widest text-prf-yellow bg-blue-900/60 px-4 py-1.5 rounded-full border border-yellow-400/30">SESSÃO ATIVA</span>
-                            <div class="text-6xl md:text-8xl font-black text-white font-mono tracking-tight my-6 transition-all duration-300" id="timer-display">00:00:00</div>
+                    <!-- Cronômetro Principal -->
+                    <div class="bg-card-dark rounded-2xl border border-blue-900 p-5 shadow-xl">
+                        <!-- Abas: Cronômetro / Pomodoro / Manual -->
+                        <div class="flex gap-1 bg-blue-950 p-1 rounded-xl mb-4">
+                            <button onclick="switchTimerMode('chrono')" id="tab-chrono" class="flex-1 py-1.5 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition">⏱ Cronômetro</button>
+                            <button onclick="switchTimerMode('pomodoro')" id="tab-pomodoro" class="flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition">🍅 Pomodoro</button>
+                            <button onclick="switchTimerMode('manual')" id="tab-manual" class="flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition">✏️ Manual</button>
+                        </div>
 
-                            <div class="flex justify-center gap-3">
-                                <button onclick="startTimer()" id="btn-timer-start" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition duration-150 shadow-lg flex items-center gap-2">
+                        <!-- Modo Cronômetro -->
+                        <div id="mode-chrono" class="text-center">
+                            <div class="text-5xl md:text-6xl font-black text-white font-mono tracking-tight my-4" id="timer-display">00:00:00</div>
+                            <div class="flex justify-center gap-2 mb-3">
+                                <button onclick="startTimer()" id="btn-timer-start" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center gap-2 text-sm">
                                     <i class="fa-solid fa-play"></i> Iniciar
                                 </button>
-                                <button onclick="pauseTimer()" id="btn-timer-pause" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl transition duration-150 shadow-lg flex items-center gap-2 hidden">
+                                <button onclick="pauseTimer()" id="btn-timer-pause" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition flex items-center gap-2 text-sm hidden">
                                     <i class="fa-solid fa-pause"></i> Pausar
                                 </button>
-                                <button onclick="resetTimer()" id="btn-timer-reset" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition duration-150 shadow flex items-center gap-2">
+                                <button onclick="resetTimer()" id="btn-timer-reset" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition flex items-center gap-2 text-sm">
                                     <i class="fa-solid fa-rotate-left"></i> Zerar
                                 </button>
                             </div>
-
-                            <div class="mt-4 text-xs text-gray-400 font-semibold" id="procrastination-container">
-                                Tempo em pausa: <span class="text-amber-400 font-mono" id="pause-timer-display">00:00:00</span>
+                            <div class="text-xs text-gray-500 font-mono" id="procrastination-container">
+                                Pausa: <span id="pause-timer-display">00:00:00</span>
                             </div>
+                        </div>
+
+                        <!-- Modo Pomodoro -->
+                        <div id="mode-pomodoro" class="hidden text-center">
+                            <div class="flex justify-center gap-2 mb-3">
+                                <button onclick="setPomodoroPreset(25,5)" class="px-3 py-1 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white border border-blue-700">25/5</button>
+                                <button onclick="setPomodoroPreset(45,10)" class="px-3 py-1 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white border border-blue-700">45/10</button>
+                                <button onclick="setPomodoroPreset(50,10)" class="px-3 py-1 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white border border-blue-700">50/10</button>
+                                <button onclick="setPomodoroPreset(90,15)" class="px-3 py-1 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white border border-blue-700">90/15</button>
+                            </div>
+                            <div class="text-xs text-gray-400 mb-2" id="pomodoro-phase-label">🎯 Foco — <span id="pomodoro-cycle-count">0</span> ciclos completos</div>
+                            <div class="text-5xl md:text-6xl font-black font-mono tracking-tight my-4" id="pomodoro-display" style="color: #10b981;">25:00</div>
+                            <div class="w-full bg-blue-950 rounded-full h-2 mb-4">
+                                <div id="pomodoro-progress" class="h-2 rounded-full transition-all duration-1000" style="width:100%; background:#10b981;"></div>
+                            </div>
+                            <div class="flex justify-center gap-2">
+                                <button onclick="startPomodoro()" id="btn-pomo-start" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-play"></i> Iniciar
+                                </button>
+                                <button onclick="pausePomodoro()" id="btn-pomo-pause" class="px-5 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl transition text-sm hidden flex items-center gap-2">
+                                    <i class="fa-solid fa-pause"></i> Pausar
+                                </button>
+                                <button onclick="resetPomodoro()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-rotate-left"></i> Zerar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Modo Manual -->
+                        <div id="mode-manual" class="hidden">
+                            <p class="text-xs text-gray-400 mb-3 text-center">Registre uma sessão que fez sem o app (caderno, livro, flashcard, etc.)</p>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Data do estudo</label>
+                                    <input type="date" id="manual-date" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Duração (minutos)</label>
+                                    <input type="number" id="manual-duration" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" placeholder="Ex: 60">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Disciplina</label>
+                                    <select id="manual-subject" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" onchange="updateManualTopics()">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Matéria</label>
+                                    <select id="manual-topic" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Tipo de estudo</label>
+                                    <select id="manual-type" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                                        <option value="Teoria">📖 Teoria</option>
+                                        <option value="Questões">📝 Questões</option>
+                                        <option value="Flashcards">🃏 Flashcards/Anki</option>
+                                        <option value="Mapa Mental">🗺️ Mapa Mental</option>
+                                        <option value="Áudio">🎧 Áudio</option>
+                                        <option value="Revisão">🔁 Revisão</option>
+                                        <option value="Outros">⚡ Outros</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Questões (total / certas)</label>
+                                    <div class="flex gap-1">
+                                        <input type="number" id="manual-qtotal" class="w-full bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-sm focus:outline-none" placeholder="Total">
+                                        <input type="number" id="manual-qcorrect" class="w-full bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-sm focus:outline-none" placeholder="Certas">
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="saveManualSession()" class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-sm shadow">
+                                <i class="fa-solid fa-floppy-disk mr-2"></i>Salvar Sessão Manual
+                            </button>
                         </div>
                     </div>
 
@@ -468,8 +577,22 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Tempo (Minutos)</label>
-                                    <input type="number" id="form-duration" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 90" required>
+                                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">
+                                        Tempo Estudado
+                                        <span id="timer-linked-badge" class="ml-1 inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xxs px-2 py-0.5 rounded-full font-bold">
+                                            <i class="fa-solid fa-link text-xxs"></i> Do Cronômetro
+                                        </span>
+                                    </label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" id="form-dur-h" min="0" max="23" class="w-full bg-input-dark border border-emerald-600/50 rounded-xl px-2 py-2.5 text-white text-center focus:outline-none focus:border-yellow-400" placeholder="HH" oninput="syncDurationFromHMS(); checkTimerOverride();">
+                                        <span class="text-white font-bold">:</span>
+                                        <input type="number" id="form-dur-m" min="0" max="59" class="w-full bg-input-dark border border-emerald-600/50 rounded-xl px-2 py-2.5 text-white text-center focus:outline-none focus:border-yellow-400" placeholder="MM" oninput="syncDurationFromHMS(); checkTimerOverride();">
+                                        <span class="text-white font-bold">:</span>
+                                        <input type="number" id="form-dur-s" min="0" max="59" class="w-full bg-input-dark border border-emerald-600/50 rounded-xl px-2 py-2.5 text-white text-center focus:outline-none focus:border-yellow-400" placeholder="SS" oninput="syncDurationFromHMS(); checkTimerOverride();">
+                                    </div>
+                                    <p class="text-xxs text-emerald-400/70 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Preenchido automaticamente pelo cronômetro</p>
+                                    <!-- campo oculto em minutos usado internamente -->
+                                    <input type="number" id="form-duration" class="hidden" value="0" required>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Páginas Lidas</label>
@@ -478,9 +601,15 @@
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Tipo de Estudo</label>
                                     <select id="form-study-type" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" required>
-                                        <option value="Teoria">Teoria + Lei Seca</option>
-                                        <option value="Questões">Só Questões</option>
-                                        <option value="Revisão">Revisão Periódica</option>
+                                        <option value="Teoria">📖 Teoria + Lei Seca</option>
+                                        <option value="Questões">📝 Só Questões</option>
+                                        <option value="Revisão">🔁 Revisão Periódica</option>
+                                        <option value="Mapa Mental">🗺️ Mapa Mental</option>
+                                        <option value="Flashcards">🃏 Flashcards / Anki</option>
+                                        <option value="Resumo">✍️ Produção de Resumo</option>
+                                        <option value="Simulado">🎯 Simulado</option>
+                                        <option value="Videoaula">🎥 Videoaula</option>
+                                        <option value="Outros">⚡ Outros</option>
                                     </select>
                                 </div>
                             </div>
@@ -571,6 +700,17 @@
                     <div class="w-px h-6 bg-blue-900 mx-1"></div>
 
                     <!-- Tamanhos e Alinhamentos -->
+                    <select onchange="changeFont(this.value)" class="bg-input-dark text-xs font-bold text-white rounded-lg px-2 py-1.5 border border-blue-800 focus:outline-none shadow-sm cursor-pointer" title="Tipo de Fonte">
+                        <option value="">Fonte</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                        <option value="Tahoma, sans-serif">Tahoma</option>
+                        <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+                    </select>
                     <select onchange="execCmd('fontSize', this.value)" class="bg-input-dark text-xs font-bold text-white rounded-lg px-2 py-1.5 border border-blue-800 focus:outline-none shadow-sm cursor-pointer">
                         <option value="3">Normal</option>
                         <option value="1">Micro</option>
@@ -603,8 +743,8 @@
                 </div>
 
                 <div class="flex items-center gap-2 mt-2 md:mt-0">
-                    <button onclick="toggleRevisionMode()" id="btn-revision-mode" class="px-3 py-1.5 bg-blue-900 border border-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm" title="Destaca apenas os marcadores de estudo para revisão rápida">
-                        <i class="fa-solid fa-eye"></i> <span>Alta Revisão</span>
+                    <button onclick="toggleRevisionMode()" id="btn-revision-mode" class="px-3 py-1.5 bg-blue-900 border border-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm" title="Modo Foco: esconde o texto normal e mostra APENAS os trechos marcados com as cores (amarelo=conceito, vermelho=erro, verde=exceção...). Ideal para revisão rápida antes da prova.">
+                        <i class="fa-solid fa-eye"></i> <span>Modo Foco</span>
                     </button>
                     <button onclick="exportToPDF()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Exportar</span>
@@ -615,10 +755,10 @@
                 </div>
             </div>
 
-            <div class="flex flex-col lg:flex-row flex-grow border border-t-0 border-blue-900 rounded-b-2xl overflow-hidden bg-card-dark relative">
+            <div class="flex flex-col lg:flex-row flex-grow border border-t-0 border-blue-900 rounded-b-2xl overflow-hidden bg-card-dark relative" style="min-height: 80vh;">
                 
                 <!-- PAINEL LATERAL: BIBLIOTECA -->
-                <div class="w-full lg:w-72 flex-shrink-0 bg-blue-950/30 border-r border-blue-900 flex flex-col h-64 lg:h-auto z-10">
+                <div class="w-full lg:w-72 flex-shrink-0 bg-blue-950/30 border-r border-blue-900 flex flex-col h-80 lg:h-auto z-10">
                     <div class="p-3 border-b border-blue-900 space-y-3 bg-blue-950/60">
                         <div class="flex justify-between items-center">
                             <h3 class="text-xs font-black text-white uppercase tracking-wider"><i class="fa-solid fa-layer-group text-prf-yellow mr-1.5"></i> Biblioteca</h3>
@@ -795,6 +935,8 @@
                                 <th scope="col" class="px-4 py-3 text-center">Duração</th>
                                 <th scope="col" class="px-4 py-3 text-center">Tipo</th>
                                 <th scope="col" class="px-4 py-3 text-center">Acertos</th>
+                                <th scope="col" class="px-4 py-3 text-center">Páginas</th>
+                                <th scope="col" class="px-4 py-3">Observações</th>
                                 <th scope="col" class="px-4 py-3 text-right">Ação</th>
                             </tr>
                         </thead>
@@ -1358,6 +1500,15 @@
                 let sCompleted = sub.topics.filter(t => t.status !== "Não Estudado").length;
                 let sPercentage = sTopicsCount > 0 ? Math.round((sCompleted/sTopicsCount)*100) : 0;
 
+                // Estatísticas globais de questões da disciplina
+                let totalQ = 0, totalC = 0;
+                sub.topics.forEach(t => { totalQ += (t.qTotal || 0); totalC += (t.qCorrect || 0); });
+                let globalAcc = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : null;
+                let accColor = globalAcc === null ? 'text-gray-400' : (globalAcc >= 86 ? 'text-blue-400' : (globalAcc >= 61 ? 'text-emerald-400' : 'text-red-400'));
+                let accBg    = globalAcc === null ? 'bg-blue-950/40 border-blue-900' : (globalAcc >= 86 ? 'bg-blue-500/10 border-blue-500/40' : (globalAcc >= 61 ? 'bg-emerald-500/10 border-emerald-500/40' : 'bg-red-500/10 border-red-500/40'));
+                let accLabel = globalAcc === null ? '<span class="text-gray-500 text-xs">Sem questões</span>'
+                    : `<span class="font-black text-base ${accColor}">${globalAcc}%</span><span class="text-gray-400 text-[11px] ml-1">(${totalC}/${totalQ})</span>`;
+
                 let topicsRowsHtml = '';
                 let rowsCount = 0;
 
@@ -1395,6 +1546,7 @@
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button onclick="quickStudyTopic(${sIdx}, ${tIdx})" class="text-xs bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black px-3 py-1.5 rounded-lg">Estudar</button>
+                                    <button onclick="openEditQuestionsModal(${sIdx}, ${tIdx})" class="text-blue-300 hover:text-blue-200 p-1.5 bg-blue-900/40 rounded" title="Editar questões/leituras"><i class="fa-solid fa-sliders text-xxs"></i></button>
                                     <button onclick="openRenameTopicModal(${sIdx}, ${tIdx})" class="text-gray-300 hover:text-yellow-400 p-1.5 bg-blue-900/40 rounded"><i class="fa-solid fa-pencil text-xxs"></i></button>
                                     <button onclick="deleteTopic(${sIdx}, ${tIdx})" class="text-gray-300 hover:text-red-400 p-1.5 bg-blue-900/40 rounded"><i class="fa-solid fa-trash-can text-xxs"></i></button>
                                 </div>
@@ -1405,24 +1557,37 @@
 
                 if (rowsCount > 0) {
                     accordion.innerHTML += `
-                        <div class="bg-card-dark rounded-2xl border border-blue-900 overflow-hidden shadow">
-                            <div class="px-5 py-4 prf-blue flex justify-between items-center border-b border-blue-900">
-                                <div>
-                                    <span class="text-xs font-bold text-prf-yellow uppercase">Disciplina</span>
-                                    <h3 class="text-lg font-black text-white">${sub.subject}</h3>
+                        <div class="bg-card-dark rounded-2xl border border-blue-900 overflow-hidden shadow" id="subject-block-${sIdx}">
+                            <div class="px-5 py-4 prf-blue flex justify-between items-center border-b border-blue-900 cursor-pointer" onclick="toggleSubjectBlock(${sIdx})">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-chevron-down text-prf-yellow text-sm transition-transform" id="chevron-${sIdx}"></i>
+                                    <div>
+                                        <span class="text-xs font-bold text-prf-yellow uppercase">Disciplina</span>
+                                        <h3 class="text-lg font-black text-white">${sub.subject}</h3>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-3" onclick="event.stopPropagation()">
+                                    <!-- Badge de acertos globais -->
+                                    <div class="flex-col items-end hidden sm:flex">
+                                        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${accBg}">
+                                            <i class="fa-solid fa-bullseye ${accColor} text-xs"></i>
+                                            ${accLabel}
+                                        </div>
+                                        <span class="text-[10px] text-gray-500 mt-0.5 text-right">questões totais</span>
+                                    </div>
+                                    <!-- Barra de avanço -->
                                     <div class="text-right hidden sm:block">
                                         <span class="text-xs text-blue-200">Avanço: ${sPercentage}%</span>
                                         <div class="w-24 bg-blue-950 rounded-full h-1.5 mt-1"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${sPercentage}%"></div></div>
                                     </div>
                                     <div class="flex gap-1.5">
+                                        <button onclick="clearSubjectRecords(${sIdx})" class="text-orange-400 p-2 bg-blue-950/40 rounded-lg hover:bg-blue-950" title="Apagar registros de questões/leituras"><i class="fa-solid fa-eraser"></i></button>
                                         <button onclick="openRenameSubjectModal(${sIdx})" class="text-yellow-400 p-2 bg-blue-950/40 rounded-lg hover:bg-blue-950"><i class="fa-solid fa-pen-to-square"></i></button>
                                         <button onclick="deleteSubject(${sIdx})" class="text-red-400 p-2 bg-blue-950/40 rounded-lg hover:bg-blue-950"><i class="fa-solid fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </div>
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto" id="subject-body-${sIdx}">
                                 <table class="w-full text-left text-sm">
                                     <tbody class="divide-y divide-blue-950">${topicsRowsHtml}</tbody>
                                 </table>
@@ -1431,6 +1596,7 @@
                     `;
                 }
             });
+            applyCollapsedState();
         }
 
         function updateTopicStatus(sIdx, tIdx, val) {
@@ -1448,6 +1614,82 @@
             showConfirm("Apagar este assunto?", () => {
                 studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
                 saveDatabase(); renderAllTabs();
+            });
+        }
+
+        // Colapsa/expande disciplina no edital
+        const _collapsedSubjects = new Set();
+        function toggleSubjectBlock(sIdx) {
+            const body = document.getElementById('subject-body-' + sIdx);
+            const chevron = document.getElementById('chevron-' + sIdx);
+            if (!body) return;
+            if (_collapsedSubjects.has(sIdx)) {
+                _collapsedSubjects.delete(sIdx);
+                body.style.display = '';
+                if (chevron) { chevron.style.transform = 'rotate(0deg)'; }
+            } else {
+                _collapsedSubjects.add(sIdx);
+                body.style.display = 'none';
+                if (chevron) { chevron.style.transform = 'rotate(-90deg)'; }
+            }
+        }
+        // Aplica estado colapsado após rerender
+        function applyCollapsedState() {
+            _collapsedSubjects.forEach(sIdx => {
+                const body = document.getElementById('subject-body-' + sIdx);
+                const chevron = document.getElementById('chevron-' + sIdx);
+                if (body) body.style.display = 'none';
+                if (chevron) chevron.style.transform = 'rotate(-90deg)';
+            });
+        }
+
+        // Edição de questões por tópico
+        let _editQSIdx = null, _editQTIdx = null;
+        function openEditQuestionsModal(sIdx, tIdx) {
+            _editQSIdx = sIdx; _editQTIdx = tIdx;
+            const topic = studyDb.syllabus[sIdx].topics[tIdx];
+            const sub   = studyDb.syllabus[sIdx];
+            document.getElementById('edit-q-topic-label').innerText = `${sub.subject} → ${topic.name}`;
+            document.getElementById('edit-q-total').value   = topic.qTotal   || 0;
+            document.getElementById('edit-q-correct').value = topic.qCorrect || 0;
+            document.getElementById('modal-edit-questions').classList.remove('hidden');
+        }
+        function closeEditQuestionsModal() {
+            document.getElementById('modal-edit-questions').classList.add('hidden');
+            _editQSIdx = null; _editQTIdx = null;
+        }
+        function saveEditQuestions() {
+            if (_editQSIdx === null) return;
+            const topic = studyDb.syllabus[_editQSIdx].topics[_editQTIdx];
+            const total   = parseInt(document.getElementById('edit-q-total').value)   || 0;
+            const correct = parseInt(document.getElementById('edit-q-correct').value) || 0;
+            if (correct > total) { showAlert('As respostas certas não podem ser maiores que o total.'); return; }
+            topic.qTotal   = total;
+            topic.qCorrect = correct;
+            saveDatabase(); renderAllTabs(); closeEditQuestionsModal();
+            showAlert('✅ Registros atualizados!');
+        }
+        function clearTopicRecords() {
+            if (_editQSIdx === null) return;
+            showConfirm('Zerar todos os registros deste tópico?', () => {
+                const topic = studyDb.syllabus[_editQSIdx].topics[_editQTIdx];
+                topic.qTotal = 0; topic.qCorrect = 0;
+                saveDatabase(); renderAllTabs(); closeEditQuestionsModal();
+                showAlert('Registros zerados.');
+            });
+        }
+        window.openEditQuestionsModal = openEditQuestionsModal;
+        window.closeEditQuestionsModal = closeEditQuestionsModal;
+        window.saveEditQuestions = saveEditQuestions;
+        window.clearTopicRecords = clearTopicRecords;
+        window.applyCollapsedState = applyCollapsedState;
+
+        // Apaga registros de questões/leituras de todos os tópicos da disciplina
+        function clearSubjectRecords(sIdx) {
+            const sub = studyDb.syllabus[sIdx];
+            showConfirm(`Apagar todos os registros de questões e leituras de "${sub.subject}"? (O status dos tópicos não será alterado)`, () => {
+                studyDb.syllabus[sIdx].topics.forEach(t => { t.qCorrect = 0; t.qTotal = 0; });
+                saveDatabase(); renderAllTabs(); showAlert("Registros apagados com sucesso!");
             });
         }
 
@@ -1565,13 +1807,33 @@
             const step = studyDb.studyCycle[studyDb.currentCycleStep];
             if (!step) { showAlert("Ciclo finalizado!"); return; }
 
+            switchTab('cronometro');
+            populateFormDropdowns();
+
+            // Preenche disciplina
             const selSub = document.getElementById('form-subject');
             if (selSub) {
                 selSub.value = step.subject;
                 updateFormTopics();
-                document.getElementById('form-duration').value = step.duration;
             }
-            switchTab('cronometro');
+
+            // Preenche primeiro tópico disponível da disciplina (se houver)
+            setTimeout(() => {
+                const selTop = document.getElementById('form-topic');
+                if (selTop && selTop.options.length > 1) {
+                    // Tenta usar tópico salvo no ciclo, senão usa o primeiro disponível
+                    if (step.topic) {
+                        selTop.value = step.topic;
+                        if (!selTop.value) selTop.selectedIndex = 1;
+                    } else {
+                        selTop.selectedIndex = 1;
+                    }
+                }
+
+                // Preenche duração nos campos HH:MM:SS
+                const totalSecs = (step.duration || 0) * 60;
+                fillDurationFieldsFromSeconds(totalSecs);
+            }, 80);
         }
 
         function openConfigureCycleModal() {
@@ -1625,13 +1887,25 @@
 
 
         // === 4. CRONÔMETRO COMPONENT ===
+
+        // --- Modo: troca entre Cronômetro / Pomodoro / Manual ---
+        function switchTimerMode(mode) {
+            ['chrono','pomodoro','manual'].forEach(m => {
+                document.getElementById('mode-' + m).classList.toggle('hidden', m !== mode);
+                const tab = document.getElementById('tab-' + m);
+                if (tab) tab.className = m === mode
+                    ? 'flex-1 py-1.5 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition'
+                    : 'flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition';
+            });
+            if (mode === 'manual') populateManualDropdowns();
+        }
+
+        // --- Cronômetro normal ---
         function startTimer() {
             if (isTimerRunning) return;
             isTimerRunning = true;
             document.getElementById('btn-timer-start').classList.add('hidden');
             document.getElementById('btn-timer-pause').classList.remove('hidden');
-            document.getElementById('timer-display').classList.add('active-timer');
-
             if (isTimerPaused) { clearInterval(pauseInterval); isTimerPaused = false; }
             timerInterval = setInterval(() => { totalSeconds++; updateTimerDisplays(); }, 1000);
         }
@@ -1641,8 +1915,6 @@
             isTimerRunning = false; isTimerPaused = true;
             document.getElementById('btn-timer-pause').classList.add('hidden');
             document.getElementById('btn-timer-start').classList.remove('hidden');
-            document.getElementById('timer-display').classList.remove('active-timer');
-
             clearInterval(timerInterval);
             pauseInterval = setInterval(() => { pauseSeconds++; updateTimerDisplays(); }, 1000);
         }
@@ -1653,23 +1925,146 @@
                 totalSeconds = 0; pauseSeconds = 0; isTimerRunning = false; isTimerPaused = false;
                 document.getElementById('btn-timer-pause').classList.add('hidden');
                 document.getElementById('btn-timer-start').classList.remove('hidden');
-                document.getElementById('timer-display').classList.remove('active-timer');
                 updateTimerDisplays();
             });
         }
 
         function updateTimerDisplays() {
-            let h = Math.floor(totalSeconds / 3600);
-            let m = Math.floor((totalSeconds % 3600) / 60);
-            let s = totalSeconds % 60;
-            document.getElementById('timer-display').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            const fmt = s => Math.floor(s/3600).toString().padStart(2,'0') + ':' +
+                             Math.floor((s%3600)/60).toString().padStart(2,'0') + ':' +
+                             (s%60).toString().padStart(2,'0');
+            const td = document.getElementById('timer-display');
+            if (td) td.innerText = fmt(totalSeconds);
+            const pd = document.getElementById('pause-timer-display');
+            if (pd) pd.innerText = fmt(pauseSeconds);
+            // Preenche campos HH:MM:SS do formulário
+            fillDurationFieldsFromSeconds(totalSeconds);
+        }
 
-            let ph = Math.floor(pauseSeconds / 3600);
-            let pm = Math.floor((pauseSeconds % 3600) / 60);
-            let ps = pauseSeconds % 60;
-            document.getElementById('pause-timer-display').innerText = `${ph.toString().padStart(2, '0')}:${pm.toString().padStart(2, '0')}:${ps.toString().padStart(2, '0')}`;
+        // --- Pomodoro ---
+        let pomodoroFocusMin = 25, pomodoroBreakMin = 5;
+        let pomodoroSecondsLeft = 25 * 60, pomodoroTotalSeconds = 25 * 60;
+        let pomodoroPhase = 'focus'; // 'focus' | 'break'
+        let pomodoroCycles = 0;
+        let pomodoroInterval = null, pomodoroRunning = false;
 
-            document.getElementById('form-duration').value = Math.max(1, Math.round(totalSeconds / 60));
+        function setPomodoroPreset(focus, brk) {
+            pomodoroFocusMin = focus; pomodoroBreakMin = brk;
+            resetPomodoro();
+        }
+
+        function startPomodoro() {
+            if (pomodoroRunning) return;
+            pomodoroRunning = true;
+            document.getElementById('btn-pomo-start').classList.add('hidden');
+            document.getElementById('btn-pomo-pause').classList.remove('hidden');
+            pomodoroInterval = setInterval(() => {
+                pomodoroSecondsLeft--;
+                updatePomodoroDisplay();
+                if (pomodoroSecondsLeft <= 0) {
+                    clearInterval(pomodoroInterval); pomodoroRunning = false;
+                    if (pomodoroPhase === 'focus') {
+                        pomodoroCycles++;
+                        pomodoroPhase = 'break';
+                        pomodoroSecondsLeft = pomodoroBreakMin * 60;
+                        pomodoroTotalSeconds = pomodoroBreakMin * 60;
+                        // Soma o tempo ao cronômetro principal
+                        totalSeconds += pomodoroFocusMin * 60;
+                        updateTimerDisplays(); // já preenche HH:MM:SS
+                        showAlert(`✅ Pomodoro ${pomodoroCycles} concluído! Pausa de ${pomodoroBreakMin} min.`);
+                    } else {
+                        pomodoroPhase = 'focus';
+                        pomodoroSecondsLeft = pomodoroFocusMin * 60;
+                        pomodoroTotalSeconds = pomodoroFocusMin * 60;
+                        showAlert('🎯 Pausa encerrada! Hora de focar.');
+                    }
+                    document.getElementById('btn-pomo-start').classList.remove('hidden');
+                    document.getElementById('btn-pomo-pause').classList.add('hidden');
+                    updatePomodoroDisplay();
+                }
+            }, 1000);
+        }
+
+        function pausePomodoro() {
+            if (!pomodoroRunning) return;
+            pomodoroRunning = false;
+            clearInterval(pomodoroInterval);
+            document.getElementById('btn-pomo-pause').classList.add('hidden');
+            document.getElementById('btn-pomo-start').classList.remove('hidden');
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroInterval); pomodoroRunning = false;
+            pomodoroPhase = 'focus';
+            pomodoroSecondsLeft = pomodoroFocusMin * 60;
+            pomodoroTotalSeconds = pomodoroFocusMin * 60;
+            document.getElementById('btn-pomo-start').classList.remove('hidden');
+            document.getElementById('btn-pomo-pause').classList.add('hidden');
+            updatePomodoroDisplay();
+        }
+
+        function updatePomodoroDisplay() {
+            const m = Math.floor(pomodoroSecondsLeft / 60).toString().padStart(2,'0');
+            const s = (pomodoroSecondsLeft % 60).toString().padStart(2,'0');
+            const el = document.getElementById('pomodoro-display');
+            const bar = document.getElementById('pomodoro-progress');
+            const label = document.getElementById('pomodoro-phase-label');
+            const cycles = document.getElementById('pomodoro-cycle-count');
+            const isFocus = pomodoroPhase === 'focus';
+            const color = isFocus ? '#10b981' : '#f59e0b';
+            if (el) { el.innerText = `${m}:${s}`; el.style.color = color; }
+            if (bar) { bar.style.width = (pomodoroSecondsLeft / pomodoroTotalSeconds * 100) + '%'; bar.style.background = color; }
+            if (label) label.innerHTML = isFocus ? `🎯 Foco (${pomodoroFocusMin}/${pomodoroBreakMin}min) — <span id="pomodoro-cycle-count">${pomodoroCycles}</span> ciclos` : `☕ Pausa — <span id="pomodoro-cycle-count">${pomodoroCycles}</span> ciclos`;
+            if (cycles) cycles.innerText = pomodoroCycles;
+        }
+
+        // --- Modo Manual (registrar sessão sem o app) ---
+        function populateManualDropdowns() {
+            const sel = document.getElementById('manual-subject');
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">Selecione...</option>';
+            studyDb.syllabus.forEach(s => sel.innerHTML += `<option value="${s.subject}">${s.subject}</option>`);
+            if (cur) sel.value = cur;
+            // Data padrão = hoje
+            const dateInput = document.getElementById('manual-date');
+            if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        function updateManualTopics() {
+            const sub = document.getElementById('manual-subject').value;
+            const sel = document.getElementById('manual-topic');
+            sel.innerHTML = '<option value="">Selecione...</option>';
+            const sData = studyDb.syllabus.find(s => s.subject === sub);
+            if (sData) sData.topics.forEach(t => sel.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+        }
+
+        function saveManualSession() {
+            const date    = document.getElementById('manual-date').value;
+            const dur     = parseInt(document.getElementById('manual-duration').value) || 0;
+            const subject = document.getElementById('manual-subject').value;
+            const topic   = document.getElementById('manual-topic').value;
+            const type    = document.getElementById('manual-type').value;
+            const qT      = parseInt(document.getElementById('manual-qtotal').value) || 0;
+            const qC      = parseInt(document.getElementById('manual-qcorrect').value) || 0;
+
+            if (!date || !dur || !subject || !topic) {
+                showAlert('Preencha data, duração, disciplina e matéria.'); return;
+            }
+
+            const sData = studyDb.syllabus.find(s => s.subject === subject);
+            if (sData) {
+                const tData = sData.topics.find(t => t.name === topic);
+                if (tData) { tData.qCorrect += qC; tData.qTotal += qT; }
+            }
+
+            studyDb.history.push({ id: Date.now(), date, subject, topic, duration: dur, type, qCorrect: qC, qTotal: qT, manual: true });
+            saveDatabase(); renderAllTabs();
+            showAlert('✅ Sessão manual salva!');
+            // Limpar campos
+            document.getElementById('manual-duration').value = '';
+            document.getElementById('manual-qtotal').value = '';
+            document.getElementById('manual-qcorrect').value = '';
         }
 
         function updateFormTopics() {
@@ -1686,10 +2081,57 @@
             document.getElementById('form-accuracy-preview').innerText = (t > 0 && c <= t) ? `${Math.round((c/t)*100)}%` : `0%`;
         }
 
+        function syncDurationFromHMS() {
+            const h = parseInt(document.getElementById('form-dur-h').value) || 0;
+            const m = parseInt(document.getElementById('form-dur-m').value) || 0;
+            const s = parseInt(document.getElementById('form-dur-s').value) || 0;
+            const totalMin = Math.max(1, Math.round((h * 3600 + m * 60 + s) / 60));
+            document.getElementById('form-duration').value = totalMin;
+        }
+
+        function fillDurationFieldsFromSeconds(secs) {
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = secs % 60;
+            const fh = document.getElementById('form-dur-h');
+            const fm = document.getElementById('form-dur-m');
+            const fs = document.getElementById('form-dur-s');
+            if (fh) fh.value = h > 0 ? h : '';
+            if (fm) fm.value = m > 0 ? m : '';
+            if (fs) fs.value = s > 0 ? s : '';
+            const fd = document.getElementById('form-duration');
+            if (fd) fd.value = Math.max(1, Math.round(secs / 60));
+            // Update badge to show timer is linked
+            const badge = document.getElementById('timer-linked-badge');
+            if (badge && secs > 0) {
+                badge.className = 'ml-1 inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xxs px-2 py-0.5 rounded-full font-bold';
+                badge.innerHTML = '<i class="fa-solid fa-link text-xxs"></i> Do Cronômetro';
+            }
+        }
+
+        function checkTimerOverride() {
+            // When user manually edits the time fields, update the badge to show it's overridden
+            const badge = document.getElementById('timer-linked-badge');
+            if (!badge) return;
+            const h = parseInt(document.getElementById('form-dur-h').value) || 0;
+            const m = parseInt(document.getElementById('form-dur-m').value) || 0;
+            const s = parseInt(document.getElementById('form-dur-s').value) || 0;
+            const manualSecs = h * 3600 + m * 60 + s;
+            if (manualSecs !== totalSeconds) {
+                badge.className = 'ml-1 inline-flex items-center gap-1 bg-yellow-400/20 text-yellow-400 border border-yellow-400/40 text-xxs px-2 py-0.5 rounded-full font-bold';
+                badge.innerHTML = '<i class="fa-solid fa-pen text-xxs"></i> Editado';
+            } else {
+                badge.className = 'ml-1 inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xxs px-2 py-0.5 rounded-full font-bold';
+                badge.innerHTML = '<i class="fa-solid fa-link text-xxs"></i> Do Cronômetro';
+            }
+        }
+
         function saveStudySession(e) {
             e.preventDefault();
             const subject = document.getElementById('form-subject').value;
             const topic = document.getElementById('form-topic').value;
+            // Always sync from HH:MM:SS fields first (which are kept in sync with the timer)
+            syncDurationFromHMS();
             const duration = parseInt(document.getElementById('form-duration').value) || 0;
             const type = document.getElementById('form-study-type').value;
             const qC = parseInt(document.getElementById('form-questions-correct').value) || 0;
@@ -1706,9 +2148,12 @@
                 }
             }
 
+            const pages = parseInt(document.getElementById('form-pages').value) || 0;
+            const notes = (document.getElementById('form-notes').value || '').trim();
+
             studyDb.history.push({
                 id: Date.now(), date: new Date().toISOString().split('T')[0],
-                subject, topic, duration, type, qCorrect: qC, qTotal: qT
+                subject, topic, duration, type, qCorrect: qC, qTotal: qT, pages, notes
             });
 
             scheduleAutomaticRevisions(subject, topic, new Date().toISOString().split('T')[0]);
@@ -1732,10 +2177,21 @@
         function quickStudyTopic(sIdx, tIdx) {
             const sub = studyDb.syllabus[sIdx];
             const top = sub.topics[tIdx];
-            document.getElementById('form-subject').value = sub.subject;
-            updateFormTopics();
-            document.getElementById('form-topic').value = top.name;
+            // Vai para aba cronômetro primeiro (garante que o DOM está ativo)
             switchTab('cronometro');
+            // Popula os selects se ainda não estiverem populados
+            populateFormDropdowns();
+            // Preenche disciplina
+            const formSub = document.getElementById('form-subject');
+            if (formSub) {
+                formSub.value = sub.subject;
+                updateFormTopics();
+            }
+            // Preenche tópico após o updateFormTopics popular os options
+            setTimeout(() => {
+                const formTop = document.getElementById('form-topic');
+                if (formTop) formTop.value = top.name;
+            }, 80);
         }
 
 
@@ -1759,18 +2215,37 @@
             populateSummaryTopicsDropdown();
         }
 
+        // Mapa global disciplina→índice para cor estável
+        const _subjectColorIndex = {};
         function getDisciplineColorClass(subjectName) {
-            const sub = subjectName.toLowerCase();
-            if (sub.includes('constitucional')) return 'disc-color-const';
-            if (sub.includes('administrativo')) return 'disc-color-admin';
-            if (sub.includes('português') || sub.includes('portugues')) return 'disc-color-port';
-            if (sub.includes('informática') || sub.includes('informatica')) return 'disc-color-info';
-            if (sub.includes('penal') || sub.includes('especial')) return 'disc-color-penal';
-            return 'disc-color-default';
+            if (_subjectColorIndex[subjectName] === undefined) {
+                // Tenta pegar do syllabus primeiro para consistência
+                const idx = studyDb.syllabus.findIndex(s => s.subject === subjectName);
+                if (idx >= 0) {
+                    _subjectColorIndex[subjectName] = idx % 12;
+                } else {
+                    // Usa hash do nome como fallback
+                    let h = 0;
+                    for (let i = 0; i < subjectName.length; i++) h = (h * 31 + subjectName.charCodeAt(i)) & 0xffff;
+                    _subjectColorIndex[subjectName] = h % 12;
+                }
+            }
+            return 'disc-color-' + _subjectColorIndex[subjectName];
         }
 
         function setTreeFilter(mode) { treeFilterMode = mode; filterSummariesTree(); }
         function filterSummariesTree() { renderSummariesTree(); }
+
+        // Estado de colapso das disciplinas na sidebar
+        const _treeCollapsed = {};
+        function toggleTreeSubject(key, headerEl) {
+            _treeCollapsed[key] = !_treeCollapsed[key];
+            const body = headerEl.nextElementSibling;
+            const chevron = headerEl.querySelector('.fa-chevron-down');
+            if (body) body.style.display = _treeCollapsed[key] ? 'none' : 'block';
+            if (chevron) chevron.style.transform = _treeCollapsed[key] ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+        window.toggleTreeSubject = toggleTreeSubject;
 
         function renderSummariesTree() {
             const container = document.getElementById('summaries-tree-container');
@@ -1805,7 +2280,17 @@
 
             for (const subject in groups) {
                 const colorClass = getDisciplineColorClass(subject);
-                let subjectHtml = `<div class="mb-3"><div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider ${colorClass} py-1.5 border-b border-blue-900/50 mb-1"><i class="fa-solid fa-book"></i> <span>${subject}</span></div><div class="pl-2 space-y-2">`;
+                const subjectKey = 'tree_collapsed_' + btoa(encodeURIComponent(subject)).replace(/=/g,'');
+                const isCollapsed = _treeCollapsed[subjectKey] === true;
+                const chevronRotate = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                const bodyDisplay = isCollapsed ? 'none' : 'block';
+
+                let subjectHtml = `<div class="mb-3">
+                    <div class="flex items-center justify-between gap-2 text-xs font-black uppercase tracking-wider ${colorClass} py-1.5 border-b border-blue-900/50 mb-1 cursor-pointer select-none hover:opacity-80 transition" onclick="toggleTreeSubject('${subjectKey}', this)">
+                        <div class="flex items-center gap-2 truncate"><i class="fa-solid fa-book"></i> <span class="truncate">${subject}</span></div>
+                        <i class="fa-solid fa-chevron-down text-[10px] flex-shrink-0 transition-transform" style="transform:${chevronRotate}"></i>
+                    </div>
+                    <div class="pl-2 space-y-2" style="display:${bodyDisplay}">`;
                 
                 for (const topic in groups[subject]) {
                     subjectHtml += `<div><div class="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold py-1"><i class="fa-regular fa-folder-open text-yellow-500"></i> <span class="truncate">${topic}</span></div><div class="pl-3 space-y-0.5 mt-0.5 border-l border-blue-900/60">`;
@@ -1853,12 +2338,18 @@
         }
 
         function selectActiveSummary(id) {
-            activeSummaryId = id; savedRange = null; 
+            activeSummaryId = id; savedRange = null;
             const summary = studyDb.summaries.find(s => s.id === id);
             if (summary) {
-                document.getElementById('no-summary-selected-state').classList.add('hidden');
-                document.getElementById('active-summary-workspace').classList.remove('hidden');
-                document.getElementById('active-summary-workspace').classList.add('flex');
+                const noState = document.getElementById('no-summary-selected-state');
+                const ws = document.getElementById('active-summary-workspace');
+                if (noState) noState.classList.add('hidden');
+                if (ws) { ws.classList.remove('hidden'); ws.style.display = 'flex'; }
+                // Garante que botões de ação estejam visíveis
+                const favBtn = document.getElementById('btn-favorite-summary');
+                const delBtn = document.querySelector('[onclick="deleteActiveSummary()"]');
+                if (favBtn) favBtn.style.display = '';
+                if (delBtn) delBtn.style.display = '';
 
                 document.getElementById('active-summary-discipline').innerText = summary.subject;
                 document.getElementById('active-summary-topic').innerText = summary.topic;
@@ -1866,10 +2357,15 @@
                 document.getElementById('active-summary-created').innerText = summary.created || "--";
                 document.getElementById('active-summary-last-edited').innerText = summary.lastEdited || "Agora";
                 document.getElementById('active-summary-tags').value = summary.tags || "";
-                
-                const favBtn = document.getElementById('btn-favorite-summary');
-                if (summary.isFavorite) { favBtn.classList.add('text-yellow-400'); favBtn.classList.remove('text-gray-400'); } 
-                else { favBtn.classList.remove('text-yellow-400'); favBtn.classList.add('text-gray-400'); }
+
+                const favBtnEl = document.getElementById('btn-favorite-summary');
+                if (favBtnEl) {
+                    if (summary.isFavorite) { favBtnEl.classList.add('text-yellow-400'); favBtnEl.classList.remove('text-gray-400'); }
+                    else { favBtnEl.classList.remove('text-yellow-400'); favBtnEl.classList.add('text-gray-400'); }
+                    favBtnEl.style.display = '';
+                }
+                const delBtnEl = document.querySelector('[onclick="deleteActiveSummary()"]');
+                if (delBtnEl) delBtnEl.style.display = '';
 
                 document.getElementById('summary-editor-canvas').innerHTML = summary.content || '';
                 renderSummariesTree(); 
@@ -1921,6 +2417,11 @@
             canvas.focus();
             if (savedRange) { const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); } 
             else { const range = document.createRange(); range.selectNodeContents(canvas); range.collapse(false); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+        }
+
+        function changeFont(fontFamily) {
+            if (!fontFamily) return;
+            document.execCommand('fontName', false, fontFamily);
         }
 
         function execCmd(command, value = null) {
@@ -1976,12 +2477,13 @@
                 canvas.classList.add('high-revision-mode');
                 btn.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-400');
                 btn.classList.remove('bg-blue-900', 'text-white', 'border-blue-700');
-                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> <span class="hidden sm:inline">Modo Revisão Ativo</span>`;
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> <span>Modo Foco Ativo</span>`;
+                showAlert("🎯 Modo Foco ativado!\n\nO texto normal ficará oculto. Apenas os trechos marcados com cores (marcadores) aparecerão.\nIdeal para revisão rápida antes da prova.");
             } else {
                 canvas.classList.remove('high-revision-mode');
                 btn.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-400');
                 btn.classList.add('bg-blue-900', 'text-white', 'border-blue-700');
-                btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span class="hidden sm:inline">Alta Revisão</span>`;
+                btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span>Modo Foco</span>`;
             }
         }
 
@@ -1993,7 +2495,40 @@
             else { canvas.classList.add('editor-paper-dark'); canvas.classList.remove('editor-paper-light'); icon.className = "fa-solid fa-sun text-yellow-400"; }
         }
 
-        function exportToPDF() { if (activeSummaryId) window.print(); }
+        function exportToPDF() {
+            if (!activeSummaryId) { showAlert('Selecione um resumo primeiro.'); return; }
+            const summary = studyDb.summaries.find(s => s.id === activeSummaryId);
+            if (!summary) return;
+            const titulo = (summary.title || 'Resumo').replace(/[^a-zA-Z0-9À-ú ]/g, '').trim();
+            const conteudo = summary.content || '';
+            const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>${titulo}</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111;line-height:1.7;}
+h1,h2,h3{color:#002244;}
+h1{font-size:26px;border-bottom:3px solid #FFD400;padding-bottom:8px;}
+h2{font-size:20px;margin-top:24px;}
+mark[style*="background-color: rgb(253, 224, 71)"]{background:#fde047;padding:1px 3px;border-radius:3px;}
+mark[style*="background-color: rgb(248, 113, 113)"]{background:#f87171;padding:1px 3px;border-radius:3px;}
+mark[style*="background-color: rgb(52, 211, 153)"]{background:#34d399;padding:1px 3px;border-radius:3px;}
+blockquote{border-left:4px solid #FFD400;padding-left:12px;color:#444;margin:16px 0;}
+table{border-collapse:collapse;width:100%;}
+td,th{border:1px solid #ccc;padding:6px 10px;}
+@media print{body{margin:0;}}
+</style></head><body>
+<h1>${titulo}</h1>
+<p style="color:#666;font-size:12px;">${summary.subject} › ${summary.topic} — ${summary.created || ''}</p>
+<hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+${conteudo}
+</body></html>`;
+            const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = titulo + '.html';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+            showAlert('✅ Resumo exportado como HTML.\nAbra o arquivo no navegador e use Ctrl+P para salvar como PDF.');
+        }
 
 
         // === 6. REVISÕES COMPONENT ===
@@ -2030,7 +2565,10 @@
                         <td class="px-4 py-3 text-gray-300">${rev.topic}</td>
                         <td class="px-4 py-3 text-gray-400 text-xs">${dParts[2]}/${dParts[1]}/${dParts[0]}</td>
                         <td class="px-4 py-3 text-center"><span class="${badgeClass} text-xxs px-2.5 py-1 rounded-full">${statusText}</span></td>
-                        <td class="px-4 py-3 text-right"><button onclick="concludeRevision('${rev.id}')" class="text-xs bg-emerald-500 text-slate-900 font-bold px-3 py-1 rounded">Feito</button></td>
+                        <td class="px-4 py-3 text-right flex items-center justify-end gap-1.5">
+                            <button onclick="concludeRevision('${rev.id}')" class="text-xs bg-emerald-500 text-slate-900 font-bold px-3 py-1 rounded">✓ Feito</button>
+                            <button onclick="skipRevisionAnki('${rev.id}')" class="text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1 rounded" title="Já fiz no Anki - dispensar sem registrar">Anki</button>
+                        </td>
                     </tr>
                 `;
             });
@@ -2045,6 +2583,14 @@
             }
         }
 
+        function skipRevisionAnki(id) {
+            const rev = studyDb.revisions.find(r => r.id.toString() === id.toString());
+            if (rev) {
+                rev.done = true; // Dispensa sem registrar no histórico
+                saveDatabase(); renderAllTabs(); showAlert("Revisão dispensada. (Feita no Anki)");
+            }
+        }
+
         function cleanUpExpiredRevisions() {
             showConfirm("Limpar revisões concluídas?", () => {
                 studyDb.revisions = studyDb.revisions.filter(r => !r.done);
@@ -2054,28 +2600,41 @@
 
 
         // === 7. HISTÓRICO COMPONENT ===
-        function renderHistoryTab() {
+        
+        function formatDurationHMS(totalMinutes) {
+            const totalSeconds = Math.round((Number(totalMinutes) || 0) * 60);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+function renderHistoryTab() {
             const tbody = document.getElementById('history-table-body');
             if (!tbody) return; tbody.innerHTML = '';
             
             let sorted = [...studyDb.history].sort((a,b) => b.id - a.id);
             if (sorted.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 font-bold">Nenhum registo ainda.</td></tr>`; return;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 font-bold">Nenhum registo ainda.</td></tr>`; return;
             }
 
             sorted.forEach(s => {
                 const d = s.date.split('-');
                 let typeBadge = s.type === "Questões" ? "bg-yellow-400/20 text-yellow-400" : (s.type === "Revisão" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-900/40 text-blue-300");
                 let qStats = s.qTotal > 0 ? `${s.qCorrect}/${s.qTotal} (${Math.round(s.qCorrect/s.qTotal*100)}%)` : "--";
+                let pagesCell = s.pages > 0 ? `<span class="text-cyan-400 font-bold">${s.pages}p</span>` : `<span class="text-gray-600">--</span>`;
+                let notesCell = s.notes ? `<span class="text-gray-300 text-xs italic" title="${s.notes.replace(/"/g,"'")}">${s.notes.length > 40 ? s.notes.substring(0,40)+'…' : s.notes}</span>` : `<span class="text-gray-600">--</span>`;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-blue-950/20">
                         <td class="px-4 py-3 text-gray-400 text-xs">${d[2]}/${d[1]}/${d[0]}</td>
                         <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
                         <td class="px-4 py-3 text-gray-300 text-xs">${s.topic}</td>
-                        <td class="px-4 py-3 text-center text-prf-yellow">${s.duration}m</td>
+                        <td class="px-4 py-3 text-center text-prf-yellow">${formatDurationHMS(s.duration)}</td>
                         <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
                         <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
+                        <td class="px-4 py-3 text-center text-xs">${pagesCell}</td>
+                        <td class="px-4 py-3 text-xs max-w-[200px]">${notesCell}</td>
                         <td class="px-4 py-3 text-right"><button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button></td>
                     </tr>
                 `;
@@ -2088,8 +2647,8 @@
 
         function exportStudyHistory() {
             if(studyDb.history.length === 0) return showAlert("Sem dados.");
-            let csv = "Data,Disciplina,Topico,Duracao_Min,Tipo,Questoes_Total,Questoes_Corretas\n";
-            studyDb.history.forEach(s => csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${s.type},${s.qTotal},${s.qCorrect}\n`);
+            let csv = "Data,Disciplina,Topico,Duracao_Min,Tipo,Questoes_Total,Questoes_Corretas,Paginas,Observacoes\n";
+            studyDb.history.forEach(s => csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${s.type},${s.qTotal||0},${s.qCorrect||0},${s.pages||0},"${(s.notes||'').replace(/"/g,"'")}"\n`);
             const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `historico_prf.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
@@ -2102,13 +2661,46 @@
             if (typeof Chart !== 'undefined') {
                 Chart.defaults.color = '#94a3b8';
                 if (studyChart) studyChart.destroy();
-                studyChart = new Chart(ctx, { type: 'bar', data: { labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], datasets: [{ label: 'Tempo Líquido (min)', data: [0,0,0,0,0,0,0], backgroundColor: '#FFD400', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#1d355c' } } } } });
+                const minsToHHMM = (mins) => {
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    return h > 0 ? `${h}h ${m.toString().padStart(2,'0')}min` : `${m}min`;
+                };
+                studyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                        datasets: [{ label: 'Tempo Líquido', data: [0,0,0,0,0,0,0], backgroundColor: '#FFD400', borderRadius: 6 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ' ' + minsToHHMM(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#1d355c' },
+                                ticks: {
+                                    callback: val => minsToHHMM(val)
+                                }
+                            }
+                        }
+                    }
+                });
             }
         }
 
         function setChartPeriod(period) {
             currentChartPeriod = period;
-            ['weekly', 'monthly', 'yearly'].forEach(p => {
+            ['daily', 'weekly', 'monthly', 'yearly'].forEach(p => {
                 const btn = document.getElementById(`btn-period-${p}`);
                 if(btn) btn.className = p === period ? "px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow" : "px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition";
             });
@@ -2118,8 +2710,37 @@
         function updateChartData() {
             if (!studyChart) return;
             const today = new Date(); const year = today.getFullYear();
-            
-            if (currentChartPeriod === 'weekly') {
+            const todayStr = today.toISOString().split('T')[0];
+
+            if (currentChartPeriod === 'daily') {
+                // Últimas 12 horas do dia de hoje agrupadas por hora
+                let hourData = Array(24).fill(0);
+                let hourLabels = [];
+                for(let h=0; h<24; h++) hourLabels.push(h.toString().padStart(2,'0')+'h');
+                studyDb.history.forEach(s => { if(s.date === todayStr) { const h = s.hour !== undefined ? s.hour : 8; hourData[h] += s.duration; } });
+                // Se não houver hora, distribui pelo total do dia em blocos de 6h
+                if(studyDb.history.filter(s=>s.date===todayStr).every(s=>s.hour===undefined)) {
+                    let blocks = [0,0,0,0]; // 00-06, 06-12, 12-18, 18-24
+                    studyDb.history.filter(s=>s.date===todayStr).forEach(s=>{ blocks[Math.min(3, Math.floor((s.hour||8)/6))] += s.duration; });
+                    studyChart.data.labels = ['00h–06h','06h–12h','12h–18h','18h–24h'];
+                    studyChart.data.datasets[0].data = blocks;
+                } else {
+                    studyChart.data.labels = hourLabels;
+                    studyChart.data.datasets[0].data = hourData;
+                }
+                // Simplificado: mostra por sessão do dia
+                let dayLabels = []; let dayData = [];
+                const daySessions = studyDb.history.filter(s => s.date === todayStr);
+                if(daySessions.length === 0) {
+                    studyChart.data.labels = ['Sem sessões hoje'];
+                    studyChart.data.datasets[0].data = [0];
+                } else {
+                    daySessions.forEach((s,i) => { dayLabels.push(s.topic ? s.topic.substring(0,12) : 'Sessão '+(i+1)); dayData.push(s.duration); });
+                    studyChart.data.labels = dayLabels;
+                    studyChart.data.datasets[0].data = dayData;
+                }
+            }
+            else if (currentChartPeriod === 'weekly') {
                 let weekData = [0,0,0,0,0,0,0];
                 const start = new Date(today); start.setDate(today.getDate() - today.getDay() + (today.getDay()===0?-6:1)); start.setHours(0,0,0,0);
                 studyDb.history.forEach(s => { const d = new Date(s.date+"T12:00:00"); if(d>=start) { let idx = d.getDay()===0?6:d.getDay()-1; weekData[idx]+=s.duration; } });
@@ -2150,10 +2771,37 @@
 
         function updateStudyTypeChartData() {
             if(!studyTypeChart) return;
-            let data = [0,0,0];
-            studyDb.history.forEach(s => { if(s.type==='Teoria') data[0]+=s.duration; else if(s.type==='Questões') data[1]+=s.duration; else if(s.type==='Revisão') data[2]+=s.duration; });
-            studyTypeChart.data.datasets[0].data = data; studyTypeChart.update();
-            document.getElementById('legend-theory-mins').innerText = data[0]+" min"; document.getElementById('legend-questions-mins').innerText = data[1]+" min"; document.getElementById('legend-revisions-mins').innerText = data[2]+" min";
+            const minsToHHMM = (mins) => {
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return h > 0 ? `${h}h ${m.toString().padStart(2,'0')}min` : `${m}min`;
+            };
+            // Agrupa todos os tipos incluindo os novos
+            const types = ['Teoria','Questões','Revisão','Mapa Mental','Flashcards','Resumo','Simulado','Videoaula','Áudio','Outros'];
+            const colors = ['#FFD400','#10b981','#3b82f6','#f97316','#a855f7','#06b6d4','#ef4444','#ec4899','#84cc16','#94a3b8'];
+            let data = new Array(types.length).fill(0);
+            studyDb.history.forEach(s => {
+                const idx = types.indexOf(s.type);
+                if (idx >= 0) data[idx] += s.duration;
+            });
+            // Filtrar apenas tipos com dados
+            const activeTypes = types.filter((_,i) => data[i] > 0);
+            const activeData  = data.filter(d => d > 0);
+            const activeColors = colors.filter((_,i) => data[i] > 0);
+
+            studyTypeChart.data.labels = activeTypes.length ? activeTypes : types;
+            studyTypeChart.data.datasets[0].data = activeData.length ? activeData : data;
+            studyTypeChart.data.datasets[0].backgroundColor = activeColors.length ? activeColors : colors;
+            studyTypeChart.options.plugins.tooltip = {
+                callbacks: { label: ctx => ` ${ctx.label}: ${minsToHHMM(ctx.parsed)}` }
+            };
+            studyTypeChart.update();
+
+            // Atualiza legendas com HH:MM
+            const leg = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = minsToHHMM(val); };
+            leg('legend-theory-mins',    data[0]);
+            leg('legend-questions-mins', data[1]);
+            leg('legend-revisions-mins', data[2]);
         }
 
 
@@ -2389,11 +3037,16 @@
         window.populateSummaryTopicsDropdown = populateSummaryTopicsDropdown; window.saveNewSummary = saveNewSummary;
         window.selectActiveSummary = selectActiveSummary; window.saveActiveSummary = saveActiveSummary; window.deleteActiveSummary = deleteActiveSummary;
         window.toggleFavoriteSummary = toggleFavoriteSummary; window.setTreeFilter = setTreeFilter; window.filterSummariesTree = filterSummariesTree;
-        window.execCmd = execCmd; window.insertBlockquote = insertBlockquote; window.insertAlertBox = insertAlertBox; window.insertObsBox = insertObsBox;
+        window.execCmd = execCmd; window.changeFont = changeFont; window.insertBlockquote = insertBlockquote; window.insertAlertBox = insertAlertBox; window.insertObsBox = insertObsBox;
         window.insertTable = insertTable; window.insertImage = insertImage; window.insertMindmap = insertMindmap;
         window.applyStudyHighlight = applyStudyHighlight; window.toggleRevisionMode = toggleRevisionMode; window.toggleEditorPaperTheme = toggleEditorPaperTheme;
         window.exportToPDF = exportToPDF; window.saveSelection = saveSelection;
         window.startTimer = startTimer; window.pauseTimer = pauseTimer; window.resetTimer = resetTimer;
+        window.switchTimerMode = switchTimerMode;
+        window.setPomodoroPreset = setPomodoroPreset; window.startPomodoro = startPomodoro; window.pausePomodoro = pausePomodoro; window.resetPomodoro = resetPomodoro;
+        window.updateManualTopics = updateManualTopics; window.saveManualSession = saveManualSession;
+        window.syncDurationFromHMS = syncDurationFromHMS;
+        window.checkTimerOverride = checkTimerOverride;
         window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
         window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
         window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
@@ -2407,5 +3060,32 @@
         window.saveScratchpad = saveScratchpad; window.loginWithEmail = loginWithEmail; window.registerWithEmail = registerWithEmail; window.logoutEmail = logoutEmail; window.manualSyncNow = manualSyncNow;
         window.switchAuthTab = switchAuthTab; window.loadFromCloud = loadFromCloud; window.generateEncryptedSyncCode = generateEncryptedSyncCode;
     </script>
+
+    <!-- Modal: Editar Questões/Registros do Tópico -->
+    <div id="modal-edit-questions" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden">
+        <div class="bg-card-dark border border-blue-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
+            <button onclick="closeEditQuestionsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-base font-black text-white"><i class="fa-solid fa-sliders text-prf-yellow mr-2"></i>Editar Registros</h3>
+            <p class="text-xs text-gray-400" id="edit-q-topic-label"></p>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Questões resolvidas</label>
+                    <input type="number" id="edit-q-total" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" min="0">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Respostas certas</label>
+                    <input type="number" id="edit-q-correct" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" min="0">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveEditQuestions()" class="flex-1 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-sm">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Salvar
+                </button>
+                <button onclick="clearTopicRecords()" class="flex-1 py-2 bg-red-900/60 hover:bg-red-900 text-red-300 font-bold rounded-xl text-sm border border-red-800">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Zerar tudo
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
