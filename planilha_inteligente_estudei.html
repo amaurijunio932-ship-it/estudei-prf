@@ -73,7 +73,102 @@
         .editor-paper-light { background-color: #ffffff; color: #0f172a; }
         .editor-paper-light th, .editor-paper-light td { border: 1px solid #cbd5e1; color: #0f172a; }
 
-        /* FULLSCREEN EDITOR */
+        /* COLOR PALETTE POPUP */
+        .color-palette-popup {
+            position: fixed; z-index: 99999;
+            background: linear-gradient(135deg, #0f1f42, #1e293b);
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 14px; padding: 10px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            display: none; flex-direction: column; gap: 6px;
+            width: 196px;
+        }
+        .color-palette-popup.open { display: flex; animation: popIn 0.15s ease; }
+        .color-palette-popup .cp-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+        .color-palette-popup .cp-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+        .color-palette-popup .cp-swatch {
+            width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 2px solid transparent;
+            transition: transform .1s, border-color .1s;
+        }
+        .color-palette-popup .cp-swatch:hover { transform: scale(1.25); border-color: rgba(255,255,255,0.6); }
+        .color-palette-popup .cp-recent { display: flex; gap: 3px; flex-wrap: wrap; min-height: 20px; }
+        .color-palette-popup .cp-custom { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .color-palette-popup .cp-custom input[type=color] { width: 22px; height: 22px; border: none; background: transparent; cursor: pointer; padding: 0; border-radius: 4px; }
+        .color-palette-popup .cp-custom span { font-size: 10px; color: #94a3b8; }
+        .cp-trigger-btn { position: relative; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .cp-trigger-btn .cp-color-bar { height: 3px; border-radius: 2px; width: 14px; margin-top: 1px; }
+
+        /* FLOATING SELECTION TOOLBAR */
+        #selection-toolbar {
+            position: fixed;
+            z-index: 9999;
+            display: none;
+            background: linear-gradient(135deg, #0f1f42, #1e293b);
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 14px;
+            padding: 6px 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+            backdrop-filter: blur(12px);
+            align-items: center;
+            gap: 3px;
+            flex-wrap: nowrap;
+            pointer-events: all;
+            transform: translateY(-8px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        #selection-toolbar.visible {
+            display: flex;
+            animation: popIn 0.15s ease forwards;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        #selection-toolbar button {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        #selection-toolbar button:hover { background: rgba(255,255,255,0.12); }
+        #selection-toolbar .st-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.1); margin: 0 2px; flex-shrink: 0; }
+        #selection-toolbar .st-mark {
+            width: 18px; height: 18px; border-radius: 5px; cursor: pointer;
+            border: 2px solid transparent; flex-shrink: 0;
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        #selection-toolbar .st-mark:hover { transform: scale(1.2); border-color: rgba(255,255,255,0.5); }
+
+        /* FULLSCREEN WORKSPACE — expande o editor original */
+        .workspace-fullscreen {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 999 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: #0a0f1e !important;
+        }
+        .workspace-fullscreen #summary-editor-canvas {
+            flex: 1 !important;
+            overflow-y: auto !important;
+        }
+        .workspace-fullscreen.ws-light { background: #e2e8f0 !important; }
+        .workspace-fullscreen.ws-light #summary-editor-canvas { background: #ffffff !important; color: #0f172a !important; }
+        .workspace-fullscreen.ws-light #summary-editor-canvas table th,
+        .workspace-fullscreen.ws-light #summary-editor-canvas table td { border-color: #cbd5e1 !important; color: #0f172a !important; }
+        /* FULLSCREEN EDITOR — hide old overlay approach */
+        #fullscreen-editor-overlay { display: none !important; }
+
+                /* FULLSCREEN EDITOR */
         #fullscreen-editor-overlay { font-family: 'Segoe UI', system-ui, sans-serif; }
         #fs-toolbar { transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
         #fs-toolbar.fs-toolbar-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
@@ -717,14 +812,14 @@
                     <div class="w-px h-6 bg-blue-900 mx-1"></div>
 
                     <!-- Cores Customizadas -->
-                    <div class="flex items-center gap-1 bg-input-dark rounded-lg px-2 py-1 border border-blue-800 shadow-sm" title="Cor da Letra">
-                        <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                        <input type="color" oninput="execCmd('foreColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
-                    </div>
-                    <div class="flex items-center gap-1 bg-input-dark rounded-lg px-2 py-1 border border-blue-800 shadow-sm" title="Cor de Fundo">
-                        <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                        <input type="color" oninput="execCmd('backColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
-                    </div>
+                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor da Letra" onclick="openColorPalette(event,'foreColor')">
+                        <i class="fa-solid fa-a text-xs text-white"></i>
+                        <span class="cp-color-bar" id="cp-bar-fore" style="background:#ffffff;"></span>
+                    </button>
+                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor de Fundo" onclick="openColorPalette(event,'backColor')">
+                        <i class="fa-solid fa-fill-drip text-xs text-white"></i>
+                        <span class="cp-color-bar" id="cp-bar-back" style="background:#3b82f6;"></span>
+                    </button>
 
                     <div class="w-px h-6 bg-blue-900 mx-1 hidden sm:block"></div>
 
@@ -781,7 +876,7 @@
                     <!-- Objetos Ricos -->
                     <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Tabela"><i class="fa-solid fa-table"></i></button>
                     <button onclick="insertImage()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Imagem / Esquema"><i class="fa-solid fa-image"></i></button>
-                    <button onclick="insertMindmap()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Mapa Mental (Bloco)"><i class="fa-solid fa-diagram-project"></i></button>
+                    <button onclick="openMindmapEditor()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Abrir Editor de Mapa Mental"><i class="fa-solid fa-diagram-project"></i></button>
                 </div>
 
                 <div class="flex items-center gap-2 mt-2 md:mt-0">
@@ -2650,7 +2745,7 @@
         function insertObsBox() { insertHTMLAtCursor(`<div style="background-color: rgba(133, 77, 14, 0.2); border-left: 4px solid #eab308; padding: 12px; border-radius: 4px; margin: 16px 0;" contenteditable="true"><strong style="color: #facc15; display: block; margin-bottom: 4px;">📌 OBSERVAÇÃO TÁTICA:</strong><span style="color: #fef08a;">Dica importante aqui...</span></div><p><br></p>`); }
         function insertTable() { insertHTMLAtCursor('<table style="width:100%; border-collapse:collapse; margin:15px 0; background: rgba(15,23,42,0.5);"><tr style="background-color: rgba(30,58,138,0.5);"><th style="border:1px solid #3b82f6; padding:8px;">A</th><th style="border:1px solid #3b82f6; padding:8px;">B</th></tr><tr><td style="border:1px solid #3b82f6; padding:8px;">1</td><td style="border:1px solid #3b82f6; padding:8px;">2</td></tr></table><p><br></p>'); }
         function insertImage() { const url = prompt("Cole a URL:", "https://"); if (url) insertHTMLAtCursor(`<div style="text-align:center; margin:20px 0;" contenteditable="false"><img src="${url}" style="max-width:100%; border-radius:8px; border:2px solid #3b82f6;" onerror="this.src='https://placehold.co/600x300/15294a/ffd400?text=Erro'"><p contenteditable="true" style="font-size:12px; color:#94a3b8;">[Legenda]</p></div><p><br></p>`); }
-        function insertMindmap() { insertHTMLAtCursor(`<div style="background-color:#0f172a; border:2px solid #3b82f6; border-radius:12px; padding:15px; margin:20px 0; font-family:'Roboto', sans-serif;"><div style="text-align:center; margin-bottom:15px;"><span style="background-color:#3b82f6; color:#ffffff; padding:4px 12px; border-radius:9999px; font-size:11px; font-weight:bold;">🧠 MAPA MENTAL</span><h4 style="color:#ffffff; margin:10px 0 0 0; font-size:16px; font-weight:bold;">TEMA</h4></div><div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px;"><div style="background-color:#1e293b; border:1px solid #10b981; padding:10px; border-radius:8px;"><strong style="color:#34d399; font-size:12px; display:block;">1</strong><span style="color:#e2e8f0; font-size:12px;">Texto...</span></div></div></div><p><br></p>`); }
+        function insertMindmap() { openMindmapEditor(); }
 
         function applyStudyHighlight(type) {
             restoreSelection(); const sel = window.getSelection();
@@ -2744,11 +2839,11 @@ ${conteudo}
                 <!-- Cores -->
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
                     <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('foreColor',this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
                     <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('backColor',this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="w-px h-5 bg-blue-900 mx-1"></div>
                 <!-- Marcadores -->
@@ -2826,6 +2921,93 @@ ${conteudo}
             <span class="text-[10px] text-gray-600"><i class="fa-solid fa-keyboard mr-1"></i> <kbd class="bg-white/10 text-gray-400 px-1 rounded text-[9px]">Esc</kbd> sair &nbsp;·&nbsp; Mova o mouse ao topo para a barra</span>
             <span id="fs-word-count" class="text-[10px] text-gray-600">0 palavras</span>
             <span id="fs-save-indicator" class="text-[10px] text-emerald-500 font-bold w-20 text-right"></span>
+        </div>
+    </div>
+
+    <!-- FLOATING SELECTION TOOLBAR -->
+    <div id="selection-toolbar" role="toolbar" aria-label="Formatação rápida">
+        <!-- Negrito / Itálico / Sublinhado / Tachado -->
+        <button onmousedown="e=>{e.preventDefault();}" onclick="stCmd('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
+        <button onclick="stCmd('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
+        <button onclick="stCmd('underline')" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
+        <button onclick="stCmd('strikeThrough')" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
+        <div class="st-sep"></div>
+        <!-- Marcadores -->
+        <div title="Amarelo" class="st-mark" style="background:#facc15;" onclick="stHighlight('yellow')"></div>
+        <div title="Vermelho" class="st-mark" style="background:#ef4444;" onclick="stHighlight('red')"></div>
+        <div title="Verde" class="st-mark" style="background:#10b981;" onclick="stHighlight('green')"></div>
+        <div title="Azul" class="st-mark" style="background:#3b82f6;" onclick="stHighlight('blue')"></div>
+        <div title="Roxo" class="st-mark" style="background:#a855f7;" onclick="stHighlight('purple')"></div>
+        <div title="Laranja" class="st-mark" style="background:#f97316;" onclick="stHighlight('orange')"></div>
+        <div class="st-sep"></div>
+        <!-- Caixa de Alerta e Observação -->
+        <button onclick="stInsertAlert()" title="Caixa de Atenção" style="color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></button>
+        <button onclick="stInsertObs()" title="Caixa de Observação" style="color:#fbbf24;"><i class="fa-solid fa-thumbtack"></i></button>
+        <div class="st-sep"></div>
+        <!-- Tamanho -->
+        <button onclick="stCmd('fontSize','2')" title="Texto Pequeno" style="font-size:9px;font-weight:bold;">A</button>
+        <button onclick="stCmd('fontSize','3')" title="Texto Normal" style="font-size:11px;font-weight:bold;">A</button>
+        <button onclick="stCmd('fontSize','5')" title="Título" style="font-size:14px;font-weight:bold;">A</button>
+        <div class="st-sep"></div>
+        <!-- Limpar formatação -->
+        <button onclick="stCmd('removeFormat')" title="Limpar formatação" style="color:#94a3b8;"><i class="fa-solid fa-eraser"></i></button>
+    </div>
+
+
+    <!-- COLOR PALETTE POPUP -->
+    <div id="color-palette-popup" class="color-palette-popup" onmousedown="event.preventDefault()">
+        <div class="cp-label" id="cp-popup-label">Cor da Letra</div>
+        <div class="cp-grid" id="cp-grid"></div>
+        <div style="height:1px;background:rgba(255,255,255,0.08);margin:2px 0;"></div>
+        <div>
+            <div class="cp-label">Recentes</div>
+            <div class="cp-recent" id="cp-recent"></div>
+        </div>
+        <div class="cp-custom">
+            <input type="color" id="cp-custom-input" title="Cor personalizada">
+            <span>Cor personalizada</span>
+        </div>
+    </div>
+
+    <!-- MIND MAP EDITOR MODAL -->
+    <div id="mindmap-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center" style="background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
+        <div class="flex flex-col rounded-2xl border border-blue-800 shadow-2xl overflow-hidden" style="width:96vw;max-width:1200px;height:90vh;background:#0a0f1e;">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3 border-b border-blue-900" style="background:#0d1530;">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-diagram-project text-yellow-400"></i>
+                    <span class="font-black text-white text-sm">Editor de Mapa Mental</span>
+                    <input id="mm-title" placeholder="Título do mapa..." value="Meu Mapa Mental"
+                        class="ml-4 bg-transparent border-b border-blue-700 text-white text-sm font-bold focus:outline-none focus:border-yellow-400 px-1 w-48">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="mmAddChild(mmSelectedId)" title="Adicionar filho (Tab)" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Nó</button>
+                    <button onclick="mmDeleteNode(mmSelectedId)" title="Excluir nó (Del)" class="px-3 py-1.5 bg-red-800/60 hover:bg-red-700 text-red-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="mmExportToEditor()" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 rounded-lg text-xs font-black transition flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Inserir no Resumo</button>
+                    <button onclick="closeMindmapEditor()" class="w-8 h-8 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <!-- Hint bar -->
+            <div class="flex flex-wrap items-center gap-3 px-4 py-2 text-[10px] text-gray-600 border-b border-blue-950" style="background:#080d1c;">
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Clique</kbd> selecionar</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">2× clique</kbd> editar</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Tab</kbd> filho</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Enter</kbd> irmão</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Del</kbd> excluir</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste</kbd> mover</span>
+                <span class="flex items-center gap-1">Cor: <span id="mm-color-swatches" class="inline-flex gap-1 ml-1"></span></span>
+                <span class="flex items-center gap-1">Ícone: <span id="mm-emoji-swatches" class="inline-flex gap-1 ml-1 flex-wrap max-w-xs"></span></span>
+            </div>
+            <!-- Canvas -->
+            <div class="flex-1 relative overflow-hidden" id="mm-canvas-wrap">
+                <svg id="mm-svg" width="100%" height="100%" style="position:absolute;inset:0;cursor:default;">
+                    <defs>
+                        <filter id="mm-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <g id="mm-links"></g>
+                    <g id="mm-nodes"></g>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -3398,6 +3580,10 @@ function renderHistoryTab() {
             }
         }
 
+        // Attach mousedown=preventDefault to selection toolbar
+        const _stBar = document.getElementById('selection-toolbar');
+        if (_stBar) _stBar.addEventListener('mousedown', e => e.preventDefault());
+
         // Auto-sync silencioso a cada 2 minutos quando logado
         setInterval(() => { if (currentUser) smartSyncNow(true); }, 2 * 60 * 1000);
 
@@ -3423,7 +3609,7 @@ function renderHistoryTab() {
         window.selectActiveSummary = selectActiveSummary; window.saveActiveSummary = saveActiveSummary; window.deleteActiveSummary = deleteActiveSummary;
         window.toggleFavoriteSummary = toggleFavoriteSummary; window.setTreeFilter = setTreeFilter; window.filterSummariesTree = filterSummariesTree;
         window.execCmd = execCmd; window.changeFont = changeFont; window.insertBlockquote = insertBlockquote; window.insertAlertBox = insertAlertBox; window.insertObsBox = insertObsBox;
-        window.insertTable = insertTable; window.insertImage = insertImage; window.insertMindmap = insertMindmap;
+        window.insertTable = insertTable; window.insertImage = insertImage; window.insertMindmap = insertMindmap; window.openMindmapEditor = openMindmapEditor; window.closeMindmapEditor = closeMindmapEditor;
         window.applyStudyHighlight = applyStudyHighlight; window.toggleRevisionMode = toggleRevisionMode; window.toggleEditorPaperTheme = toggleEditorPaperTheme;
         window.exportToPDF = exportToPDF; window.saveSelection = saveSelection;
         window.startTimer = startTimer; window.pauseTimer = pauseTimer; window.resetTimer = resetTimer;
@@ -3444,83 +3630,69 @@ function renderHistoryTab() {
         let fsToolbarHidden = false;
 
         function enterFullscreenEditor() {
-            const mainEditor = document.getElementById('summary-editor-canvas');
-            if (!mainEditor) { showAlert('Selecione um resumo primeiro.'); return; }
+            const workspace = document.getElementById('active-summary-workspace');
+            if (!workspace || workspace.classList.contains('hidden')) {
+                showAlert('Selecione um resumo primeiro.'); return;
+            }
+            workspace.classList.add('workspace-fullscreen');
+            // Add exit button + theme toggle if not there
+            if (!document.getElementById('fs-exit-btn')) {
+                const bar = document.createElement('div');
+                bar.id = 'fs-exit-btn';
+                bar.style.cssText = 'position:fixed;bottom:20px;right:24px;z-index:1001;display:flex;gap:10px;align-items:center;';
+                bar.innerHTML = `
+                    <button onclick="toggleWsTheme()" title="Alternar tema"
+                        style="background:rgba(30,58,138,0.85);backdrop-filter:blur(8px);border:1px solid rgba(59,130,246,0.4);color:white;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+                        <i id="ws-theme-icon" class="fa-solid fa-sun" style="color:#fbbf24;"></i>
+                        <span id="ws-theme-label">Modo Claro</span>
+                    </button>
+                    <button onclick="exitFullscreenEditor()" title="Sair da tela cheia (Esc)"
+                        style="background:rgba(239,68,68,0.15);backdrop-filter:blur(8px);border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+                        <i class="fa-solid fa-compress"></i> Sair
+                    </button>`;
+                document.body.appendChild(bar);
+            } else {
+                document.getElementById('fs-exit-btn').style.display = 'flex';
+            }
+            _wsIsLight = false;
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+            document.getElementById('summary-editor-canvas').focus();
+        }
 
-            const overlay  = document.getElementById('fullscreen-editor-overlay');
-            const fsEditor = document.getElementById('fs-editor-content');
-            const docArea  = document.getElementById('fs-doc-area');
-            const titleEl  = document.getElementById('active-summary-title');
-            const titleLabel = document.getElementById('fs-title-label');
+                function exitFullscreenEditor() {
+            const workspace = document.getElementById('active-summary-workspace');
+            if (workspace) { workspace.classList.remove('workspace-fullscreen', 'ws-light'); }
+            const bar = document.getElementById('fs-exit-btn');
+            if (bar) bar.style.display = 'none';
+            if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+        }
 
-            // Copy content & formatting
-            fsEditor.innerHTML = mainEditor.innerHTML;
-            // Strip inline colors that were set by execCommand (they fight the theme)
-            fsEditor.querySelectorAll('font[color], [style*="color: rgb(243"], [style*="color: rgb(248"]').forEach(el => {
-                if (!el.classList || !el.classList.contains('study-hl')) el.style && el.style.removeProperty('color');
-            });
-            if (titleLabel && titleEl) titleLabel.innerText = titleEl.value || '';
-
-            // Sync theme from main editor
-            fsIsLight = mainEditor.classList.contains('editor-paper-light');
-            applyFsTheme();
-
-            overlay.classList.remove('hidden');
-            overlay.style.opacity = '0';
-            requestAnimationFrame(() => {
-                overlay.style.transition = 'opacity 0.3s ease';
-                overlay.style.opacity = '1';
-            });
-
-            // Show toolbar
-            const tb = document.getElementById('fs-toolbar');
-            if (tb) { tb.classList.remove('fs-toolbar-hidden'); fsToolbarHidden = false; }
-
-            _activeEditorId = 'fs-editor-content';
-            savedRange = null;
-            setTimeout(() => { fsEditor.focus(); }, 100);
-            updateFsWordCount();
-            // Prevent toolbar buttons from stealing editor focus
-            document.querySelectorAll('#fs-toolbar button, #fs-toolbar select, #fs-toolbar input[type=color]').forEach(el => {
-                if (el.tagName === 'BUTTON') {
-                    el.addEventListener('mousedown', e => e.preventDefault(), { once: false });
-                }
-            });
-
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
+        let _wsIsLight = false;
+        function toggleWsTheme() {
+            _wsIsLight = !_wsIsLight;
+            const workspace = document.getElementById('active-summary-workspace');
+            const canvas = document.getElementById('summary-editor-canvas');
+            const icon = document.getElementById('ws-theme-icon');
+            const label = document.getElementById('ws-theme-label');
+            if (_wsIsLight) {
+                workspace.classList.add('ws-light');
+                workspace.style.background = '#e2e8f0';
+                if (icon) { icon.className = 'fa-solid fa-moon'; icon.style.color = '#60a5fa'; }
+                if (label) label.innerText = 'Modo Escuro';
+                // Apply light theme to canvas
+                canvas.classList.remove('editor-paper-dark'); canvas.classList.add('editor-paper-light');
+            } else {
+                workspace.classList.remove('ws-light');
+                workspace.style.background = '';
+                if (icon) { icon.className = 'fa-solid fa-sun'; icon.style.color = '#fbbf24'; }
+                if (label) label.innerText = 'Modo Claro';
+                canvas.classList.remove('editor-paper-light'); canvas.classList.add('editor-paper-dark');
             }
         }
 
-        function exitFullscreenEditor() {
-            _activeEditorId = 'summary-editor-canvas';
-            savedRange = null;
-            syncFsToMain();
-            const overlay = document.getElementById('fullscreen-editor-overlay');
-            overlay.style.transition = 'opacity 0.25s ease';
-            overlay.style.opacity = '0';
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                overlay.style.opacity = '';
-                overlay.style.transition = '';
-            }, 260);
-            if (document.exitFullscreen && document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-            }
-        }
+                function syncFsToMain() { /* no-op: fullscreen IS the main editor */ }
 
-        function syncFsToMain() {
-            const fsEditor  = document.getElementById('fs-editor-content');
-            const mainEditor = document.getElementById('summary-editor-canvas');
-            if (!fsEditor || !mainEditor) return;
-            mainEditor.innerHTML = fsEditor.innerHTML;
-            if (typeof saveActiveSummary === 'function') saveActiveSummary();
-            updateFsWordCount();
-            const ind = document.getElementById('fs-save-indicator');
-            if (ind) { ind.innerText = '✓ Guardado'; clearTimeout(ind._t); ind._t = setTimeout(() => { ind.innerText = ''; }, 1800); }
-        }
-
-        function updateFsWordCount() {
+                function updateFsWordCount() {
             const fsEditor = document.getElementById('fs-editor-content');
             const wc = document.getElementById('fs-word-count');
             if (!fsEditor || !wc) return;
@@ -3618,7 +3790,670 @@ function renderHistoryTab() {
             }
         });
 
-                // === DICA DO DIA ===
+        
+
+
+        // ===================== MIND MAP ENGINE =====================
+        const MM_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+        let mmNodes = [], mmLinks = [], mmNextId = 1, mmSelectedId = null, mmEditingId = null;
+        let mmDragging = null, mmDragOffX = 0, mmDragOffY = 0;
+        let mmSvg, mmLinksG, mmNodesG, mmWrap, mmPanG;
+        let mmPanX = 0, mmPanY = 0, mmIsPanning = false, mmPanStartX = 0, mmPanStartY = 0;
+        let mmLastClickId = null, mmLastClickTime = 0;
+
+        function openMindmapEditor() {
+            document.getElementById('mindmap-modal').classList.remove('hidden');
+            mmSvg    = document.getElementById('mm-svg');
+            mmLinksG = document.getElementById('mm-links');
+            mmNodesG = document.getElementById('mm-nodes');
+            mmPanG   = document.getElementById('mm-pan-group');
+            mmWrap   = document.getElementById('mm-canvas-wrap');
+            if (mmNodes.length === 0) mmInitDefault();
+            mmRender();
+            // color swatches
+            const sw = document.getElementById('mm-color-swatches');
+            sw.innerHTML = MM_COLORS.map(c =>
+                `<span onclick="mmSetColor('${c}')" style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${c};cursor:pointer;border:2px solid transparent;" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='transparent'"></span>`
+            ).join('');
+            // icon picker button
+            const esw = document.getElementById('mm-emoji-swatches');
+            esw.innerHTML = `<button onclick="mmOpenIconPicker()" style="cursor:pointer;font-size:11px;background:#1e3a5f;color:#7dd3fc;border:1px solid #3b82f6;border-radius:6px;padding:2px 8px;font-weight:700;">🎨 Escolher ícone</button>`;
+            // SVG events
+            mmSvg.onmousedown = mmOnSvgMouseDown;
+            mmSvg.onmousemove = mmOnMouseMove;
+            mmSvg.onmouseup   = mmOnMouseUp;
+            mmSvg.addEventListener('mouseleave', mmOnMouseUp);
+            document.addEventListener('keydown', mmOnKey);
+        }
+
+        function closeMindmapEditor() {
+            document.getElementById('mindmap-modal').classList.add('hidden');
+            document.removeEventListener('keydown', mmOnKey);
+            mmEditingId = null;
+        }
+
+        function mmInitDefault() {
+            mmNodes = []; mmLinks = []; mmNextId = 1; mmSelectedId = null;
+            const cx = 560, cy = 340;
+            mmAddNode(null, 'Tema Central', cx, cy, '#facc15', 18, true);
+            const branches = [
+                {label:'Ideia 1', dx:-220, dy:-140, color:'#3b82f6'},
+                {label:'Ideia 2', dx: 220, dy:-140, color:'#10b981'},
+                {label:'Ideia 3', dx:-220, dy: 140, color:'#f59e0b'},
+                {label:'Ideia 4', dx: 220, dy: 140, color:'#ef4444'},
+            ];
+            branches.forEach(b => {
+                const id = mmAddNode(1, b.label, cx+b.dx, cy+b.dy, b.color, 14);
+                mmAddNode(id, 'Sub-ideia', cx+b.dx+(b.dx>0?130:-130), cy+b.dy, b.color, 12);
+            });
+        }
+
+        function mmAddNode(parentId, label, x, y, color, fontSize, isRoot) {
+            const id = mmNextId++;
+            mmNodes.push({id, parentId, label: label||'Novo nó', x: x||300, y: y||200,
+                color: color || MM_COLORS[(id-1) % MM_COLORS.length],
+                fontSize: fontSize||13, isRoot: !!isRoot});
+            if (parentId) mmLinks.push({from: parentId, to: id});
+            return id;
+        }
+
+        function mmRender() {
+            if (!mmLinksG) return;
+            // Close any open edit field
+            const openFo = document.getElementById('mm-edit-fo');
+            if (openFo && !mmEditingId) openFo.remove();
+            // Apply pan transform
+            if (mmPanG) mmPanG.setAttribute('transform', `translate(${mmPanX},${mmPanY})`);
+            mmLinksG.innerHTML = '';
+            mmNodesG.innerHTML = '';
+            // Draw links (curved)
+            mmLinks.forEach(lk => {
+                const from = mmNodes.find(n=>n.id===lk.from);
+                const to   = mmNodes.find(n=>n.id===lk.to);
+                if (!from||!to) return;
+                const mx = (from.x+to.x)/2;
+                const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+                path.setAttribute('d', `M${from.x},${from.y} C${mx},${from.y} ${mx},${to.y} ${to.x},${to.y}`);
+                path.setAttribute('fill','none');
+                path.setAttribute('stroke', to.color || '#3b82f6');
+                path.setAttribute('stroke-width','2.5');
+                path.setAttribute('stroke-linecap','round');
+                path.setAttribute('opacity','0.7');
+                mmLinksG.appendChild(path);
+            });
+            // Draw nodes
+            mmNodes.forEach(n => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+                g.setAttribute('transform',`translate(${n.x},${n.y})`);
+                g.style.cursor = 'pointer';
+
+                // Measure text
+                const pad = n.isRoot ? 20 : 14;
+                const charW = (n.fontSize||13) * 0.6;
+                const rw = Math.max(60, n.label.length * charW + pad*2);
+                const rh = n.isRoot ? 44 : 32;
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                rect.setAttribute('x', -rw/2); rect.setAttribute('y', -rh/2);
+                rect.setAttribute('width', rw); rect.setAttribute('height', rh);
+                rect.setAttribute('rx', n.isRoot ? 22 : 16);
+                rect.setAttribute('fill', n.isRoot ? n.color : 'rgba(13,21,48,0.9)');
+                rect.setAttribute('stroke', n.color);
+                rect.setAttribute('stroke-width', n.isRoot ? 3 : 2);
+                if (n.id === mmSelectedId) {
+                    rect.setAttribute('filter','url(#mm-glow)');
+                    rect.setAttribute('stroke-width', n.isRoot ? 4 : 3);
+                }
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+                text.setAttribute('text-anchor','middle');
+                text.setAttribute('dominant-baseline','middle');
+                text.setAttribute('fill', n.isRoot ? '#0f172a' : n.color);
+                text.setAttribute('font-size', n.fontSize||13);
+                text.setAttribute('font-weight', n.isRoot ? '900' : '700');
+                text.setAttribute('font-family', 'system-ui, sans-serif');
+                text.setAttribute('pointer-events','none');
+                text.textContent = n.label;
+
+                g.appendChild(rect); g.appendChild(text);
+                g.addEventListener('mousedown', e => { e.stopPropagation(); mmStartDrag(e, n); });
+                mmNodesG.appendChild(g);
+            });
+        }
+
+        function mmStartDrag(e, n) {
+            const now = Date.now();
+            const isDbl = (now - mmLastClickTime < 300 && mmLastClickId === n.id);
+            mmLastClickTime = now;
+            mmLastClickId = n.id;
+
+            if (isDbl) {
+                // Double click detected before DOM is rebuilt — edit immediately
+                mmLastClickId = null;
+                mmSelect(n.id);
+                mmStartEdit(n);
+                return; // don't start dragging
+            }
+
+            mmSelect(n.id);
+            mmDragging = n;
+            const svgRect = mmSvg.getBoundingClientRect();
+            mmDragOffX = e.clientX - svgRect.left - n.x - mmPanX;
+            mmDragOffY = e.clientY - svgRect.top  - n.y - mmPanY;
+        }
+
+        function mmOnSvgMouseDown(e) {
+            // Only pan when clicking the SVG background (not a node)
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'svg' || tag === 'g' && e.target.id === 'mm-pan-group') {
+                mmSelect(null);
+                mmIsPanning = true;
+                mmPanStartX = e.clientX - mmPanX;
+                mmPanStartY = e.clientY - mmPanY;
+                mmSvg.style.cursor = 'grabbing';
+            }
+        }
+
+        function mmOnMouseMove(e) {
+            if (mmDragging) {
+                const svgRect = mmSvg.getBoundingClientRect();
+                mmDragging.x = e.clientX - svgRect.left - mmDragOffX - mmPanX;
+                mmDragging.y = e.clientY - svgRect.top  - mmDragOffY - mmPanY;
+                mmRender();
+            } else if (mmIsPanning) {
+                mmPanX = e.clientX - mmPanStartX;
+                mmPanY = e.clientY - mmPanStartY;
+                if (mmPanG) mmPanG.setAttribute('transform', `translate(${mmPanX},${mmPanY})`);
+            }
+        }
+
+        function mmOnMouseUp() {
+            mmDragging = null;
+            mmIsPanning = false;
+            if (mmSvg) mmSvg.style.cursor = 'default';
+        }
+
+        function mmSelect(id) {
+            mmSelectedId = id;
+            mmRender();
+        }
+
+        function mmStartEdit(n) {
+            // Remove any existing edit foreignObject
+            const old = document.getElementById('mm-edit-fo');
+            if (old) old.remove();
+
+            mmEditingId = n.id;
+            const charW = (n.fontSize || 13) * 0.62;
+            const rw = Math.max(140, n.label.length * charW + 50);
+            const rh = 38;
+
+            // Use foreignObject INSIDE the SVG (outside pan group so coords are absolute SVG space)
+            const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+            fo.id = 'mm-edit-fo';
+            // Position in SVG space = node data coords + pan offset
+            fo.setAttribute('x',      n.x + mmPanX - rw / 2);
+            fo.setAttribute('y',      n.y + mmPanY - rh / 2);
+            fo.setAttribute('width',  rw);
+            fo.setAttribute('height', rh + 4);
+
+            const inp = document.createElement('input');
+            inp.value = n.label;
+            inp.style.cssText = `
+                display:block; width:100%; height:${rh}px; box-sizing:border-box;
+                text-align:center; font-weight:700; font-size:${n.fontSize || 13}px;
+                background:${n.isRoot ? n.color : '#1e3a5f'};
+                color:${n.isRoot ? '#0f172a' : '#fff'};
+                border:none; border-radius:10px;
+                outline:3px solid ${n.color};
+                box-shadow:0 4px 24px rgba(0,0,0,0.8);
+                padding:0 10px; cursor:text;
+            `;
+            fo.appendChild(inp);
+            mmSvg.appendChild(fo); // append to SVG root (not pan group)
+
+            // Small delay so the element is in DOM before focus
+            requestAnimationFrame(() => { inp.focus(); inp.select(); });
+
+            const finish = () => {
+                const val = inp.value.trim();
+                if (val) n.label = val;
+                fo.remove();
+                mmEditingId = null;
+                mmRender();
+            };
+            inp.addEventListener('blur',    finish);
+            inp.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); inp.removeEventListener('blur', finish); finish(); }
+            });
+        }
+
+        function mmAddChild(parentId) {
+            if (!parentId) parentId = 1;
+            const parent = mmNodes.find(n=>n.id===parentId);
+            if (!parent) return;
+            const children = mmNodes.filter(n=>n.parentId===parentId);
+            const angle = children.length % 2 === 0 ? -1 : 1;
+            const dist = 180 + children.length * 10;
+            const x = parent.x + (parent.isRoot ? dist * (children.length%2===0?-1:1) : (parent.x > 560 ? 180 : -180));
+            const y = parent.y + angle * (60 + children.length * 30);
+            const color = parent.isRoot ? MM_COLORS[children.length % MM_COLORS.length] : parent.color;
+            const id = mmAddNode(parentId, 'Novo nó', x, y, color, 13);
+            mmSelect(id);
+            mmRender();
+            setTimeout(() => { const n = mmNodes.find(n=>n.id===id); if(n) { mmLastClickId=null; mmStartEdit(n); } }, 50);
+        }
+
+        function mmAddSibling(id) {
+            const n = mmNodes.find(n=>n.id===id);
+            if (!n || !n.parentId) { mmAddChild(id); return; }
+            const parent = mmNodes.find(p=>p.id===n.parentId);
+            const siblings = mmNodes.filter(s=>s.parentId===n.parentId);
+            const newId = mmAddNode(n.parentId, 'Novo nó', n.x, n.y+50, n.color, n.fontSize);
+            mmSelect(newId);
+            mmRender();
+            setTimeout(() => { const nn = mmNodes.find(nn=>nn.id===newId); if(nn) { mmLastClickId=null; mmStartEdit(nn); } }, 50);
+        }
+
+        function mmDeleteNode(id) {
+            if (!id || id===1) return;
+            // Remove node and all descendants
+            const toRemove = new Set();
+            const collect = (nid) => {
+                toRemove.add(nid);
+                mmNodes.filter(n=>n.parentId===nid).forEach(n=>collect(n.id));
+            };
+            collect(id);
+            mmNodes  = mmNodes.filter(n=>!toRemove.has(n.id));
+            mmLinks  = mmLinks.filter(l=>!toRemove.has(l.from)&&!toRemove.has(l.to));
+            mmSelect(null);
+        }
+
+        function mmSetColor(color) {
+            const n = mmNodes.find(n=>n.id===mmSelectedId);
+            if (!n) return;
+            n.color = color;
+            mmRender();
+        }
+
+        function mmAddEmoji(em) {
+            const n = mmNodes.find(n=>n.id===mmSelectedId);
+            if (!n) { showAlert('Selecione um nó primeiro!'); return; }
+            // Prepend emoji if not already there
+            if (!n.label.startsWith(em)) n.label = em + ' ' + n.label;
+            else n.label = n.label.replace(em + ' ', '');
+            mmRender();
+        }
+        window.mmAddEmoji = mmAddEmoji;
+
+        function mmOnKey(e) {
+            const active = document.activeElement;
+            if (active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')) return;
+            if (!document.getElementById('mindmap-modal').classList.contains('hidden')) {
+                if (e.key==='Tab')    { e.preventDefault(); mmAddChild(mmSelectedId||1); }
+                if (e.key==='Enter')  { e.preventDefault(); mmAddSibling(mmSelectedId||1); }
+                if (e.key==='Delete'||e.key==='Backspace') { e.preventDefault(); mmDeleteNode(mmSelectedId); }
+            }
+        }
+
+        function mmExportToEditor() {
+            const svgEl = document.getElementById('mm-svg');
+            // Get bounding box of all nodes
+            let minX=9999,minY=9999,maxX=-9999,maxY=-9999;
+            mmNodes.forEach(n=>{
+                const charW=(n.fontSize||13)*0.62;
+                const rw=Math.max(60,n.label.length*charW+28);
+                const rh=n.isRoot?44:32;
+                minX=Math.min(minX,n.x-rw/2-10);
+                minY=Math.min(minY,n.y-rh/2-10);
+                maxX=Math.max(maxX,n.x+rw/2+10);
+                maxY=Math.max(maxY,n.y+rh/2+10);
+            });
+            const pad=40, vw=maxX-minX+pad*2, vh=maxY-minY+pad*2;
+            // Rebuild SVG as a self-contained string (no live references)
+            let linksSVG='', nodesSVG='';
+            mmLinks.forEach(lk=>{
+                const from=mmNodes.find(n=>n.id===lk.from), to=mmNodes.find(n=>n.id===lk.to);
+                if(!from||!to) return;
+                const mx=(from.x+to.x)/2;
+                linksSVG+=`<path d="M${from.x},${from.y} C${mx},${from.y} ${mx},${to.y} ${to.x},${to.y}" fill="none" stroke="${to.color||'#3b82f6'}" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>`;
+            });
+            mmNodes.forEach(n=>{
+                const charW=(n.fontSize||13)*0.62;
+                const rw=Math.max(60,n.label.length*charW+28);
+                const rh=n.isRoot?44:32;
+                const rx=n.isRoot?22:16;
+                const fill=n.isRoot?n.color:'rgba(13,21,48,0.95)';
+                const textColor=n.isRoot?'#0f172a':n.color;
+                const sw=n.isRoot?3:2;
+                nodesSVG+=`<g transform="translate(${n.x},${n.y})">
+  <rect x="${-rw/2}" y="${-rh/2}" width="${rw}" height="${rh}" rx="${rx}" fill="${fill}" stroke="${n.color}" stroke-width="${sw}"/>
+  <text text-anchor="middle" dominant-baseline="middle" fill="${textColor}" font-size="${n.fontSize||13}" font-weight="${n.isRoot?900:700}" font-family="system-ui,sans-serif">${n.label.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>
+</g>`;
+            });
+            const title = document.getElementById('mm-title').value || 'Mapa Mental';
+            // Set aspect ratio preserving height
+            const aspectH = Math.round(vh / vw * 100);
+            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" style="width:100%;height:auto;display:block;min-height:${Math.min(vh,400)}px;"><g>${linksSVG}</g><g>${nodesSVG}</g></svg>`;
+            const html = `<div contenteditable="false" style="margin:24px 0;border:2px solid #3b82f6;border-radius:16px;padding:16px;background:#0a0f1e;"><p style="text-align:center;font-weight:900;color:#fbbf24;font-size:15px;margin:0 0 10px;">🧠 ${title}</p>${svgStr}</div><p><br></p>`;
+            insertHTMLAtCursor(html);
+            closeMindmapEditor();
+        }
+
+        window.openMindmapEditor = openMindmapEditor;
+        window.closeMindmapEditor = closeMindmapEditor;
+        window.mmAddChild = mmAddChild;
+        window.mmDeleteNode = mmDeleteNode;
+        window.mmSetColor = mmSetColor;
+        window.mmExportToEditor = mmExportToEditor;
+
+        // ── ICON PICKER ──────────────────────────────────────────────
+        const MM_ICON_CATS = {
+            '🚔 PRF & Segurança': ['🚔','🚓','👮','🛡️','🔫','⚠️','🚨','🔒','🔑','📋','🗺️','🛣️','🚦','🚧','⛽','🅿️','📡','🔎','🧾','📌'],
+            '🚗 Veículos':        ['🚗','🚕','🚙','🏎️','🚐','🛻','🚑','🚒','🚌','🚎','🛺','🏍️','🚲','🛵','✈️','🚁','⛵','🚢','🚂','🚀'],
+            '📊 Planejamento':    ['📊','📈','📉','🎯','🏆','✅','❌','⭐','💡','🧠','📝','📖','📐','📏','🗂️','💼','🔬','🔭','📌','🖊️'],
+            '⚖️ Direito & Lei':   ['⚖️','📜','🏛️','📚','🔏','📃','🖋️','⚡','🏅','🎖️','📑','🗳️','📯','🔔','🕊️','🤝','💬','📢','📣','🗣️'],
+            '📅 Tempo & Metas':   ['📅','🕐','⏱️','⏰','🗓️','📆','⌛','🔄','♻️','📌','🏁','🚀','🔥','💥','✨','🌟','🌈','🎉','🎊','🥇'],
+            '📡 Tecnologia':      ['💻','🖥️','📱','⌨️','🖱️','📡','🔋','💾','🖨️','📷','🔌','🧲','⚙️','🔧','🔩','🛠️','📟','📠','🎙️','🔊'],
+        };
+
+        function mmOpenIconPicker() {
+            const existing = document.getElementById('mm-icon-picker-modal');
+            if (existing) { existing.remove(); return; }
+            const overlay = document.createElement('div');
+            overlay.id = 'mm-icon-picker-modal';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);';
+            const box = document.createElement('div');
+            box.style.cssText = 'background:#0d1530;border:1px solid #3b82f6;border-radius:16px;padding:20px;width:480px;max-width:95vw;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.8);';
+            let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <span style="color:#fbbf24;font-weight:900;font-size:14px;">🎨 Escolher Ícone para o Nó</span>
+              <button onclick="document.getElementById('mm-icon-picker-modal').remove()" style="background:#1e3a5f;color:#94a3b8;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
+            </div>`;
+            for (const [cat, icons] of Object.entries(MM_ICON_CATS)) {
+                html += `<div style="margin-bottom:12px;">
+                  <div style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${cat}</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+                icons.forEach(em => {
+                    html += `<button onclick="mmPickIcon('${em}')" style="width:36px;height:36px;background:#1e3a5f;border:1px solid #3b5f8a;border-radius:8px;font-size:20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#3b82f6';this.style.transform='scale(1.2)'" onmouseout="this.style.background='#1e3a5f';this.style.transform='scale(1)'" title="${em}">${em}</button>`;
+                });
+                html += `</div></div>`;
+            }
+            html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #1e3a5f;display:flex;gap:8px;justify-content:flex-end;">
+              <button onclick="mmPickIcon('')" style="padding:6px 14px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Remover ícone</button>
+            </div>`;
+            box.innerHTML = html;
+            overlay.appendChild(box);
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+            document.body.appendChild(overlay);
+        }
+
+        function mmPickIcon(em) {
+            document.getElementById('mm-icon-picker-modal')?.remove();
+            const n = mmNodes.find(n=>n.id===mmSelectedId);
+            if (!n) { if(em) showAlert('Selecione um nó primeiro!'); return; }
+            // Strip any existing leading icon (emoji = unicode > 127)
+            n.label = n.label.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FEFF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}-\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}-\u{26AB}\u{26BD}-\u{26BE}\u{26C4}-\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}-\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}\u{2712}\u{2714}\u{2716}\u{271D}\u{2721}\u{2728}\u{2733}-\u{2734}\u{2744}\u{2747}\u{274C}\u{274E}\u{2753}-\u{2755}\u{2757}\u{2763}-\u{2764}\u{2795}-\u{2797}\u{27A1}\u{27B0}\u{27BF}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{2B50}\u{2B55}\u{3030}\u{303D}\u{3297}\u{3299}] /u, '').trim();
+            if (em) n.label = em + ' ' + n.label;
+            mmRender();
+        }
+
+        function mmResetPan() {
+            mmPanX = 0; mmPanY = 0;
+            if (mmPanG) mmPanG.setAttribute('transform', 'translate(0,0)');
+        }
+
+        window.mmOpenIconPicker = mmOpenIconPicker;
+        window.mmPickIcon = mmPickIcon;
+        window.mmResetPan = mmResetPan;
+
+        // === COLOR PALETTE ===
+        const CP_COLORS = [
+            // Row 1 — dark tones
+            '#000000','#1a1a2e','#16213e','#0f3460','#533483','#2b2d42','#1b1b2f','#212121',
+            // Row 2 — medium tones
+            '#374151','#1e40af','#1d4ed8','#2563eb','#7c3aed','#9333ea','#be185d','#991b1b',
+            // Row 3 — vivid
+            '#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#ef4444','#f97316','#eab308',
+            // Row 4 — lighter vivid
+            '#22d3ee','#34d399','#4ade80','#a3e635','#fbbf24','#fb923c','#f87171','#f472b6',
+            // Row 5 — pastels
+            '#bfdbfe','#c7d2fe','#ddd6fe','#fbcfe8','#fecaca','#fed7aa','#fef08a','#d9f99d',
+            // Row 6 — whites & grays
+            '#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1','#94a3b8','#64748b','#475569','#ffffff',
+        ];
+        let _cpMode = 'foreColor';
+        let _cpRecentColors = [];
+        let _cpOpen = false;
+
+        function buildCpGrid() {
+            const grid = document.getElementById('cp-grid');
+            grid.innerHTML = CP_COLORS.map(c =>
+                `<div class="cp-swatch" style="background:${c};" title="${c}" onclick="pickColor('${c}')"></div>`
+            ).join('');
+        }
+
+        function updateCpRecent() {
+            const el = document.getElementById('cp-recent');
+            if (!el) return;
+            el.innerHTML = _cpRecentColors.slice(0,8).map(c =>
+                `<div class="cp-swatch" style="background:${c};" title="${c}" onclick="pickColor('${c}')"></div>`
+            ).join('') || '<span style="font-size:10px;color:#475569;">Nenhuma ainda</span>';
+        }
+
+        function openColorPalette(e, mode) {
+            e.stopPropagation();
+            e.preventDefault();
+            saveSelection();
+            _cpMode = mode;
+            const popup = document.getElementById('color-palette-popup');
+            const label = document.getElementById('cp-popup-label');
+            label.innerText = mode === 'foreColor' ? 'Cor da Letra' : 'Cor de Fundo';
+            buildCpGrid();
+            updateCpRecent();
+
+            // Position near button
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pw = 196, ph = 220;
+            let left = rect.left;
+            let top = rect.bottom + 6;
+            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+            if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.classList.add('open');
+            _cpOpen = true;
+
+            // Custom color input
+            const customInput = document.getElementById('cp-custom-input');
+            customInput.oninput = () => pickColor(customInput.value);
+        }
+
+        function pickColor(hex) {
+            restoreSelection();
+            document.execCommand(_cpMode, false, hex);
+            saveSelection();
+            if (typeof saveActiveSummary === 'function') saveActiveSummary();
+            // Update the color bar in the trigger button
+            if (_cpMode === 'foreColor') {
+                document.querySelectorAll('#cp-bar-fore').forEach(el => el.style.background = hex);
+            } else {
+                document.querySelectorAll('#cp-bar-back').forEach(el => el.style.background = hex);
+            }
+            // Track recent
+            _cpRecentColors = [hex, ..._cpRecentColors.filter(c => c !== hex)].slice(0, 8);
+            closeColorPalette();
+        }
+
+        function closeColorPalette() {
+            const popup = document.getElementById('color-palette-popup');
+            if (popup) popup.classList.remove('open');
+            _cpOpen = false;
+        }
+
+        document.addEventListener('mousedown', e => {
+            if (_cpOpen) {
+                const popup = document.getElementById('color-palette-popup');
+                if (popup && !popup.contains(e.target)) closeColorPalette();
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && _cpOpen) closeColorPalette();
+        });
+
+        window.openColorPalette = openColorPalette;
+        window.pickColor = pickColor;
+
+        // === FLOATING SELECTION TOOLBAR ===
+        let _stSavedRange = null;
+
+        function _getEditorEl() {
+            // Returns whichever editor is currently active
+            const ws = document.getElementById('active-summary-workspace');
+            if (ws && ws.classList.contains('workspace-fullscreen')) return document.getElementById('summary-editor-canvas');
+            return document.getElementById('summary-editor-canvas');
+        }
+
+        function showSelectionToolbar(x, y) {
+            const tb = document.getElementById('selection-toolbar');
+            if (!tb) return;
+            tb.classList.add('visible');
+            // Position above the selection
+            const tbW = 380, tbH = 44;
+            let left = x - tbW / 2;
+            left = Math.max(8, Math.min(left, window.innerWidth - tbW - 8));
+            let top = y - tbH - 12;
+            if (top < 8) top = y + 20;
+            tb.style.left = left + 'px';
+            tb.style.top  = top  + 'px';
+        }
+
+        function hideSelectionToolbar() {
+            const tb = document.getElementById('selection-toolbar');
+            if (tb) tb.classList.remove('visible');
+        }
+
+        function stCmd(cmd, val) {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus();
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            document.execCommand(cmd, false, val || null);
+            if (typeof saveActiveSummary === 'function') saveActiveSummary();
+        }
+
+        function stHighlight(type) {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            if (!_stSavedRange) { showAlert('Selecione um texto!'); return; }
+            canvas.focus();
+            // Restore saved selection directly
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(_stSavedRange);
+
+            // Apply highlight manually (bypass applyStudyHighlight which calls restoreSelection)
+            let bgColor = '', color = '#ffffff';
+            switch(type) {
+                case 'red':    bgColor = '#ef4444'; break;
+                case 'yellow': bgColor = '#facc15'; color = '#1e293b'; break;
+                case 'green':  bgColor = '#10b981'; break;
+                case 'blue':   bgColor = '#3b82f6'; break;
+                case 'purple': bgColor = '#a855f7'; break;
+                case 'orange': bgColor = '#f97316'; break;
+            }
+            const span = document.createElement('span');
+            span.style.backgroundColor = bgColor;
+            span.style.color = color;
+            span.style.padding = '2px 4px';
+            span.style.borderRadius = '4px';
+            span.className = 'study-hl hl-' + type;
+            const range = sel.getRangeAt(0);
+            span.appendChild(range.extractContents());
+            range.insertNode(span);
+            const newRange = document.createRange();
+            newRange.setStartAfter(span); newRange.collapse(true);
+            sel.removeAllRanges(); sel.addRange(newRange);
+            savedRange = newRange.cloneRange();
+            if (typeof saveActiveSummary === 'function') saveActiveSummary();
+            hideSelectionToolbar();
+        }
+
+        function stInsertAlert() {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus();
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            insertAlertBox();
+            hideSelectionToolbar();
+        }
+
+        function stInsertObs() {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus();
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            insertObsBox();
+            hideSelectionToolbar();
+        }
+
+        // Listen for selections inside the editor
+        document.addEventListener('mouseup', e => {
+            // Small delay so selection is finalised
+            setTimeout(() => {
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+                    hideSelectionToolbar();
+                    return;
+                }
+                // Only show if selection is inside an editor
+                const canvas = document.getElementById('summary-editor-canvas');
+                const range = sel.getRangeAt(0);
+                if (!canvas || !canvas.contains(range.commonAncestorContainer)) {
+                    hideSelectionToolbar();
+                    return;
+                }
+                _stSavedRange = range.cloneRange();
+                // Position at top-center of selection
+                const rect = range.getBoundingClientRect();
+                showSelectionToolbar(
+                    rect.left + rect.width / 2,
+                    rect.top + window.scrollY
+                );
+            }, 10);
+        });
+
+        // Hide on click outside toolbar
+        document.addEventListener('mousedown', e => {
+            const tb = document.getElementById('selection-toolbar');
+            if (tb && !tb.contains(e.target)) {
+                hideSelectionToolbar();
+            }
+        });
+
+        // Prevent toolbar buttons from stealing selection
+        document.getElementById('selection-toolbar') && document.getElementById('selection-toolbar').addEventListener('mousedown', e => {
+            e.preventDefault();
+        });
+
+        // Hide on Escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') hideSelectionToolbar();
+        });
+
+        // === DICA DO DIA ===
         const dailyTips = [
             "Mapeie os seus erros. Se errou uma questão de trânsito ou direito constitucional hoje, não fique desanimado. Isso é um sinal brilhante de onde o seu conhecimento está falho.",
             "Use a técnica do espaçamento: revise uma matéria 1 dia depois, depois 7 dias, depois 30 dias. Isso fixa o conteúdo na memória de longo prazo.",
@@ -3728,14 +4563,14 @@ function renderHistoryTab() {
         }
 
         window.generateTextSyncCode = generateTextSyncCode; window.openImportModal = openImportModal; window.closeImportModal = closeImportModal; window.importManualCodeFromModal = importManualCodeFromModal;
-        window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar; window.smartSyncNow = smartSyncNow; window.loadFromCloud = loadFromCloud;
+        window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar; window.stCmd = stCmd; window.stHighlight = stHighlight; window.stInsertAlert = stInsertAlert; window.stInsertObs = stInsertObs; window.smartSyncNow = smartSyncNow; window.loadFromCloud = loadFromCloud;
         window.filterEditalSubject = filterEditalSubject; window.updateTopicStatus = updateTopicStatus; window.deleteSubject = deleteSubject; window.deleteTopic = deleteTopic;
         window.openAddTopicModal = openAddTopicModal; window.closeAddTopicModal = closeAddTopicModal; window.toggleNewSubjectInput = toggleNewSubjectInput; window.saveCustomTopic = saveCustomTopic;
         window.openRenameSubjectModal = openRenameSubjectModal; window.closeRenameSubjectModal = closeRenameSubjectModal; window.saveRenamedSubject = saveRenamedSubject;
         window.openRenameTopicModal = openRenameTopicModal; window.closeRenameTopicModal = closeRenameTopicModal; window.saveRenamedTopic = saveRenamedTopic;
         window.resetCycleProgress = resetCycleProgress; window.startSpecificCycleStep = startSpecificCycleStep; window.startNextCycleSubject = startNextCycleSubject;
         window.openConfigureCycleModal = openConfigureCycleModal; window.addSubjectToCycleConfig = addSubjectToCycleConfig; window.saveCycleConfig = saveCycleConfig; window.closeConfigureCycleModal = closeConfigureCycleModal;
-        window.saveScratchpad = saveScratchpad; window.loginWithEmail = loginWithEmail; window.registerWithEmail = registerWithEmail; window.logoutEmail = logoutEmail; window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar;
+        window.saveScratchpad = saveScratchpad; window.loginWithEmail = loginWithEmail; window.registerWithEmail = registerWithEmail; window.logoutEmail = logoutEmail; window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar; window.stCmd = stCmd; window.stHighlight = stHighlight; window.stInsertAlert = stInsertAlert; window.stInsertObs = stInsertObs;
         window.switchAuthTab = switchAuthTab; window.loadFromCloud = loadFromCloud; window.generateEncryptedSyncCode = generateEncryptedSyncCode;
     </script>
 
@@ -3784,11 +4619,11 @@ function renderHistoryTab() {
                 <div class="w-px h-6 bg-blue-900 mx-1"></div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
                     <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('foreColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
                     <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('backColor', this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="w-px h-6 bg-blue-900 mx-1"></div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-blue-800/40">
@@ -3877,11 +4712,11 @@ function renderHistoryTab() {
                 <!-- Cores -->
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
                     <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('foreColor',this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
                     <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <input type="color" oninput="execCmd('backColor',this.value)" class="w-5 h-5 bg-transparent border-0 cursor-pointer p-0">
+                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="w-px h-5 bg-blue-900 mx-1"></div>
                 <!-- Marcadores -->
@@ -3959,6 +4794,97 @@ function renderHistoryTab() {
             <span class="text-[10px] text-gray-600"><i class="fa-solid fa-keyboard mr-1"></i> <kbd class="bg-white/10 text-gray-400 px-1 rounded text-[9px]">Esc</kbd> sair &nbsp;·&nbsp; Mova o mouse ao topo para a barra</span>
             <span id="fs-word-count" class="text-[10px] text-gray-600">0 palavras</span>
             <span id="fs-save-indicator" class="text-[10px] text-emerald-500 font-bold w-20 text-right"></span>
+        </div>
+    </div>
+
+    <!-- FLOATING SELECTION TOOLBAR -->
+    <div id="selection-toolbar" role="toolbar" aria-label="Formatação rápida">
+        <!-- Negrito / Itálico / Sublinhado / Tachado -->
+        <button onmousedown="e=>{e.preventDefault();}" onclick="stCmd('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
+        <button onclick="stCmd('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
+        <button onclick="stCmd('underline')" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
+        <button onclick="stCmd('strikeThrough')" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
+        <div class="st-sep"></div>
+        <!-- Marcadores -->
+        <div title="Amarelo" class="st-mark" style="background:#facc15;" onclick="stHighlight('yellow')"></div>
+        <div title="Vermelho" class="st-mark" style="background:#ef4444;" onclick="stHighlight('red')"></div>
+        <div title="Verde" class="st-mark" style="background:#10b981;" onclick="stHighlight('green')"></div>
+        <div title="Azul" class="st-mark" style="background:#3b82f6;" onclick="stHighlight('blue')"></div>
+        <div title="Roxo" class="st-mark" style="background:#a855f7;" onclick="stHighlight('purple')"></div>
+        <div title="Laranja" class="st-mark" style="background:#f97316;" onclick="stHighlight('orange')"></div>
+        <div class="st-sep"></div>
+        <!-- Caixa de Alerta e Observação -->
+        <button onclick="stInsertAlert()" title="Caixa de Atenção" style="color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></button>
+        <button onclick="stInsertObs()" title="Caixa de Observação" style="color:#fbbf24;"><i class="fa-solid fa-thumbtack"></i></button>
+        <div class="st-sep"></div>
+        <!-- Tamanho -->
+        <button onclick="stCmd('fontSize','2')" title="Texto Pequeno" style="font-size:9px;font-weight:bold;">A</button>
+        <button onclick="stCmd('fontSize','3')" title="Texto Normal" style="font-size:11px;font-weight:bold;">A</button>
+        <button onclick="stCmd('fontSize','5')" title="Título" style="font-size:14px;font-weight:bold;">A</button>
+        <div class="st-sep"></div>
+        <!-- Limpar formatação -->
+        <button onclick="stCmd('removeFormat')" title="Limpar formatação" style="color:#94a3b8;"><i class="fa-solid fa-eraser"></i></button>
+    </div>
+
+
+    <!-- COLOR PALETTE POPUP -->
+    <div id="color-palette-popup" class="color-palette-popup" onmousedown="event.preventDefault()">
+        <div class="cp-label" id="cp-popup-label">Cor da Letra</div>
+        <div class="cp-grid" id="cp-grid"></div>
+        <div style="height:1px;background:rgba(255,255,255,0.08);margin:2px 0;"></div>
+        <div>
+            <div class="cp-label">Recentes</div>
+            <div class="cp-recent" id="cp-recent"></div>
+        </div>
+        <div class="cp-custom">
+            <input type="color" id="cp-custom-input" title="Cor personalizada">
+            <span>Cor personalizada</span>
+        </div>
+    </div>
+
+    <!-- MIND MAP EDITOR MODAL -->
+    <div id="mindmap-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center" style="background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
+        <div class="flex flex-col rounded-2xl border border-blue-800 shadow-2xl overflow-hidden" style="width:96vw;max-width:1200px;height:90vh;background:#0a0f1e;">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3 border-b border-blue-900" style="background:#0d1530;">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-diagram-project text-yellow-400"></i>
+                    <span class="font-black text-white text-sm">Editor de Mapa Mental</span>
+                    <input id="mm-title" placeholder="Título do mapa..." value="Meu Mapa Mental"
+                        class="ml-4 bg-transparent border-b border-blue-700 text-white text-sm font-bold focus:outline-none focus:border-yellow-400 px-1 w-48">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="mmAddChild(mmSelectedId)" title="Adicionar filho (Tab)" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Nó</button>
+                    <button onclick="mmDeleteNode(mmSelectedId)" title="Excluir nó (Del)" class="px-3 py-1.5 bg-red-800/60 hover:bg-red-700 text-red-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="mmResetPan()" title="Centralizar mapa" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-crosshairs"></i> Centralizar</button>
+                    <button onclick="mmExportToEditor()" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 rounded-lg text-xs font-black transition flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Inserir no Resumo</button>
+                    <button onclick="closeMindmapEditor()" class="w-8 h-8 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <!-- Hint bar -->
+            <div class="flex flex-wrap items-center gap-3 px-4 py-2 text-[10px] text-gray-600 border-b border-blue-950" style="background:#080d1c;">
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Clique</kbd> selecionar</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">2× clique</kbd> editar</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Tab</kbd> filho</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Enter</kbd> irmão</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Del</kbd> excluir</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste nó</kbd> mover</span>
+                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste fundo</kbd> pan</span>
+                <span class="flex items-center gap-1">Cor: <span id="mm-color-swatches" class="inline-flex gap-1 ml-1"></span></span>
+                <span class="flex items-center gap-1">Ícone: <span id="mm-emoji-swatches" class="inline-flex gap-1 ml-1 flex-wrap max-w-xs"></span></span>
+            </div>
+            <!-- Canvas -->
+            <div class="flex-1 relative overflow-hidden" id="mm-canvas-wrap">
+                <svg id="mm-svg" width="100%" height="100%" style="position:absolute;inset:0;cursor:default;">
+                    <defs>
+                        <filter id="mm-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <g id="mm-pan-group">
+                        <g id="mm-links"></g>
+                        <g id="mm-nodes"></g>
+                    </g>
+                </svg>
+            </div>
         </div>
     </div>
 
