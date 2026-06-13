@@ -1690,23 +1690,206 @@
         }
 
         // === 2. EDITAL VERTICALIZADO COMPONENT ===
+        // ── Edital search filter state ──
+        let _editalActiveFilter = 'all';
+
         function renderSyllabusTab() {
             const filterContainer = document.getElementById('edital-subject-filters');
             if (filterContainer) {
+                filterContainer.className = 'relative';
                 filterContainer.innerHTML = `
-                    <button onclick="filterEditalSubject('all')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-yellow-400 text-slate-900 shadow">Todos</button>
-                `;
-                studyDb.syllabus.forEach((sub, index) => {
-                    filterContainer.innerHTML += `
-                        <button onclick="filterEditalSubject('${index}')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-950 border border-blue-900 text-gray-300 hover:text-white transition">${sub.subject}</button>
-                    `;
-                });
+                <div id="edital-filter-wrapper" style="position:relative;">
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+
+                    <!-- Search input -->
+                    <div style="position:relative;flex:1 1 240px;max-width:400px;">
+                      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fbbf24;font-size:13px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                      </span>
+                      <input
+                        type="text"
+                        id="edital-search-input"
+                        placeholder="Buscar disciplina..."
+                        oninput="handleEditalSearch(this.value)"
+                        onfocus="showEditalDropdown()"
+                        autocomplete="off"
+                        style="width:100%;background:#0d1e36;border:1.5px solid #1e3a5f;border-radius:14px;color:#f3f4f6;font-size:13px;font-weight:600;padding:10px 40px 10px 40px;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit;"
+                        onfocusin="this.style.borderColor='#fbbf24';this.style.boxShadow='0 0 0 3px rgba(251,191,36,0.12)'"
+                        onfocusout="this.style.borderColor='#1e3a5f';this.style.boxShadow='none'"
+                      >
+                      <button id="edital-clear-btn" onclick="clearEditalFilter()" type="button"
+                        style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;font-size:14px;padding:0;line-height:1;transition:color .15s;"
+                        onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='#6b7280'">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+
+                      <!-- Dropdown -->
+                      <div id="edital-search-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;width:100%;min-width:300px;z-index:500;">
+                        <div style="background:linear-gradient(160deg,#0d1c38,#0a1628);border:1px solid rgba(59,130,246,0.28);border-radius:18px;overflow:hidden;box-shadow:0 28px 70px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.03);">
+                          <div style="padding:9px 16px 7px;border-bottom:1px solid rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:space-between;">
+                            <span style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#3b82f6;">
+                              <i class="fa-solid fa-graduation-cap" style="margin-right:5px;"></i>Disciplinas
+                            </span>
+                            <span id="edital-dd-count" style="font-size:10px;font-weight:700;color:#374151;"></span>
+                          </div>
+                          <div id="edital-dropdown-list" style="max-height:300px;overflow-y:auto;"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Active filter pill -->
+                    <div id="edital-active-pill" style="display:none;align-items:center;gap:7px;padding:8px 13px;border-radius:12px;border:1px solid rgba(251,191,36,0.28);background:rgba(251,191,36,0.08);color:#fbbf24;font-size:11px;font-weight:800;flex-shrink:0;">
+                      <i class="fa-solid fa-filter" style="font-size:9px;opacity:.8;"></i>
+                      <span id="edital-pill-label" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                      <button onclick="clearEditalFilter()" type="button"
+                        style="background:none;border:none;cursor:pointer;color:rgba(251,191,36,.6);padding:0;margin-left:2px;line-height:1;font-size:11px;transition:color .15s;"
+                        onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color='rgba(251,191,36,.6)'">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+
+                    <!-- Count -->
+                    <span id="edital-total-count" style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;display:none;" class="sm:inline-block">${studyDb.syllabus.length} disciplinas</span>
+                  </div>
+                </div>`;
+
+                populateEditalDropdown('');
+                // Re-apply stored filter after re-render
+                if (_editalActiveFilter !== 'all') {
+                    const sub = studyDb.syllabus[_editalActiveFilter];
+                    if (sub) _restoreEditalFilterUI(sub.subject);
+                    else _editalActiveFilter = 'all';
+                }
+                const countEl = document.getElementById('edital-total-count');
+                if (countEl) { countEl.style.display = ''; }
             }
-            renderSyllabusAccordion('all');
+            renderSyllabusAccordion(_editalActiveFilter);
         }
 
+        function _restoreEditalFilterUI(label) {
+            const input   = document.getElementById('edital-search-input');
+            const clearBtn= document.getElementById('edital-clear-btn');
+            const pill    = document.getElementById('edital-active-pill');
+            const pillLbl = document.getElementById('edital-pill-label');
+            const countEl = document.getElementById('edital-total-count');
+            if (input)   input.value = label;
+            if (clearBtn) clearBtn.style.display = 'block';
+            if (pill)    pill.style.display = 'flex';
+            if (pillLbl) pillLbl.textContent = label;
+            if (countEl) countEl.textContent = '1 disciplina';
+        }
+
+        function populateEditalDropdown(searchTerm) {
+            const list    = document.getElementById('edital-dropdown-list');
+            const countEl = document.getElementById('edital-dd-count');
+            if (!list) return;
+            const term     = (searchTerm || '').toLowerCase();
+            const disc_colors = ['#ef4444','#f97316','#eab308','#10b981','#3b82f6','#a855f7','#ec4899','#06b6d4','#84cc16','#f43f5e','#8b5cf6','#14b8a6'];
+            const filtered = studyDb.syllabus.map((s,i)=>({s,i})).filter(({s})=>!term||s.subject.toLowerCase().includes(term));
+
+            if (countEl) countEl.textContent = filtered.length + ' encontradas';
+
+            let html = '';
+            if (!term) {
+                const isAll = _editalActiveFilter === 'all';
+                html += `<div onclick="applyEditalFilter('all','Todas')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;background:${isAll?'rgba(59,130,246,0.14)':'transparent'};transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='${isAll?'rgba(59,130,246,0.14)':'transparent'}'">
+                  <div style="width:30px;height:30px;border-radius:9px;background:rgba(251,191,36,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fa-solid fa-layer-group" style="font-size:12px;color:#fbbf24;"></i>
+                  </div>
+                  <span style="font-size:13px;font-weight:700;color:${isAll?'#fbbf24':'#e2e8f0'};flex:1;">Todas as disciplinas</span>
+                  <span style="font-size:10px;font-weight:800;background:rgba(30,53,92,.7);color:#4b5563;padding:2px 9px;border-radius:20px;">${studyDb.syllabus.length}</span>
+                  ${isAll?'<i class="fa-solid fa-check" style="font-size:10px;color:#fbbf24;margin-left:2px;"></i>':''}
+                </div>
+                <div style="height:1px;background:rgba(59,130,246,0.1);margin:2px 0;"></div>`;
+            }
+
+            if (filtered.length === 0) {
+                html += `<div style="padding:28px 16px;text-align:center;color:#374151;font-size:13px;">
+                  <i class="fa-solid fa-magnifying-glass" style="display:block;margin-bottom:10px;font-size:20px;color:#1e3a5f;"></i>
+                  Nenhuma disciplina encontrada
+                </div>`;
+            } else {
+                filtered.forEach(({s,i}) => {
+                    const isActive = _editalActiveFilter == i;
+                    const color    = disc_colors[i % disc_colors.length];
+                    const total    = s.topics.length;
+                    const done     = s.topics.filter(t=>t.status!=='Não Estudado').length;
+                    const pct      = total>0 ? Math.round((done/total)*100) : 0;
+                    const pctColor = pct>=80?'#10b981':pct>=40?'#fbbf24':'#ef4444';
+                    html += `<div onclick="applyEditalFilter('${i}','${s.subject.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}');hideEditalDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;background:${isActive?'rgba(59,130,246,0.14)':'transparent'};transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='${isActive?'rgba(59,130,246,0.14)':'transparent'}'">
+                      <div style="width:30px;height:30px;border-radius:9px;background:${color}1a;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fa-solid fa-book" style="font-size:11px;color:${color};"></i>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;font-weight:700;color:${isActive?'#fbbf24':'#e2e8f0'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.subject}</div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                          <div style="flex:1;max-width:70px;height:3px;background:rgba(15,31,66,.9);border-radius:2px;overflow:hidden;">
+                            <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:2px;"></div>
+                          </div>
+                          <span style="font-size:10px;color:#4b5563;font-weight:600;">${done}/${total}</span>
+                        </div>
+                      </div>
+                      ${isActive?'<i class="fa-solid fa-check" style="font-size:10px;color:#fbbf24;flex-shrink:0;"></i>':''}
+                    </div>`;
+                });
+            }
+            list.innerHTML = html;
+        }
+
+        function handleEditalSearch(val) {
+            const clearBtn = document.getElementById('edital-clear-btn');
+            if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+            populateEditalDropdown(val);
+            showEditalDropdown();
+        }
+
+        function showEditalDropdown() {
+            const dd = document.getElementById('edital-search-dropdown');
+            if (dd) dd.style.display = 'block';
+            setTimeout(()=>document.addEventListener('click', _editalOutsideHandler, {once:true}), 60);
+        }
+
+        function _editalOutsideHandler(e) {
+            const w = document.getElementById('edital-filter-wrapper');
+            if (w && w.contains(e.target)) {
+                setTimeout(()=>document.addEventListener('click', _editalOutsideHandler, {once:true}), 60);
+            } else { hideEditalDropdown(); }
+        }
+
+        function hideEditalDropdown() {
+            const dd = document.getElementById('edital-search-dropdown');
+            if (dd) dd.style.display = 'none';
+        }
+
+        function applyEditalFilter(idx, label) {
+            _editalActiveFilter = idx;
+            const input   = document.getElementById('edital-search-input');
+            const clearBtn= document.getElementById('edital-clear-btn');
+            const pill    = document.getElementById('edital-active-pill');
+            const pillLbl = document.getElementById('edital-pill-label');
+            const countEl = document.getElementById('edital-total-count');
+            if (idx === 'all') {
+                if (input)    input.value = '';
+                if (clearBtn) clearBtn.style.display = 'none';
+                if (pill)     pill.style.display = 'none';
+                if (countEl)  countEl.textContent = studyDb.syllabus.length + ' disciplinas';
+            } else {
+                if (input)    input.value = label;
+                if (clearBtn) clearBtn.style.display = 'block';
+                if (pill)     { pill.style.display = 'flex'; }
+                if (pillLbl)  pillLbl.textContent = label;
+                if (countEl)  countEl.textContent = '1 disciplina';
+            }
+            hideEditalDropdown();
+            populateEditalDropdown('');
+            renderSyllabusAccordion(idx);
+        }
+
+        function clearEditalFilter() { applyEditalFilter('all',''); }
+
         function filterEditalSubject(index) {
-            renderSyllabusAccordion(index);
+            const label = index === 'all' ? '' : (studyDb.syllabus[index] ? studyDb.syllabus[index].subject : '');
+            applyEditalFilter(index, label);
         }
 
         function renderSyllabusAccordion(filterIdx) {
@@ -1935,12 +2118,14 @@
                 targetSub = newSub;
                 if (!studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase())) {
                     studyDb.syllabus.push({ subject: targetSub, topics: [] });
+                    studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
                 }
             }
 
             const subObj = studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase());
             if (subObj) {
                 subObj.topics.push({ name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
+                subObj.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeAddTopicModal(); renderAllTabs(); showAlert("Tópico adicionado!");
             }
         }
@@ -1958,6 +2143,7 @@
                 const old = studyDb.syllabus[idx].subject;
                 studyDb.syllabus[idx].subject = val;
                 studyDb.studyCycle.forEach(c => { if(c.subject === old) c.subject = val; });
+                studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeRenameSubjectModal(); renderAllTabs();
             }
         }
@@ -1975,6 +2161,7 @@
             const val = document.getElementById('modal-rename-topic-input').value.trim();
             if (val) {
                 studyDb.syllabus[sIdx].topics[tIdx].name = val;
+                studyDb.syllabus[sIdx].topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeRenameTopicModal(); renderAllTabs();
             }
         }
@@ -2536,7 +2723,8 @@
                 groups[sum.subject][sum.topic].push(sum);
             });
 
-            for (const subject in groups) {
+            const sortedSubjects = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            for (const subject of sortedSubjects) {
                 const colorClass = getDisciplineColorClass(subject);
                 const subjectKey = 'tree_collapsed_' + btoa(encodeURIComponent(subject)).replace(/=/g,'');
                 const isCollapsed = _treeCollapsed[subjectKey] === true;
@@ -2550,7 +2738,8 @@
                     </div>
                     <div class="pl-2 space-y-2" style="display:${bodyDisplay}">`;
                 
-                for (const topic in groups[subject]) {
+                const sortedTopics = Object.keys(groups[subject]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                for (const topic of sortedTopics) {
                     subjectHtml += `<div><div class="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold py-1"><i class="fa-regular fa-folder-open text-yellow-500"></i> <span class="truncate">${topic}</span></div><div class="pl-3 space-y-0.5 mt-0.5 border-l border-blue-900/60">`;
                     
                     groups[subject][topic].forEach(sum => {
@@ -2680,7 +2869,7 @@
         function restoreSelection() {
             const canvas = getActiveEditor();
             if (!canvas) return;
-            canvas.focus();
+            canvas.focus({ preventScroll: true });
             if (savedRange) {
                 try {
                     // Verify saved range belongs to this canvas
@@ -3802,6 +3991,8 @@ function renderHistoryTab() {
         let mmLastClickId = null, mmLastClickTime = 0;
 
         function openMindmapEditor() {
+            // Salva a posição do cursor ANTES de abrir o modal (o foco sai do editor ao abrir)
+            saveSelection();
             document.getElementById('mindmap-modal').classList.remove('hidden');
             mmSvg    = document.getElementById('mm-svg');
             mmLinksG = document.getElementById('mm-links');
@@ -4132,10 +4323,23 @@ function renderHistoryTab() {
 </g>`;
             });
             const title = document.getElementById('mm-title').value || 'Mapa Mental';
+            // Detecta se o editor está em tema claro para adaptar as cores do mapa
+            const canvas = getActiveEditor();
+            const isLight = canvas && (canvas.classList.contains('editor-paper-light') || canvas.classList.contains('fs-light'));
+            const bgColor = isLight ? '#f8fafc' : '#0a0f1e';
+            const titleColor = isLight ? '#1e40af' : '#fbbf24';
+            const borderColor = isLight ? '#3b82f6' : '#3b82f6';
+            // Ajusta cores dos nós para tema claro
+            let nodesSVGFinal = nodesSVG;
+            if (isLight) {
+                // No tema claro, o fundo dos nós fica azul bem claro em vez de azul escuro
+                nodesSVGFinal = nodesSVG.replace(/rgba\(13,21,48,0\.9[05]?\)/g, 'rgba(239,246,255,0.95)');
+            }
             // Set aspect ratio preserving height
-            const aspectH = Math.round(vh / vw * 100);
-            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" style="width:100%;height:auto;display:block;min-height:${Math.min(vh,400)}px;"><g>${linksSVG}</g><g>${nodesSVG}</g></svg>`;
-            const html = `<div contenteditable="false" style="margin:24px 0;border:2px solid #3b82f6;border-radius:16px;padding:16px;background:#0a0f1e;"><p style="text-align:center;font-weight:900;color:#fbbf24;font-size:15px;margin:0 0 10px;">🧠 ${title}</p>${svgStr}</div><p><br></p>`;
+            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" style="width:100%;height:auto;display:block;min-height:${Math.min(vh,400)}px;"><g>${linksSVG}</g><g>${nodesSVGFinal}</g></svg>`;
+            // Wrapper com data-mindmap="1" para permitir deleção via teclado (Delete/Backspace)
+            const uid = 'mm_' + Date.now();
+            const html = `<div data-mindmap="1" id="${uid}" contenteditable="false" style="margin:24px 0;border:2px solid ${borderColor};border-radius:16px;padding:16px;background:${bgColor};cursor:default;position:relative;" title="Clique para selecionar · Delete para apagar"><p style="text-align:center;font-weight:900;color:${titleColor};font-size:15px;margin:0 0 10px;">🧠 ${title}</p>${svgStr}<button onclick="this.closest('[data-mindmap]').remove();saveActiveSummary();" style="position:absolute;top:8px;right:10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:8px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:700;" title="Remover mapa">✕ Remover</button></div><p><br></p>`;
             insertHTMLAtCursor(html);
             closeMindmapEditor();
         }
@@ -4145,6 +4349,39 @@ function renderHistoryTab() {
         window.mmAddChild = mmAddChild;
         window.mmDeleteNode = mmDeleteNode;
         window.mmSetColor = mmSetColor;
+        // === SUPORTE A DELEÇÃO DE MAPAS MENTAIS VIA TECLADO ===
+        // Quando o usuário clica em um mapa e pressiona Delete/Backspace, ele é removido
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                // Se o modal do mapa estiver aberto, não interfere
+                if (!document.getElementById('mindmap-modal').classList.contains('hidden')) return;
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return;
+                const anchor = sel.anchorNode;
+                if (!anchor) return;
+                // Verifica se o cursor está imediatamente antes/depois de um bloco de mapa mental
+                let node = anchor.nodeType === 3 ? anchor.parentNode : anchor;
+                // Caso o foco esteja no editor e o nó pai seja um bloco data-mindmap
+                const mmBlock = node.closest ? node.closest('[data-mindmap]') : null;
+                if (mmBlock) {
+                    e.preventDefault();
+                    mmBlock.remove();
+                    saveActiveSummary();
+                }
+            }
+        });
+
+        // Highlight visual ao clicar num mapa para indicar que está selecionado
+        document.addEventListener('click', function(e) {
+            const mmBlock = e.target.closest ? e.target.closest('[data-mindmap]') : null;
+            // Remove highlight de todos os mapas
+            document.querySelectorAll('[data-mindmap]').forEach(el => el.style.outline = '');
+            if (mmBlock && !e.target.closest('button')) {
+                mmBlock.style.outline = '2px solid #fbbf24';
+                mmBlock.style.outlineOffset = '2px';
+            }
+        });
+
         window.mmExportToEditor = mmExportToEditor;
 
         // ── ICON PICKER ──────────────────────────────────────────────
@@ -4336,7 +4573,7 @@ function renderHistoryTab() {
         function stCmd(cmd, val) {
             const canvas = _getEditorEl();
             if (!canvas) return;
-            canvas.focus();
+            canvas.focus({ preventScroll: true });
             if (_stSavedRange) {
                 const sel = window.getSelection();
                 sel.removeAllRanges();
@@ -4350,7 +4587,7 @@ function renderHistoryTab() {
             const canvas = _getEditorEl();
             if (!canvas) return;
             if (!_stSavedRange) { showAlert('Selecione um texto!'); return; }
-            canvas.focus();
+            canvas.focus({ preventScroll: true });
             // Restore saved selection directly
             const sel = window.getSelection();
             sel.removeAllRanges();
@@ -4386,7 +4623,7 @@ function renderHistoryTab() {
         function stInsertAlert() {
             const canvas = _getEditorEl();
             if (!canvas) return;
-            canvas.focus();
+            canvas.focus({ preventScroll: true });
             if (_stSavedRange) {
                 const sel = window.getSelection();
                 sel.removeAllRanges();
@@ -4399,7 +4636,7 @@ function renderHistoryTab() {
         function stInsertObs() {
             const canvas = _getEditorEl();
             if (!canvas) return;
-            canvas.focus();
+            canvas.focus({ preventScroll: true });
             if (_stSavedRange) {
                 const sel = window.getSelection();
                 sel.removeAllRanges();
