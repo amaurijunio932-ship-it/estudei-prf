@@ -2352,6 +2352,17 @@
         }
         requestAnimationFrame(_titleLoop);
 
+        // Alerta ao fechar/sair com cronômetro ativo e não salvo
+        window.addEventListener('beforeunload', (e) => {
+            const s = _timerNowSeconds();
+            if (s > 0) {
+                const msg = 'Você tem ' + Math.floor(s/60) + 'm ' + (s%60) + 's no cronômetro não salvos. Se sair agora, perderá tudo!';
+                e.preventDefault();
+                e.returnValue = msg;
+                return msg;
+            }
+        });
+
         // Ao voltar para a aba: força recálculo imediato
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
