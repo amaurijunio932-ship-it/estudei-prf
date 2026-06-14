@@ -2330,6 +2330,24 @@
             }
         });
 
+        // Atualiza o título da aba a cada segundo usando Date.now()
+        // (independente do setInterval principal que o navegador pode suspender)
+        setInterval(() => {
+            const s = _timerNowSeconds();
+            if (!isTimerRunning && s === 0) {
+                document.title = 'Estudei - Planilha Inteligente PRF';
+                return;
+            }
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const s2 = s % 60;
+            let timeStr;
+            if (h > 0) timeStr = h + 'h ' + String(m).padStart(2,'0') + 'm';
+            else if (m > 0) timeStr = m + 'm ' + String(s2).padStart(2,'0') + 's';
+            else timeStr = s2 + 's';
+            document.title = timeStr + ' ⏱ Estudei PRF';
+        }, 1000);
+
         function updateTimerDisplays() {
             const fmt = s => Math.floor(s/3600).toString().padStart(2,'0') + ':' +
                              Math.floor((s%3600)/60).toString().padStart(2,'0') + ':' +
