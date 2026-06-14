@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estudei - Planilha Inteligente PRF</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23003366'/><text x='32' y='46' font-size='38' text-anchor='middle' font-family='Arial Black,sans-serif' fill='%23FFD400'>E</text></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -2338,6 +2339,19 @@
             const pd = document.getElementById('pause-timer-display');
             if (pd) pd.innerText = fmt(pauseSeconds);
             fillDurationFieldsFromSeconds(totalSeconds);
+            // Atualiza titulo da aba
+            if (isTimerRunning || totalSeconds > 0) {
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s2 = totalSeconds % 60;
+                let timeStr;
+                if (h > 0) timeStr = h + 'h ' + String(m).padStart(2,'0') + 'm';
+                else if (m > 0) timeStr = m + 'm ' + String(s2).padStart(2,'0') + 's';
+                else timeStr = s2 + 's';
+                document.title = timeStr + ' ⏱ Estudei PRF';
+            } else {
+                document.title = 'Estudei - Planilha Inteligente PRF';
+            }
         }
 
         // --- Pomodoro ---
