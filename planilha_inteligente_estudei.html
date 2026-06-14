@@ -825,6 +825,9 @@
                     <!-- Objetos Ricos -->
                     <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Tabela"><i class="fa-solid fa-table"></i></button>
                     <button onclick="insertImage()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Imagem / Esquema"><i class="fa-solid fa-image"></i></button>
+                    <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-input-dark text-purple-400 hover:bg-purple-900/50 transition shadow-sm hidden lg:block" title="Recuar para esquerda"><i class="fa-solid fa-outdent"></i></button>
+                    <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-input-dark text-purple-400 hover:bg-purple-900/50 transition shadow-sm hidden lg:block" title="Recuar para direita"><i class="fa-solid fa-indent"></i></button>
+                    <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-input-dark text-cyan-400 hover:bg-cyan-900/50 transition shadow-sm hidden lg:block" title="Inserir Toggle (bloco expansível)"><i class="fa-solid fa-caret-right"></i></button>
                     <button onclick="openMindmapEditor()" class="w-8 h-8 rounded-lg bg-input-dark text-white hover:bg-blue-800 transition shadow-sm hidden lg:block" title="Abrir Editor de Mapa Mental"><i class="fa-solid fa-diagram-project"></i></button>
                 </div>
 
@@ -2924,6 +2927,36 @@
         function insertImage() { const url = prompt("Cole a URL:", "https://"); if (url) insertHTMLAtCursor(`<div style="text-align:center; margin:20px 0;" contenteditable="false"><img src="${url}" style="max-width:100%; border-radius:8px; border:2px solid #3b82f6;" onerror="this.src='https://placehold.co/600x300/15294a/ffd400?text=Erro'"><p contenteditable="true" style="font-size:12px; color:#94a3b8;">[Legenda]</p></div><p><br></p>`); }
         function insertMindmap() { openMindmapEditor(); }
 
+        // Recuo avançado
+        function indentIn() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            let node = sel.getRangeAt(0).startContainer;
+            while (node && node.nodeType !== 1) node = node.parentNode;
+            while (node && !['P','DIV','LI','BLOCKQUOTE','H1','H2','H3','H4'].includes(node.tagName)) node = node.parentNode;
+            if (!node) { document.execCommand('indent', false, null); return; }
+            const cur = parseInt(node.style.marginLeft || '0') || 0;
+            node.style.marginLeft = Math.min(cur + 32, 256) + 'px';
+        }
+        function indentOut() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            let node = sel.getRangeAt(0).startContainer;
+            while (node && node.nodeType !== 1) node = node.parentNode;
+            while (node && !['P','DIV','LI','BLOCKQUOTE','H1','H2','H3','H4'].includes(node.tagName)) node = node.parentNode;
+            if (!node) { document.execCommand('outdent', false, null); return; }
+            const cur = parseInt(node.style.marginLeft || '0') || 0;
+            const next = Math.max(cur - 32, 0);
+            node.style.marginLeft = next > 0 ? next + 'px' : '';
+        }
+
+        // Toggle expansivel
+        let _toggleIdCounter = Date.now();
+        function insertToggle() {
+            _toggleIdCounter++;
+            insertHTMLAtCursor('<div class="estudei-toggle" style="border:1px solid rgba(59,130,246,0.35);border-radius:8px;margin:10px 0;overflow:hidden;background:rgba(15,23,42,0.45);" contenteditable="false"><div class="estudei-toggle-header" onclick="(function(el){var b=el.closest(\'.estudei-toggle\').querySelector(\'.estudei-toggle-body\');var ic=el.querySelector(\'.tgl-icon\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';ic.style.transform=open?\'rotate(0deg)\':\'rotate(90deg)\';})(this)" style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;user-select:none;background:rgba(59,130,246,0.1);border-bottom:1px solid rgba(59,130,246,0.2);"><span class="tgl-icon" style="color:#60a5fa;font-size:12px;transition:transform 0.2s;transform:rotate(90deg);">&#9658;</span><span contenteditable="true" style="color:#93c5fd;font-weight:700;font-size:14px;flex:1;outline:none;" onclick="event.stopPropagation()">T&#237;tulo do Toggle</span></div><div class="estudei-toggle-body" style="padding:12px 16px;display:block;"><p contenteditable="true" style="outline:none;color:#e2e8f0;min-height:24px;">Conte&#250;do aqui...</p></div></div><p><br></p>');
+        }
+
         function applyStudyHighlight(type) {
             restoreSelection(); const sel = window.getSelection();
             if (!sel.rangeCount || sel.isCollapsed) { showAlert("Selecione um texto!"); return; }
@@ -3060,6 +3093,9 @@ ${conteudo}
                 <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-900/30 text-red-400 transition text-xs"><i class="fa-solid fa-triangle-exclamation"></i></button>
                 <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-yellow-900/30 text-yellow-400 transition text-xs"><i class="fa-solid fa-thumbtack"></i></button>
                 <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-table"></i></button>
+                <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar esquerda"><i class="fa-solid fa-outdent"></i></button>
+                <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar direita"><i class="fa-solid fa-indent"></i></button>
+                <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-cyan-900/30 text-cyan-400 transition text-xs" title="Toggle expansível"><i class="fa-solid fa-caret-right"></i></button>
                 <div class="w-px h-5 bg-blue-900 mx-1"></div>
                 <!-- Modo Claro/Escuro -->
                 <button onclick="toggleFsTheme()" id="btn-fs-theme" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-blue-800/40 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Alternar Tema">
@@ -4887,6 +4923,9 @@ function renderHistoryTab() {
                 <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-900/30 text-red-400 transition text-xs"><i class="fa-solid fa-triangle-exclamation"></i></button>
                 <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-yellow-900/30 text-yellow-400 transition text-xs"><i class="fa-solid fa-thumbtack"></i></button>
                 <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-table"></i></button>
+                <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar esquerda"><i class="fa-solid fa-outdent"></i></button>
+                <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar direita"><i class="fa-solid fa-indent"></i></button>
+                <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-cyan-900/30 text-cyan-400 transition text-xs" title="Toggle expansível"><i class="fa-solid fa-caret-right"></i></button>
                 <div class="flex-1"></div>
                 <!-- Title display -->
                 <span id="fs-title-label" class="text-sm font-black text-white/60 truncate max-w-xs hidden lg:block"></span>
@@ -4980,6 +5019,9 @@ function renderHistoryTab() {
                 <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-900/30 text-red-400 transition text-xs"><i class="fa-solid fa-triangle-exclamation"></i></button>
                 <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-yellow-900/30 text-yellow-400 transition text-xs"><i class="fa-solid fa-thumbtack"></i></button>
                 <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-table"></i></button>
+                <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar esquerda"><i class="fa-solid fa-outdent"></i></button>
+                <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar direita"><i class="fa-solid fa-indent"></i></button>
+                <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-cyan-900/30 text-cyan-400 transition text-xs" title="Toggle expansível"><i class="fa-solid fa-caret-right"></i></button>
                 <div class="w-px h-5 bg-blue-900 mx-1"></div>
                 <!-- Modo Claro/Escuro -->
                 <button onclick="toggleFsTheme()" id="btn-fs-theme" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-blue-800/40 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Alternar Tema">
