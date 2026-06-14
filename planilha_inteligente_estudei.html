@@ -173,7 +173,7 @@
         #fullscreen-editor-overlay { font-family: 'Segoe UI', system-ui, sans-serif; }
         #fs-toolbar { transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
         #fs-toolbar.fs-toolbar-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
-        #fs-editor-content { min-height: calc(100vh - 120px); outline: none; padding-bottom: 80px; }
+        #fs-editor-content { outline: none; }
         #fs-editor-content ul { list-style-type: disc !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content ol { list-style-type: decimal !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content li { display: list-item !important; margin-bottom: 6px; }
@@ -3148,14 +3148,14 @@ ${conteudo}
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14"
-             style="padding-bottom: 80px;"
+        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto"
+             style="padding-top:56px; padding-bottom:48px;"
              onmousemove="handleFsMouseMove(event)">
             <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
             <div id="fs-editor-content"
-                 class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-6 my-6 px-12 py-10 rounded-2xl shadow-2xl outline-none"
+                 class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-auto px-8 py-10 rounded-2xl shadow-2xl outline-none"
                  contenteditable="true"
-                 style="caret-color:#fbbf24; min-height:80vh; padding-bottom: 80px;"
+                 style="caret-color:#fbbf24; min-height:calc(100vh - 120px); box-sizing:border-box;"
                  onmouseup="saveSelection()" onkeyup="saveSelection(); syncFsToMain()" oninput="syncFsToMain()" onfocus="_activeEditorId='fs-editor-content'; saveSelection();">
             </div>
         </div>
@@ -4969,14 +4969,14 @@ function renderHistoryTab() {
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="flex-1 overflow-y-auto flex justify-center" style="padding-top: 56px; padding-bottom: 80px;"
+        <div id="fs-doc-area" class="flex-1 overflow-y-auto" style="padding-top: 56px; padding-bottom: 48px;"
              onmousemove="handleFsMouseMove(event)">
             <!-- Watermark / background glow -->
             <div class="pointer-events-none fixed inset-0 z-0" style="background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(250,204,21,0.03) 0%, transparent 50%);"></div>
 
-            <div id="fs-editor-content" class="relative z-10 w-full max-w-4xl mx-auto min-h-full px-12 py-10 text-white outline-none"
+            <div id="fs-editor-content" class="relative z-10 w-full max-w-4xl mx-auto px-8 py-10 text-white outline-none"
                  contenteditable="true"
-                 style="font-size: 15px; line-height: 1.8; caret-color: #fbbf24;"
+                 style="font-size: 15px; line-height: 1.8; caret-color: #fbbf24; min-height: calc(100vh - 120px); box-sizing: border-box;"
                  onkeyup="syncFsToMain()" oninput="syncFsToMain()">
             </div>
         </div>
@@ -5075,13 +5075,13 @@ function renderHistoryTab() {
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14" style="padding-bottom:80px;"
+        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto" style="padding-top:56px; padding-bottom:48px;"
              onmousemove="handleFsMouseMove(event)">
             <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
             <div id="fs-editor-content"
-                 class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-6 my-6 px-12 py-10 rounded-2xl shadow-2xl outline-none"
+                 class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-auto px-8 py-10 rounded-2xl shadow-2xl outline-none"
                  contenteditable="true"
-                 style="caret-color:#fbbf24; min-height:80vh;"
+                 style="caret-color:#fbbf24; min-height:calc(100vh - 120px); box-sizing:border-box;"
                  onmouseup="saveSelection()" onkeyup="saveSelection(); syncFsToMain()" oninput="syncFsToMain()" onfocus="_activeEditorId='fs-editor-content'; saveSelection();">
             </div>
         </div>
