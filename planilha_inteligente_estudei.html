@@ -2322,17 +2322,7 @@
             });
         }
 
-        // Recalcula ao voltar para a aba
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                if (isTimerRunning) { totalSeconds = _timerNowSeconds(); updateTimerDisplays(); }
-                if (isTimerPaused) { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
-            }
-        });
-
-        // Atualiza o título da aba a cada segundo usando Date.now()
-        // (independente do setInterval principal que o navegador pode suspender)
-        setInterval(() => {
+        function _updateTabTitle() {
             const s = _timerNowSeconds();
             if (!isTimerRunning && s === 0) {
                 document.title = 'Estudei - Planilha Inteligente PRF';
@@ -2346,7 +2336,28 @@
             else if (m > 0) timeStr = m + 'm ' + String(s2).padStart(2,'0') + 's';
             else timeStr = s2 + 's';
             document.title = timeStr + ' ⏱ Estudei PRF';
-        }, 1000);
+        }
+
+        // requestAnimationFrame só roda quando a aba está visível — nunca é suspenso
+        let _lastTitleSec = -1;
+        function _titleLoop() {
+            if (!document.hidden) {
+                const s = _timerNowSeconds();
+                if (s !== _lastTitleSec) { _lastTitleSec = s; _updateTabTitle(); }
+            }
+            requestAnimationFrame(_titleLoop);
+        }
+        requestAnimationFrame(_titleLoop);
+
+        // Ao voltar para a aba: força recálculo imediato
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                if (isTimerRunning) { totalSeconds = _timerNowSeconds(); updateTimerDisplays(); }
+                if (isTimerPaused) { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
+                _lastTitleSec = -1;
+                _updateTabTitle();
+            }
+        });
 
         function updateTimerDisplays() {
             const fmt = s => Math.floor(s/3600).toString().padStart(2,'0') + ':' +
