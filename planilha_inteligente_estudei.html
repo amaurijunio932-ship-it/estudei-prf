@@ -2954,7 +2954,7 @@
         let _toggleIdCounter = Date.now();
         function insertToggle() {
             _toggleIdCounter++;
-            insertHTMLAtCursor('<div class="estudei-toggle" style="border:1px solid rgba(59,130,246,0.35);border-radius:8px;margin:10px 0;overflow:hidden;background:rgba(15,23,42,0.45);" contenteditable="false"><div class="estudei-toggle-header" onclick="(function(el){var b=el.closest(\'.estudei-toggle\').querySelector(\'.estudei-toggle-body\');var ic=el.querySelector(\'.tgl-icon\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';ic.style.transform=open?\'rotate(0deg)\':\'rotate(90deg)\';})(this)" style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;user-select:none;background:rgba(59,130,246,0.1);border-bottom:1px solid rgba(59,130,246,0.2);"><span class="tgl-icon" style="color:#60a5fa;font-size:12px;transition:transform 0.2s;transform:rotate(90deg);">&#9658;</span><span contenteditable="true" style="color:#93c5fd;font-weight:700;font-size:14px;flex:1;outline:none;" onclick="event.stopPropagation()">T&#237;tulo do Toggle</span></div><div class="estudei-toggle-body" style="padding:12px 16px;display:block;"><p contenteditable="true" style="outline:none;color:#e2e8f0;min-height:24px;">Conte&#250;do aqui...</p></div></div><p><br></p>');
+            insertHTMLAtCursor('<div class="estudei-toggle" style="border:1px solid rgba(59,130,246,0.35);border-radius:8px;margin:10px 0;overflow:hidden;background:rgba(15,23,42,0.45);position:relative;" contenteditable="false"><div class="estudei-toggle-header" onclick="(function(el){var b=el.closest(\'.estudei-toggle\').querySelector(\'.estudei-toggle-body\');var ic=el.querySelector(\'.tgl-icon\');var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';ic.style.transform=open?\'rotate(0deg)\':\'rotate(90deg)\';})(this)" style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;user-select:none;background:rgba(59,130,246,0.1);border-bottom:1px solid rgba(59,130,246,0.2);"><span class="tgl-icon" style="color:#60a5fa;font-size:12px;transition:transform 0.2s;transform:rotate(90deg);">&#9658;</span><span contenteditable="true" style="color:#93c5fd;font-weight:700;font-size:14px;flex:1;outline:none;" onclick="event.stopPropagation()">T&#237;tulo do Toggle</span><span onclick="(function(el){var t=el.closest(\'.estudei-toggle\');var p=t.nextSibling;t.parentNode.removeChild(t);if(p&&p.nodeType===1)p.focus();})(this);event.stopPropagation()" title="Apagar toggle" style="color:#f87171;font-size:14px;font-weight:700;padding:2px 6px;border-radius:4px;cursor:pointer;line-height:1;flex-shrink:0;" onmouseover="this.style.background=\'rgba(248,113,113,0.2)\'" onmouseout="this.style.background=\'none\'">&#10005;</span></div><div class="estudei-toggle-body" style="padding:12px 16px;display:block;"><p contenteditable="true" style="outline:none;color:#e2e8f0;min-height:24px;">Conte&#250;do aqui...</p></div></div><p><br></p>');
         }
 
         function applyStudyHighlight(type) {
@@ -3000,8 +3000,26 @@
             isEditorPaperLight = !isEditorPaperLight;
             const canvas = document.getElementById('summary-editor-canvas');
             const icon = document.getElementById('paper-theme-icon');
-            if (isEditorPaperLight) { canvas.classList.add('editor-paper-light'); canvas.classList.remove('editor-paper-dark'); icon.className = "fa-solid fa-moon text-blue-900"; } 
-            else { canvas.classList.add('editor-paper-dark'); canvas.classList.remove('editor-paper-light'); icon.className = "fa-solid fa-sun text-yellow-400"; }
+            const appRoot = document.getElementById('app-root') || document.body;
+            const editorPanel = document.getElementById('editor-panel') || canvas.closest('.flex-1') || canvas.parentElement;
+            if (isEditorPaperLight) {
+                canvas.classList.add('editor-paper-light'); canvas.classList.remove('editor-paper-dark');
+                icon.className = "fa-solid fa-moon text-blue-400";
+                // Tema dia: fundo branco/cinza claro
+                document.body.style.background = '#f1f5f9';
+                if (editorPanel) editorPanel.style.background = '#f8fafc';
+                // Toolbar e sidebar ficam com borda suave
+                document.querySelectorAll('.prf-blue').forEach(el => { el.dataset._origBg = el.style.background; el.style.background = '#e2e8f0'; });
+                document.querySelectorAll('h1,h2,h3,h4,strong,b').forEach(el => { if (!el.style.color) el.style.color = '#1e3a5f'; });
+            } else {
+                canvas.classList.add('editor-paper-dark'); canvas.classList.remove('editor-paper-light');
+                icon.className = "fa-solid fa-sun text-yellow-400";
+                // Volta ao tema noturno
+                document.body.style.background = '';
+                if (editorPanel) editorPanel.style.background = '';
+                document.querySelectorAll('.prf-blue').forEach(el => { el.style.background = el.dataset._origBg || ''; });
+                document.querySelectorAll('h1,h2,h3,h4,strong,b').forEach(el => { el.style.color = ''; });
+            }
         }
 
         function exportToPDF() {
