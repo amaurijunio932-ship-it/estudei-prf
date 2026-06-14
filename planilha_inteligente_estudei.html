@@ -173,7 +173,7 @@
         #fullscreen-editor-overlay { font-family: 'Segoe UI', system-ui, sans-serif; }
         #fs-toolbar { transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
         #fs-toolbar.fs-toolbar-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
-        #fs-editor-content { min-height: calc(100vh - 120px); outline: none; }
+        #fs-editor-content { min-height: calc(100vh - 120px); outline: none; padding-bottom: 80px; }
         #fs-editor-content ul { list-style-type: disc !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content ol { list-style-type: decimal !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content li { display: list-item !important; margin-bottom: 6px; }
@@ -2341,16 +2341,14 @@
             document.title = timeStr + ' ⏱ Estudei PRF';
         }
 
-        // requestAnimationFrame só roda quando a aba está visível — nunca é suspenso
-        let _lastTitleSec = -1;
-        function _titleLoop() {
-            if (!document.hidden) {
-                const s = _timerNowSeconds();
-                if (s !== _lastTitleSec) { _lastTitleSec = s; _updateTabTitle(); }
-            }
-            requestAnimationFrame(_titleLoop);
+        // Título da aba: setInterval controlado por visibilitychange
+        // Ao voltar à aba: recalcula imediatamente e reinicia o intervalo
+        let _titleInterval = null;
+        function _startTitleLoop() {
+            if (_titleInterval) clearInterval(_titleInterval);
+            _titleInterval = setInterval(_updateTabTitle, 500);
         }
-        requestAnimationFrame(_titleLoop);
+        _startTitleLoop();
 
         // Alerta ao fechar/sair com cronômetro ativo e não salvo
         window.addEventListener('beforeunload', (e) => {
@@ -2363,15 +2361,19 @@
             }
         });
 
-        // Ao voltar para a aba: força recálculo imediato
+        // Ao voltar para a aba: recalcula tudo na hora e reinicia o loop
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 if (isTimerRunning) { totalSeconds = _timerNowSeconds(); updateTimerDisplays(); }
-                if (isTimerPaused) { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
-                _lastTitleSec = -1;
-                _updateTabTitle();
+                if (isTimerPaused)  { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
+                _updateTabTitle();   // título imediato
+                _startTitleLoop();   // reinicia o intervalo (estava suspenso)
+            } else {
+                // Aba foi para background — para o intervalo
+                if (_titleInterval) { clearInterval(_titleInterval); _titleInterval = null; }
             }
         });
+
 
         function updateTimerDisplays() {
             const fmt = s => Math.floor(s/3600).toString().padStart(2,'0') + ':' +
@@ -3146,13 +3148,14 @@ ${conteudo}
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14 pb-10"
+        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14"
+             style="padding-bottom: 80px;"
              onmousemove="handleFsMouseMove(event)">
             <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
             <div id="fs-editor-content"
                  class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-6 my-6 px-12 py-10 rounded-2xl shadow-2xl outline-none"
                  contenteditable="true"
-                 style="caret-color:#fbbf24; min-height:80vh;"
+                 style="caret-color:#fbbf24; min-height:80vh; padding-bottom: 80px;"
                  onmouseup="saveSelection()" onkeyup="saveSelection(); syncFsToMain()" oninput="syncFsToMain()" onfocus="_activeEditorId='fs-editor-content'; saveSelection();">
             </div>
         </div>
@@ -4966,7 +4969,7 @@ function renderHistoryTab() {
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="flex-1 overflow-y-auto flex justify-center" style="padding-top: 56px;"
+        <div id="fs-doc-area" class="flex-1 overflow-y-auto flex justify-center" style="padding-top: 56px; padding-bottom: 80px;"
              onmousemove="handleFsMouseMove(event)">
             <!-- Watermark / background glow -->
             <div class="pointer-events-none fixed inset-0 z-0" style="background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(250,204,21,0.03) 0%, transparent 50%);"></div>
@@ -5072,7 +5075,7 @@ function renderHistoryTab() {
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14 pb-10"
+        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto flex justify-center pt-14" style="padding-bottom:80px;"
              onmousemove="handleFsMouseMove(event)">
             <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
             <div id="fs-editor-content"
