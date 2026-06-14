@@ -587,7 +587,6 @@
                         <div class="flex gap-1 bg-blue-950 p-1 rounded-xl mb-4">
                             <button onclick="switchTimerMode('chrono')" id="tab-chrono" class="flex-1 py-1.5 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition">⏱ Cronômetro</button>
                             <button onclick="switchTimerMode('pomodoro')" id="tab-pomodoro" class="flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition">🍅 Pomodoro</button>
-                            <button onclick="switchTimerMode('manual')" id="tab-manual" class="flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition">✏️ Manual</button>
                         </div>
 
                         <!-- Modo Cronômetro -->
@@ -635,58 +634,7 @@
                             </div>
                         </div>
 
-                        <!-- Modo Manual -->
-                        <div id="mode-manual" class="hidden">
-                            <p class="text-xs text-gray-400 mb-3 text-center">Registre uma sessão que fez sem o app (caderno, livro, flashcard, etc.)</p>
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Data do estudo</label>
-                                    <input type="date" id="manual-date" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Duração (minutos)</label>
-                                    <input type="number" id="manual-duration" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" placeholder="Ex: 60">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Disciplina</label>
-                                    <select id="manual-subject" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" onchange="updateManualTopics()">
-                                        <option value="">Selecione...</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Matéria</label>
-                                    <select id="manual-topic" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
-                                        <option value="">Selecione...</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 mb-4">
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Tipo de estudo</label>
-                                    <select id="manual-type" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
-                                        <option value="Teoria">📖 Teoria</option>
-                                        <option value="Questões">📝 Questões</option>
-                                        <option value="Flashcards">🃏 Flashcards/Anki</option>
-                                        <option value="Mapa Mental">🗺️ Mapa Mental</option>
-                                        <option value="Áudio">🎧 Áudio</option>
-                                        <option value="Revisão">🔁 Revisão</option>
-                                        <option value="Outros">⚡ Outros</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-400 mb-1">Questões (total / certas)</label>
-                                    <div class="flex gap-1">
-                                        <input type="number" id="manual-qtotal" class="w-full bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-sm focus:outline-none" placeholder="Total">
-                                        <input type="number" id="manual-qcorrect" class="w-full bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-sm focus:outline-none" placeholder="Certas">
-                                    </div>
-                                </div>
-                            </div>
-                            <button onclick="saveManualSession()" class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-sm shadow">
-                                <i class="fa-solid fa-floppy-disk mr-2"></i>Salvar Sessão Manual
-                            </button>
-                        </div>
+
                     </div>
 
                     <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
@@ -1338,6 +1286,11 @@
         let timerInterval = null, pauseInterval = null;
         let totalSeconds = 0, pauseSeconds = 0;
         let isTimerRunning = false, isTimerPaused = false;
+        // Timestamp-based tracking (evita perda de tempo por throttle do navegador)
+        let timerStartTs = null;
+        let timerBaseSeconds = 0;
+        let pauseStartTs = null;
+        let pauseBaseSeconds = 0;
 
         const motivationalQuotes = [
             // PRF / Concurso
@@ -2300,44 +2253,81 @@
 
         // --- Modo: troca entre Cronômetro / Pomodoro / Manual ---
         function switchTimerMode(mode) {
-            ['chrono','pomodoro','manual'].forEach(m => {
+            ['chrono','pomodoro'].forEach(m => {
                 document.getElementById('mode-' + m).classList.toggle('hidden', m !== mode);
                 const tab = document.getElementById('tab-' + m);
                 if (tab) tab.className = m === mode
                     ? 'flex-1 py-1.5 text-xs font-black rounded-lg bg-yellow-400 text-slate-900 shadow transition'
                     : 'flex-1 py-1.5 text-xs font-black rounded-lg text-gray-300 hover:text-white transition';
             });
-            if (mode === 'manual') populateManualDropdowns();
         }
 
         // --- Cronômetro normal ---
+        function _timerNowSeconds() {
+            if (!isTimerRunning || timerStartTs === null) return timerBaseSeconds;
+            return timerBaseSeconds + Math.floor((Date.now() - timerStartTs) / 1000);
+        }
+        function _pauseNowSeconds() {
+            if (!isTimerPaused || pauseStartTs === null) return pauseBaseSeconds;
+            return pauseBaseSeconds + Math.floor((Date.now() - pauseStartTs) / 1000);
+        }
+
         function startTimer() {
             if (isTimerRunning) return;
             isTimerRunning = true;
+            if (isTimerPaused) {
+                // Congelar pausa
+                pauseBaseSeconds = _pauseNowSeconds();
+                pauseStartTs = null;
+                clearInterval(pauseInterval);
+                isTimerPaused = false;
+            }
+            timerStartTs = Date.now();
             document.getElementById('btn-timer-start').classList.add('hidden');
             document.getElementById('btn-timer-pause').classList.remove('hidden');
-            if (isTimerPaused) { clearInterval(pauseInterval); isTimerPaused = false; }
-            timerInterval = setInterval(() => { totalSeconds++; updateTimerDisplays(); }, 1000);
+            timerInterval = setInterval(() => {
+                totalSeconds = _timerNowSeconds();
+                updateTimerDisplays();
+            }, 500);
         }
 
         function pauseTimer() {
             if (!isTimerRunning) return;
+            // Congelar tempo de estudo
+            timerBaseSeconds = _timerNowSeconds();
+            timerStartTs = null;
+            totalSeconds = timerBaseSeconds;
             isTimerRunning = false; isTimerPaused = true;
+            clearInterval(timerInterval);
             document.getElementById('btn-timer-pause').classList.add('hidden');
             document.getElementById('btn-timer-start').classList.remove('hidden');
-            clearInterval(timerInterval);
-            pauseInterval = setInterval(() => { pauseSeconds++; updateTimerDisplays(); }, 1000);
+            pauseStartTs = Date.now();
+            pauseInterval = setInterval(() => {
+                pauseSeconds = _pauseNowSeconds();
+                updateTimerDisplays();
+            }, 500);
         }
 
         function resetTimer() {
             showConfirm("Zerar cronômetro?", () => {
                 clearInterval(timerInterval); clearInterval(pauseInterval);
-                totalSeconds = 0; pauseSeconds = 0; isTimerRunning = false; isTimerPaused = false;
+                totalSeconds = 0; pauseSeconds = 0;
+                timerBaseSeconds = 0; timerStartTs = null;
+                pauseBaseSeconds = 0; pauseStartTs = null;
+                isTimerRunning = false; isTimerPaused = false;
                 document.getElementById('btn-timer-pause').classList.add('hidden');
                 document.getElementById('btn-timer-start').classList.remove('hidden');
                 updateTimerDisplays();
             });
         }
+
+        // Recalcula ao voltar para a aba
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                if (isTimerRunning) { totalSeconds = _timerNowSeconds(); updateTimerDisplays(); }
+                if (isTimerPaused) { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
+            }
+        });
 
         function updateTimerDisplays() {
             const fmt = s => Math.floor(s/3600).toString().padStart(2,'0') + ':' +
@@ -2347,7 +2337,6 @@
             if (td) td.innerText = fmt(totalSeconds);
             const pd = document.getElementById('pause-timer-display');
             if (pd) pd.innerText = fmt(pauseSeconds);
-            // Preenche campos HH:MM:SS do formulário
             fillDurationFieldsFromSeconds(totalSeconds);
         }
 
@@ -2429,53 +2418,6 @@
         }
 
         // --- Modo Manual (registrar sessão sem o app) ---
-        function populateManualDropdowns() {
-            const sel = document.getElementById('manual-subject');
-            if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = '<option value="">Selecione...</option>';
-            studyDb.syllabus.forEach(s => sel.innerHTML += `<option value="${s.subject}">${s.subject}</option>`);
-            if (cur) sel.value = cur;
-            // Data padrão = hoje
-            const dateInput = document.getElementById('manual-date');
-            if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        function updateManualTopics() {
-            const sub = document.getElementById('manual-subject').value;
-            const sel = document.getElementById('manual-topic');
-            sel.innerHTML = '<option value="">Selecione...</option>';
-            const sData = studyDb.syllabus.find(s => s.subject === sub);
-            if (sData) sData.topics.forEach(t => sel.innerHTML += `<option value="${t.name}">${t.name}</option>`);
-        }
-
-        function saveManualSession() {
-            const date    = document.getElementById('manual-date').value;
-            const dur     = parseInt(document.getElementById('manual-duration').value) || 0;
-            const subject = document.getElementById('manual-subject').value;
-            const topic   = document.getElementById('manual-topic').value;
-            const type    = document.getElementById('manual-type').value;
-            const qT      = parseInt(document.getElementById('manual-qtotal').value) || 0;
-            const qC      = parseInt(document.getElementById('manual-qcorrect').value) || 0;
-
-            if (!date || !dur || !subject || !topic) {
-                showAlert('Preencha data, duração, disciplina e matéria.'); return;
-            }
-
-            const sData = studyDb.syllabus.find(s => s.subject === subject);
-            if (sData) {
-                const tData = sData.topics.find(t => t.name === topic);
-                if (tData) { tData.qCorrect += qC; tData.qTotal += qT; }
-            }
-
-            studyDb.history.push({ id: Date.now(), date, subject, topic, duration: dur, type, qCorrect: qC, qTotal: qT, manual: true });
-            saveDatabase(); renderAllTabs();
-            showAlert('✅ Sessão manual salva!');
-            // Limpar campos
-            document.getElementById('manual-duration').value = '';
-            document.getElementById('manual-qtotal').value = '';
-            document.getElementById('manual-qcorrect').value = '';
-        }
 
         function updateFormTopics() {
             const sub = document.getElementById('form-subject').value;
@@ -2614,7 +2556,10 @@
             document.getElementById('study-session-form').reset();
             const _df = document.getElementById('form-session-date'); if (_df) _df.value = isoToBR(todayBrazil());
             clearInterval(timerInterval); clearInterval(pauseInterval);
-            totalSeconds = 0; pauseSeconds = 0; isTimerRunning = false; isTimerPaused = false;
+            totalSeconds = 0; pauseSeconds = 0;
+            timerBaseSeconds = 0; timerStartTs = null;
+            pauseBaseSeconds = 0; pauseStartTs = null;
+            isTimerRunning = false; isTimerPaused = false;
             updateTimerDisplays();
             showAlert("Sessão salva com sucesso!");
         }
@@ -3804,7 +3749,6 @@ function renderHistoryTab() {
         window.startTimer = startTimer; window.pauseTimer = pauseTimer; window.resetTimer = resetTimer;
         window.switchTimerMode = switchTimerMode;
         window.setPomodoroPreset = setPomodoroPreset; window.startPomodoro = startPomodoro; window.pausePomodoro = pausePomodoro; window.resetPomodoro = resetPomodoro;
-        window.updateManualTopics = updateManualTopics; window.saveManualSession = saveManualSession;
         window.syncDurationFromHMS = syncDurationFromHMS;
         window.checkTimerOverride = checkTimerOverride;
         window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
