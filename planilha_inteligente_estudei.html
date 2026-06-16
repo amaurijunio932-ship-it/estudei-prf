@@ -55,7 +55,7 @@
         .editor-canvas {
             min-height: 700px;
             outline: none;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
             font-size: 1rem;
         }
@@ -170,10 +170,10 @@
         #fullscreen-editor-overlay { display: none !important; }
 
                 /* FULLSCREEN EDITOR */
-        #fullscreen-editor-overlay { font-family: 'Segoe UI', system-ui, sans-serif; }
+        #fullscreen-editor-overlay { font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif; }
         #fs-toolbar { transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s ease; }
         #fs-toolbar.fs-toolbar-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
-        #fs-editor-content { outline: none; }
+        #fs-editor-content { outline: none; font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif; }
         #fs-editor-content ul { list-style-type: disc !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content ol { list-style-type: decimal !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content li { display: list-item !important; margin-bottom: 6px; }
@@ -214,6 +214,62 @@
         .disc-color-10 { color: #8b5cf6; border-left-color: #8b5cf6; }
         .disc-color-11 { color: #14b8a6; border-left-color: #14b8a6; } 
 
+        /* ===== TOAST NOTIFICATIONS ===== */
+        #toast-container {
+            position: fixed; bottom: 24px; right: 24px;
+            z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 12px;
+            padding: 13px 18px; border-radius: 14px;
+            font-size: 13px; font-weight: 700; color: #fff;
+            max-width: 340px; min-width: 200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            pointer-events: all;
+            animation: toastIn 0.3s cubic-bezier(.4,0,.2,1) forwards;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .toast.toast-success { background: rgba(16,185,129,0.92); }
+        .toast.toast-info    { background: rgba(59,130,246,0.92); }
+        .toast.toast-warn    { background: rgba(245,158,11,0.95); color: #1c1c1c; }
+        .toast.toast-error   { background: rgba(239,68,68,0.92); }
+        .toast.toast-out     { animation: toastOut 0.35s ease forwards; }
+        @keyframes toastIn  { from { opacity:0; transform:translateX(60px) scale(0.95); } to { opacity:1; transform:translateX(0) scale(1); } }
+        @keyframes toastOut { from { opacity:1; transform:translateX(0) scale(1); } to { opacity:0; transform:translateX(60px) scale(0.95); } }
+
+        /* ===== STREAK & DAILY GOAL ===== */
+        .streak-fire { display:inline-block; animation: flamePulse 1.5s ease-in-out infinite; }
+        @keyframes flamePulse { 0%,100% { transform:scale(1) rotate(-3deg); } 50% { transform:scale(1.15) rotate(3deg); } }
+        .daily-goal-bar-fill {
+            height:100%; border-radius:99px;
+            background: linear-gradient(90deg, #10b981, #FFD400);
+            transition: width 0.6s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ===== AUTOSAVE INDICATOR ===== */
+        #autosave-indicator {
+            font-size: 11px; font-weight: 700; color: #10b981;
+            display:flex; align-items:center; gap:5px;
+            opacity:0; transition: opacity 0.4s;
+        }
+        #autosave-indicator.visible { opacity:1; }
+        #autosave-indicator .as-dot {
+            width:7px; height:7px; border-radius:50%;
+            background:#10b981; animation: asPulse 1s ease-in-out infinite;
+        }
+        @keyframes asPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(0.7);} }
+
+        /* ===== RECENT SESSIONS IN TIMER TAB ===== */
+        .recent-session-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding: 8px 12px; border-radius:10px;
+            border-left: 3px solid #FFD400;
+            background: rgba(29,53,92,0.4);
+            font-size: 12px; gap:8px;
+        }
+
         /* Estilos de Impressão para Exportação PDF */
         @media print {
             body * { visibility: hidden; }
@@ -224,6 +280,9 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-12">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
 
     <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="prf-blue border-b-4 border-prf-yellow shadow-lg px-4 py-3 sticky top-0 z-50">
@@ -332,7 +391,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
                     <div>
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
@@ -369,6 +428,50 @@
                         <p class="text-xs text-blue-300 mt-1" id="stat-cycle-next-sub">Seguinte: Carregando...</p>
                     </div>
                     <div class="text-sky-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-arrows-spin"></i></div>
+                </div>
+
+                <!-- NOVO: Total de Horas -->
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Total de Horas</span>
+                        <h3 class="text-2xl font-black mt-1 text-prf-yellow" id="stat-total-hours">0h 00m</h3>
+                        <p class="text-xs text-blue-300 mt-1" id="stat-today-hours">Hoje: 0h</p>
+                    </div>
+                    <div class="text-prf-yellow text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-clock"></i></div>
+                </div>
+
+                <!-- NOVO: Streak -->
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Sequência</span>
+                        <h3 class="text-2xl font-black mt-1 text-orange-400" id="stat-streak">0 <span class="streak-fire text-xl">🔥</span></h3>
+                        <p class="text-xs text-gray-400 mt-1" id="stat-streak-label">dias seguidos</p>
+                    </div>
+                    <div class="text-orange-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                </div>
+            </div>
+
+            <!-- Meta Diária de Estudo -->
+            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                        <span class="text-sm font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Meta Diária de Estudo</span>
+                        <p class="text-xs text-gray-400 mt-0.5" id="daily-goal-status-text">Definir meta ajuda a manter consistência</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 font-bold">Meta:</span>
+                        <input type="number" id="daily-goal-input" min="1" max="1440" placeholder="120"
+                            class="w-20 bg-input-dark border border-blue-800 rounded-lg px-2 py-1.5 text-white text-center text-sm font-black focus:outline-none focus:border-yellow-400"
+                            oninput="updateDailyGoal()" title="Meta em minutos">
+                        <span class="text-xs text-gray-400">min</span>
+                    </div>
+                </div>
+                <div class="w-full bg-blue-950 rounded-full h-3 overflow-hidden">
+                    <div id="daily-goal-bar" class="daily-goal-bar-fill" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between text-xxs text-gray-500 mt-1.5">
+                    <span id="daily-goal-current">0 min hoje</span>
+                    <span id="daily-goal-pct">0%</span>
                 </div>
             </div>
 
@@ -727,7 +830,9 @@
                             </div>
 
                             <div class="flex justify-end gap-2">
-                                <button type="reset" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Limpar</button>
+                                <button type="button" onclick="confirmClearForm()" class="px-5 py-2.5 bg-slate-800 hover:bg-red-900/60 text-white hover:text-red-300 font-bold rounded-xl transition border border-transparent hover:border-red-700/50" title="Limpar todos os campos">
+                                    <i class="fa-solid fa-trash-can mr-1 text-xs"></i> Limpar
+                                </button>
                                 <button type="submit" class="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition shadow-lg">
                                     <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Registo
                                 </button>
@@ -740,6 +845,14 @@
                     <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                         <h3 class="text-lg font-black text-white"><i class="fa-solid fa-award text-prf-yellow mr-2"></i>Dica do Dia</h3>
                         <div class="text-sm text-gray-300 leading-relaxed" id="daily-tip-text"></div>
+                    </div>
+
+                    <!-- Sessões Recentes -->
+                    <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-3">
+                        <h3 class="text-sm font-black text-white"><i class="fa-solid fa-history text-prf-yellow mr-2"></i>Sessões Recentes</h3>
+                        <div id="recent-sessions-list" class="space-y-2">
+                            <p class="text-xs text-gray-500 text-center py-3">Nenhuma sessão registada ainda.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -915,6 +1028,11 @@
                                 <div class="flex items-center gap-3">
                                     <span title="Data de Criação"><i class="fa-regular fa-calendar-plus mr-1"></i> <span id="active-summary-created">--</span></span>
                                     <span title="Última Edição"><i class="fa-solid fa-pen-rotate mr-1"></i> <span id="active-summary-last-edited">Agora</span></span>
+                                    <!-- Auto-save indicator -->
+                                    <span id="autosave-indicator" title="Auto-salvo">
+                                        <span class="as-dot"></span>
+                                        <span>Salvo</span>
+                                    </span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-tags text-gray-600"></i>
@@ -1640,6 +1758,62 @@
             if(scratch) {
                 storageGet('estudei_prf_scratchpad').then(val => { if(val) scratch.value = val; });
             }
+
+            // ── Novos stats: Total de Horas, Streak, Meta Diária, Sessões Recentes ──
+            // Total de Horas
+            const thEl = document.getElementById('stat-total-hours');
+            if (thEl) { const h=Math.floor(totalMinutes/60),m=totalMinutes%60; thEl.innerText=`${h}h ${String(m).padStart(2,'0')}m`; }
+            const todayStr2 = todayBrazil();
+            const todayMin2 = studyDb.history.filter(s=>s.date===todayStr2).reduce((a,s)=>a+parseInt(s.duration||0),0);
+            const todayEl = document.getElementById('stat-today-hours');
+            if (todayEl) { const th=Math.floor(todayMin2/60),tm=todayMin2%60; todayEl.innerText=`Hoje: ${th>0?th+'h ':''}`+tm+'min'; }
+
+            // Streak
+            (function renderStreak() {
+                const studyDates = new Set(studyDb.history.map(s=>s.date));
+                const today0 = todayBrazil();
+                let streak=0, d=new Date(today0+'T12:00:00');
+                if(!studyDates.has(today0)) d.setDate(d.getDate()-1);
+                while(true){ const ds=d.toISOString().slice(0,10); if(studyDates.has(ds)){streak++;d.setDate(d.getDate()-1);}else break; }
+                const sEl=document.getElementById('stat-streak');
+                const lEl=document.getElementById('stat-streak-label');
+                if(sEl) sEl.innerHTML=`${streak} <span class="streak-fire text-xl">${streak>0?'🔥':''}</span>`;
+                if(lEl) lEl.innerText=streak===0?'Comece hoje!':streak===1?'dia — vai de vento!':streak>=7?'dias — impressionante! 🏆':'dias seguidos';
+            })();
+
+            // Daily goal bar
+            (function renderGoalBar() {
+                const goalEl=document.getElementById('daily-goal-input');
+                const goalMin=parseInt(goalEl?.value)||120;
+                const pct=Math.min(100,Math.round((todayMin2/goalMin)*100));
+                const bar=document.getElementById('daily-goal-bar');
+                const curEl=document.getElementById('daily-goal-current');
+                const pctEl=document.getElementById('daily-goal-pct');
+                const statusEl=document.getElementById('daily-goal-status-text');
+                if(bar) bar.style.width=pct+'%';
+                if(curEl) curEl.innerText=`${todayMin2} min hoje`;
+                if(pctEl) pctEl.innerText=`${pct}% da meta (${goalMin} min)`;
+                if(statusEl){
+                    if(pct>=100){statusEl.innerText='🎉 Meta atingida! Excelente dedicação hoje.';statusEl.className='text-xs text-emerald-400 mt-0.5 font-bold';}
+                    else if(pct>=50){statusEl.innerText=`Faltam ${goalMin-todayMin2} min para atingir a meta`;statusEl.className='text-xs text-yellow-400 mt-0.5';}
+                    else{statusEl.innerText=`Meta: ${goalMin} min/dia — ajuste conforme sua rotina`;statusEl.className='text-xs text-gray-400 mt-0.5';}
+                }
+            })();
+
+            // Sessões Recentes
+            (function renderRecent() {
+                const container=document.getElementById('recent-sessions-list');
+                if(!container) return;
+                const recent=[...studyDb.history].sort((a,b)=>b.id-a.id).slice(0,5);
+                if(recent.length===0){container.innerHTML='<p class="text-xs text-gray-500 text-center py-3">Nenhuma sessão registada ainda.</p>';return;}
+                const te={'Teoria':'📖','Questões':'📝','Revisão':'🔁','Mapa Mental':'🗺️','Flashcards':'🃏','Resumo':'✍️','Simulado':'🎯','Videoaula':'🎥','Outros':'⚡'};
+                container.innerHTML=recent.map(s=>{
+                    const d=s.date.split('-'),ds=`${d[2]}/${d[1]}`;
+                    const dm=parseInt(s.duration||0),dh=Math.floor(dm/60),dmin=dm%60;
+                    const ts=dh>0?`${dh}h${String(dmin).padStart(2,'0')}m`:`${dmin}m`;
+                    return `<div class="recent-session-row"><span class="text-base">${te[s.type]||'📚'}</span><div style="flex:1;min-width:0;"><div class="font-bold text-white truncate" style="font-size:11px;">${s.subject}</div><div class="text-gray-400 truncate" style="font-size:10px;">${s.topic}</div></div><div class="text-right flex-shrink-0"><div class="text-prf-yellow font-black" style="font-size:11px;">${ts}</div><div class="text-gray-500" style="font-size:10px;">${ds}</div></div></div>`;
+                }).join('');
+            })();
         }
 
         function saveScratchpad() {
@@ -2361,16 +2535,37 @@
             }
         });
 
-        // Ao voltar para a aba: recalcula tudo na hora e reinicia o loop
+        // Ao voltar para a aba: recalcula tudo na hora e reinicia os loops
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                if (isTimerRunning) { totalSeconds = _timerNowSeconds(); updateTimerDisplays(); }
-                if (isTimerPaused)  { pauseSeconds = _pauseNowSeconds(); updateTimerDisplays(); }
-                _updateTabTitle();   // título imediato
-                _startTitleLoop();   // reinicia o intervalo (estava suspenso)
+                // Recalcula o tempo real imediatamente (timestamp garante precisão mesmo após throttle)
+                if (isTimerRunning) {
+                    totalSeconds = _timerNowSeconds();
+                    updateTimerDisplays();
+                    // Reinicia o interval de display (estava suspenso/throttled)
+                    clearInterval(timerInterval);
+                    timerInterval = setInterval(() => {
+                        totalSeconds = _timerNowSeconds();
+                        updateTimerDisplays();
+                    }, 500);
+                }
+                if (isTimerPaused) {
+                    pauseSeconds = _pauseNowSeconds();
+                    updateTimerDisplays();
+                    clearInterval(pauseInterval);
+                    pauseInterval = setInterval(() => {
+                        pauseSeconds = _pauseNowSeconds();
+                        updateTimerDisplays();
+                    }, 500);
+                }
+                _updateTabTitle();
+                _startTitleLoop();
             } else {
-                // Aba foi para background — para o intervalo
+                // Aba foi para background — para todos os intervals de display
+                // O tempo continua sendo calculado via timestamp ao voltar
                 if (_titleInterval) { clearInterval(_titleInterval); _titleInterval = null; }
+                clearInterval(timerInterval);
+                clearInterval(pauseInterval);
             }
         });
 
@@ -2496,7 +2691,7 @@
             const h = parseInt(document.getElementById('form-dur-h').value) || 0;
             const m = parseInt(document.getElementById('form-dur-m').value) || 0;
             const s = parseInt(document.getElementById('form-dur-s').value) || 0;
-            const totalMin = Math.max(1, Math.round((h * 3600 + m * 60 + s) / 60));
+            const totalMin = Math.round((h * 3600 + m * 60 + s) / 60);
             document.getElementById('form-duration').value = totalMin;
         }
 
@@ -2507,11 +2702,11 @@
             const fh = document.getElementById('form-dur-h');
             const fm = document.getElementById('form-dur-m');
             const fs = document.getElementById('form-dur-s');
-            if (fh) fh.value = h > 0 ? h : '';
-            if (fm) fm.value = m > 0 ? m : '';
-            if (fs) fs.value = s > 0 ? s : '';
+            if (fh) fh.value = h;
+            if (fm) fm.value = m;
+            if (fs) fs.value = s;
             const fd = document.getElementById('form-duration');
-            if (fd) fd.value = Math.max(1, Math.round(secs / 60));
+            if (fd) fd.value = Math.round(secs / 60);
             // Update badge to show timer is linked
             const badge = document.getElementById('timer-linked-badge');
             if (badge && secs > 0) {
@@ -2620,7 +2815,7 @@
             pauseBaseSeconds = 0; pauseStartTs = null;
             isTimerRunning = false; isTimerPaused = false;
             updateTimerDisplays();
-            showAlert("Sessão salva com sucesso!");
+            showToast('✅ Sessão salva com sucesso!', 'success');
         }
 
         function quickStudyTopic(sIdx, tIdx) {
@@ -2780,7 +2975,7 @@
             const newSummary = {
                 id: Date.now(), subject, topic, title,
                 content: "<h2>Introdução</h2><p>Comece a digitar os pontos principais do seu material aqui...</p>",
-                created: new Date().toLocaleDateString(), lastEdited: "Agora", tags: "", isFavorite: false
+                created: isoToBR(todayBrazil()), lastEdited: "Agora", tags: "", isFavorite: false
             };
             studyDb.summaries.push(newSummary); saveDatabase();
             closeCreateSummaryModal(); document.getElementById('modal-summary-title').value = '';
@@ -2835,11 +3030,16 @@
             if (summary) {
                 summary.title = document.getElementById('active-summary-title').value.trim() || "Resumo Sem Título";
                 summary.tags = document.getElementById('active-summary-tags').value.trim();
-                summary.content = document.getElementById('summary-editor-canvas').innerHTML;
+                // Lê do editor ativo (principal ou tela cheia)
+                const activeEditor = _getEditorEl();
+                summary.content = activeEditor ? activeEditor.innerHTML : document.getElementById('summary-editor-canvas').innerHTML;
                 const now = new Date();
-                summary.lastEdited = `${now.toLocaleDateString()} às ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                const brt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+                summary.lastEdited = `${brt.toLocaleDateString('pt-BR')} às ${brt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                 document.getElementById('active-summary-last-edited').innerText = summary.lastEdited;
                 saveDatabase();
+                // Visual auto-save feedback
+                if (typeof scheduleAutosave === 'function') scheduleAutosave();
             }
         }
 
@@ -3043,8 +3243,9 @@
             const conteudo = summary.content || '';
             const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>${titulo}</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111;line-height:1.7;}
+body{font-family:'Roboto',Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#111;line-height:1.7;}
 h1,h2,h3{color:#002244;}
 h1{font-size:26px;border-bottom:3px solid #FFD400;padding-bottom:8px;}
 h2{font-size:20px;margin-top:24px;}
@@ -3270,7 +3471,7 @@ ${conteudo}
         // === 6. REVISÕES COMPONENT ===
         function scheduleAutomaticRevisions(subject, topic, dateStr) {
             const intervals = [{l: "24h", d: 1}, {l: "7d", d: 7}, {l: "15d", d: 15}, {l: "30d", d: 30}];
-            const baseDate = new Date(dateStr);
+            const baseDate = new Date(dateStr + "T12:00:00");
             intervals.forEach(i => {
                 let d = new Date(baseDate); d.setDate(d.getDate() + i.d);
                 studyDb.revisions.push({ id: Date.now()+Math.random(), subject, topic, dueDate: d.toISOString().split('T')[0], label: i.l, done: false });
@@ -3283,6 +3484,17 @@ ${conteudo}
             
             const today = todayBrazil();
             let sorted = studyDb.revisions.filter(r => !r.done).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+
+            // Atualiza contadores de status
+            const overdue = sorted.filter(r => r.dueDate < today).length;
+            const todayCount = sorted.filter(r => r.dueDate === today).length;
+            const future = sorted.filter(r => r.dueDate > today).length;
+            const elOverdue = document.getElementById('rev-stats-overdue');
+            const elToday   = document.getElementById('rev-stats-today');
+            const elFuture  = document.getElementById('rev-stats-future');
+            if (elOverdue) elOverdue.innerText = overdue;
+            if (elToday)   elToday.innerText   = todayCount;
+            if (elFuture)  elFuture.innerText  = future;
 
             if (sorted.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 font-bold">🎉 Nenhuma revisão pendente!</td></tr>`; return;
@@ -3314,7 +3526,7 @@ ${conteudo}
             const rev = studyDb.revisions.find(r => r.id.toString() === id.toString());
             if (rev) {
                 rev.done = true;
-                studyDb.history.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], subject: rev.subject, topic: rev.topic + ` (Revisão ${rev.label})`, duration: 15, type: "Revisão", qCorrect: 0, qTotal: 0 });
+                studyDb.history.push({ id: Date.now(), date: todayBrazil(), subject: rev.subject, topic: rev.topic + ` (Revisão ${rev.label})`, duration: 15, type: "Revisão", qCorrect: 0, qTotal: 0 });
                 saveDatabase(); renderAllTabs(); showAlert("Revisão marcada como concluída!");
             }
         }
@@ -3598,9 +3810,13 @@ function renderHistoryTab() {
                 const decryptedStr = decodeURIComponent(escape(atob(code)));
                 const state = JSON.parse(decryptedStr);
                 if (state && state.syllabus) {
+                    if (!state.summaries)  state.summaries  = [];
+                    if (!state.history)    state.history    = [];
+                    if (!state.revisions)  state.revisions  = [];
+                    if (!state.studyCycle) state.studyCycle = [];
                     studyDb = state; saveDatabase().then(() => { renderAllTabs(); closeImportModal(); showAlert("Importação concluída com sucesso!"); });
                 } else showAlert("Código inválido.");
-            } catch(e) { showAlert("Código corrompido."); }
+            } catch(e) { showAlert("Código corrompido ou inválido."); }
         }
 
         // === FIREBASE: configuração real ===
@@ -3865,10 +4081,253 @@ function renderHistoryTab() {
         window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
         window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
         window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
+        // Funções usadas via onclick mas que estavam faltando no escopo global
+        window.closeAlert = closeAlert; window.handleConfirm = handleConfirm;
+        window.openSyncCenterModal = openSyncCenterModal; window.closeSyncCenterModal = closeSyncCenterModal;
+        window.cycleMotivationalQuote = cycleMotivationalQuote;
+        window.skipRevisionAnki = skipRevisionAnki;
+        window.clearSubjectRecords = clearSubjectRecords;
+        window.renderHistoryTab = renderHistoryTab;
+        window.indentIn = indentIn; window.indentOut = indentOut; window.insertToggle = insertToggle;
+        window.toggleWsTheme = toggleWsTheme;
+        window.toggleSubjectBlock = toggleSubjectBlock;
+        window.applyEditalFilter = applyEditalFilter; window.clearEditalFilter = clearEditalFilter;
+        window.calPrevMonth = calPrevMonth; window.calNextMonth = calNextMonth;
+        window.maskDateInput = maskDateInput;
+        window.handleEditalSearch = handleEditalSearch; window.showEditalDropdown = showEditalDropdown; window.hideEditalDropdown = hideEditalDropdown;
 
 
+        // =====================================================================
+        // ===== MELHORIAS IMPLEMENTADAS =======================================
+        // =====================================================================
 
-        // === EDITOR TELA CHEIA ===
+        // ── 1. TOAST NOTIFICATIONS ──────────────────────────────────────────
+        function showToast(message, type = 'success', duration = 3500) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const icons = { success:'fa-circle-check', info:'fa-circle-info', warn:'fa-triangle-exclamation', error:'fa-circle-xmark' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type]||icons.info} flex-shrink-0"></i><span style="flex:1;line-height:1.35">${message}</span>`;
+            container.appendChild(toast);
+            // auto dismiss
+            const timer = setTimeout(() => dismissToast(toast), duration);
+            toast.addEventListener('click', () => { clearTimeout(timer); dismissToast(toast); });
+        }
+        function dismissToast(el) {
+            el.classList.add('toast-out');
+            el.addEventListener('animationend', () => el.remove(), { once: true });
+        }
+        // Expose globally
+        window.showToast = showToast;
+
+
+        // ── 2. KEYBOARD SHORTCUTS ───────────────────────────────────────────
+        const _tabKeys = ['dashboard','edital','ciclo','cronometro','resumos','revisoes','historico'];
+        document.addEventListener('keydown', function _globalShortcuts(e) {
+            // Skip if inside a text input / textarea / contenteditable (except our special ones)
+            const tag = e.target.tagName;
+            const isEditing = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+            const isEditorCanvas = e.target.isContentEditable;
+
+            // Ctrl+S — save active summary (works even inside editor)
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (activeSummaryId) {
+                    saveActiveSummary();
+                    showToast('✅ Resumo salvo!', 'success', 2000);
+                    triggerAutosaveIndicator();
+                } else {
+                    showToast('Abra um resumo para salvar com Ctrl+S', 'info', 2500);
+                }
+                return;
+            }
+
+            // Ctrl+1-7 — tab switching (skip if inside normal input)
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && !isEditorCanvas) {
+                const num = parseInt(e.key);
+                if (num >= 1 && num <= 7) {
+                    e.preventDefault();
+                    const tabId = _tabKeys[num - 1];
+                    if (tabId) {
+                        switchTab(tabId);
+                        showToast(`Aba: ${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`, 'info', 1500);
+                    }
+                }
+            }
+        });
+
+
+        // ── 3. STREAK DE DIAS CONSECUTIVOS ──────────────────────────────────
+        function calculateStreak() {
+            const todayStr = todayBrazil();
+            const studyDates = new Set(studyDb.history.map(s => s.date));
+
+            if (studyDates.size === 0) return 0;
+
+            let streak = 0;
+            let checkDate = new Date(todayStr + 'T12:00:00');
+
+            // If studied today, count today then go back; else start from yesterday
+            if (!studyDates.has(todayStr)) {
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+
+            while (true) {
+                const dateStr = checkDate.toISOString().slice(0, 10);
+                if (studyDates.has(dateStr)) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else break;
+            }
+            return streak;
+        }
+
+
+        // ── 4. DAILY GOAL ───────────────────────────────────────────────────
+        const DAILY_GOAL_KEY = 'estudei_prf_daily_goal';
+
+        async function loadDailyGoal() {
+            const val = await storageGet(DAILY_GOAL_KEY);
+            const goalEl = document.getElementById('daily-goal-input');
+            if (goalEl && val) goalEl.value = val;
+        }
+
+        function updateDailyGoal() {
+            const goalEl = document.getElementById('daily-goal-input');
+            const val = parseInt(goalEl?.value) || 0;
+            if (val > 0) storageSet(DAILY_GOAL_KEY, val);
+            refreshDailyGoalBar();
+        }
+
+        function refreshDailyGoalBar() {
+            const goalEl = document.getElementById('daily-goal-input');
+            const goalMin = parseInt(goalEl?.value) || 120;
+            const todayStr = todayBrazil();
+            const todayMin = studyDb.history
+                .filter(s => s.date === todayStr)
+                .reduce((acc, s) => acc + parseInt(s.duration || 0), 0);
+
+            const pct = Math.min(100, Math.round((todayMin / goalMin) * 100));
+            const bar = document.getElementById('daily-goal-bar');
+            const curEl = document.getElementById('daily-goal-current');
+            const pctEl = document.getElementById('daily-goal-pct');
+            const statusEl = document.getElementById('daily-goal-status-text');
+
+            if (bar) bar.style.width = pct + '%';
+            if (curEl) curEl.innerText = `${todayMin} min hoje`;
+            if (pctEl) pctEl.innerText = `${pct}% da meta (${goalMin} min)`;
+            if (statusEl) {
+                if (pct >= 100) {
+                    statusEl.innerText = '🎉 Meta atingida! Excelente dedicação hoje.';
+                    statusEl.className = 'text-xs text-emerald-400 mt-0.5 font-bold';
+                } else if (pct >= 50) {
+                    statusEl.innerText = `Faltam ${goalMin - todayMin} min para atingir a meta de hoje`;
+                    statusEl.className = 'text-xs text-yellow-400 mt-0.5';
+                } else {
+                    statusEl.innerText = `Meta: ${goalMin} min/dia — ajuste conforme sua rotina`;
+                    statusEl.className = 'text-xs text-gray-400 mt-0.5';
+                }
+            }
+        }
+        window.updateDailyGoal = updateDailyGoal;
+
+
+        // ── 5. TOTAL DE HORAS / STREAK / GOAL / SESSÕES RECENTES ────────────
+        //  All injected directly into updateDashboardMetrics above.
+        //  Helper stubs for external callers:
+
+
+        // ── 7. AUTO-SAVE VISUAL NO EDITOR ────────────────────────────────────
+        let _autosaveTimer = null;
+
+        function scheduleAutosave() {
+            const indicator = document.getElementById('autosave-indicator');
+            if (!indicator) return;
+            // Show "saving..." dot in amber
+            indicator.querySelector('.as-dot').style.background = '#f59e0b';
+            indicator.querySelector('span:last-child').innerText = 'Salvando…';
+            indicator.classList.add('visible');
+            clearTimeout(_autosaveTimer);
+            // After 1.5s of idle, flip to "Salvo"
+            _autosaveTimer = setTimeout(() => triggerAutosaveIndicator(), 1500);
+        }
+
+        function triggerAutosaveIndicator() {
+            const indicator = document.getElementById('autosave-indicator');
+            if (!indicator) return;
+            indicator.querySelector('.as-dot').style.background = '#10b981';
+            indicator.querySelector('span:last-child').innerText = 'Salvo';
+            indicator.classList.add('visible');
+            setTimeout(() => indicator.classList.remove('visible'), 3000);
+        }
+
+        // Patch the editor canvas to trigger debounced autosave
+        document.addEventListener('input', function(e) {
+            if (e.target && e.target.id === 'summary-editor-canvas') {
+                scheduleAutosave();
+            }
+        }, true);
+
+        // Also patch title and tags inputs
+        const _titleInput = document.getElementById('active-summary-title');
+        const _tagsInput  = document.getElementById('active-summary-tags');
+        if (_titleInput) _titleInput.addEventListener('input', scheduleAutosave);
+        if (_tagsInput)  _tagsInput.addEventListener('input', scheduleAutosave);
+
+
+        // ── 8. CONFIRMAÇÃO ANTES DO LIMPAR ───────────────────────────────────
+        function confirmClearForm() {
+            showConfirm(
+                '⚠️ Limpar o formulário? Todos os campos serão apagados (o cronômetro continuará).',
+                () => {
+                    document.getElementById('study-session-form').reset();
+                    const _df = document.getElementById('form-session-date');
+                    if (_df) _df.value = isoToBR(todayBrazil());
+                    fillDurationFieldsFromSeconds(totalSeconds);
+                    showToast('Formulário limpo.', 'info', 2000);
+                }
+            );
+        }
+        window.confirmClearForm = confirmClearForm;
+
+
+        // ── PATCH: Replace non-critical showAlert calls with toasts ──────────
+        // We override showAlert to use toast for quick success/info messages,
+        // keeping the blocking modal only for errors / confirmations.
+        const _origShowAlert = showAlert;
+        function showAlert(message) {
+            // Messages that should remain as blocking modals:
+            const blocking = ['Erro', 'erro', 'inválido', 'inválida', 'Código', 'corrompido',
+                              'Selecione', 'Sem dados', 'Faça login', 'Ative Email'];
+            const isBlocking = blocking.some(kw => message.includes(kw));
+            if (isBlocking) {
+                _origShowAlert(message);
+            } else {
+                // Detect type from message content
+                const type = (message.includes('✅') || message.includes('sucesso') || message.includes('salvo') || message.includes('Salvo') || message.includes('criado') || message.includes('Importação'))
+                    ? 'success'
+                    : (message.includes('⚠') || message.includes('Pausa') || message.includes('encerrada') || message.includes('concluído'))
+                    ? 'warn'
+                    : 'info';
+                showToast(message, type);
+            }
+        }
+        window.showAlert = showAlert;
+
+
+        // ── INIT EXTRAS ──────────────────────────────────────────────────────
+        loadDailyGoal();
+
+        // Keyboard shortcut hint tooltip in nav
+        (function addShortcutHints() {
+            const hints = ['1','2','3','4','5','6','7'];
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                if (hints[i]) btn.title = `Ctrl+${hints[i]} para abrir`;
+            });
+        })();
+
+
         let fsIsLight = false;
         let fsToolbarHideTimer = null;
         let fsToolbarHidden = false;
@@ -4601,8 +5060,8 @@ function renderHistoryTab() {
 
         function _getEditorEl() {
             // Returns whichever editor is currently active
-            const ws = document.getElementById('active-summary-workspace');
-            if (ws && ws.classList.contains('workspace-fullscreen')) return document.getElementById('summary-editor-canvas');
+            const overlay = document.getElementById('fullscreen-editor-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) return document.getElementById('fs-editor-content');
             return document.getElementById('summary-editor-canvas');
         }
 
