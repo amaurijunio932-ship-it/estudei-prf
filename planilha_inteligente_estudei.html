@@ -70,9 +70,9 @@
         .editor-canvas th, .editor-canvas td { border: 1px solid #3b82f6; padding: 8px; text-align: left; }
 
         /* Temas Claro/Escuro do papel do editor */
-        .editor-paper-dark { background-color: #1d355c; color: #f3f4f6; }
-        .editor-paper-light { background-color: #ffffff; color: #0f172a; }
-        .editor-paper-light th, .editor-paper-light td { border: 1px solid #cbd5e1; color: #0f172a; }
+        .editor-paper-dark { background-color: #0d1622; color: #dde3eb; }
+        .editor-paper-light { background-color: #f5f0e6; color: #1c1c2e; }
+        .editor-paper-light th, .editor-paper-light td { border: 1px solid #c4bfb3; color: #1c1c2e; }
 
         /* COLOR PALETTE POPUP */
         .color-palette-popup {
@@ -162,10 +162,10 @@
             flex: 1 !important;
             overflow-y: auto !important;
         }
-        .workspace-fullscreen.ws-light { background: #e2e8f0 !important; }
-        .workspace-fullscreen.ws-light #summary-editor-canvas { background: #ffffff !important; color: #0f172a !important; }
+        .workspace-fullscreen.ws-light { background: #ede8de !important; }
+        .workspace-fullscreen.ws-light #summary-editor-canvas { background: #f5f0e6 !important; color: #1c1c2e !important; }
         .workspace-fullscreen.ws-light #summary-editor-canvas table th,
-        .workspace-fullscreen.ws-light #summary-editor-canvas table td { border-color: #cbd5e1 !important; color: #0f172a !important; }
+        .workspace-fullscreen.ws-light #summary-editor-canvas table td { border-color: #c4bfb3 !important; color: #1c1c2e !important; }
         /* FULLSCREEN EDITOR — hide old overlay approach */
         #fullscreen-editor-overlay { display: none !important; }
 
@@ -178,12 +178,12 @@
         #fs-editor-content ol { list-style-type: decimal !important; padding-left: 2rem !important; margin: 12px 0 !important; display: block !important; }
         #fs-editor-content li { display: list-item !important; margin-bottom: 6px; }
         #fs-editor-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; display: table !important; }
-        #fs-editor-content.fs-dark { background: #0a0f1e; color: #f3f4f6; }
-        #fs-editor-content.fs-dark table th, #fs-editor-content.fs-dark table td { border: 1px solid #3b82f6; padding: 8px; color: #f3f4f6; }
-        #fs-editor-content.fs-light { background: #ffffff; color: #0f172a; }
-        #fs-editor-content.fs-light table th, #fs-editor-content.fs-light table td { border: 1px solid #cbd5e1; padding: 8px; color: #0f172a; }
-        #fs-doc-area.fs-light { background: #e2e8f0; }
-        #fs-doc-area.fs-dark { background: #0a0f1e; }
+        #fs-editor-content.fs-dark { background: #0d1622; color: #dde3eb; }
+        #fs-editor-content.fs-dark table th, #fs-editor-content.fs-dark table td { border: 1px solid #2d4a6a; padding: 8px; color: #dde3eb; }
+        #fs-editor-content.fs-light { background: #f5f0e6; color: #1c1c2e; }
+        #fs-editor-content.fs-light table th, #fs-editor-content.fs-light table td { border: 1px solid #c4bfb3; padding: 8px; color: #1c1c2e; }
+        #fs-doc-area.fs-light { background: #ede8de; }
+        #fs-doc-area.fs-dark { background: #080f1c; }
 
         /* MODO ALTA REVISÃO (Destaque Inteligente) */
         .high-revision-mode {
@@ -213,6 +213,13 @@
         .disc-color-9  { color: #f43f5e; border-left-color: #f43f5e; }
         .disc-color-10 { color: #8b5cf6; border-left-color: #8b5cf6; }
         .disc-color-11 { color: #14b8a6; border-left-color: #14b8a6; } 
+
+        /* ===== EDIT HISTORY MODAL ===== */
+        #modal-edit-history .bg-card-dark {
+            animation: popIn 0.2s cubic-bezier(.4,0,.2,1);
+        }
+        /* Row action buttons group */
+        .history-action-cell { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 
         /* ===== TOAST NOTIFICATIONS ===== */
         #toast-container {
@@ -594,6 +601,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
                     <!-- Preenchido dinamicamente -->
                 </div>
+            </div>
+
+            <!-- ── PAINEL DE INTELIGÊNCIA ADAPTATIVA ── -->
+            <div id="intelligence-panel" class="space-y-4">
+                <!-- Preenchido pelo motor de IA -->
             </div>
         </section>
 
@@ -1178,6 +1190,162 @@
     </main>
 
     <!-- MODAIS -->
+
+    <!-- Modal: Editar Histórico -->
+    <div id="modal-edit-history" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[130] flex items-center justify-center p-4 hidden" onclick="if(event.target===this)closeEditHistoryModal()">
+        <div class="bg-card-dark border-2 border-yellow-400 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 relative max-h-[92vh] overflow-y-auto">
+            <button onclick="closeEditHistoryModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl transition"><i class="fa-solid fa-xmark"></i></button>
+            <div class="border-b border-blue-900 pb-4">
+                <h3 class="text-xl font-black text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-prf-yellow"></i> Editar Registo de Estudo
+                </h3>
+                <p class="text-xs text-blue-300 mt-1">Altere as informações da sessão de estudo selecionada.</p>
+            </div>
+
+            <input type="hidden" id="edit-history-id">
+
+            <!-- Disciplina -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-book mr-1 text-yellow-400"></i> Disciplina
+                </label>
+                <div class="relative" id="edit-subject-wrapper">
+                    <div class="flex items-center bg-input-dark border border-blue-800 rounded-xl overflow-visible focus-within:border-yellow-400 transition" style="border-radius:12px;">
+                        <input type="text" id="edit-history-subject"
+                            placeholder="Selecione ou digite..."
+                            autocomplete="off" spellcheck="false"
+                            oninput="filterEditSubjectDD(this.value)"
+                            onfocus="openEditSubjectDD()"
+                            class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none placeholder-gray-600">
+                        <button type="button" onclick="toggleEditSubjectDD()" title="Ver disciplinas"
+                            class="px-3 h-full text-gray-400 hover:text-yellow-400 transition flex-shrink-0 flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="edit-subject-chevron"></i>
+                        </button>
+                    </div>
+                    <div id="edit-subject-dropdown"
+                        class="hidden absolute left-0 right-0 top-full mt-1 z-[200] rounded-xl shadow-2xl overflow-hidden"
+                        style="background:#0d1830;border:1.5px solid #1e3a5f;max-height:220px;overflow-y:auto;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tópico / Matéria -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-tag mr-1 text-yellow-400"></i> Tópico / Matéria
+                </label>
+                <div class="relative" id="edit-topic-wrapper">
+                    <div class="flex items-center bg-input-dark border border-blue-800 rounded-xl overflow-visible focus-within:border-yellow-400 transition" style="border-radius:12px;">
+                        <input type="text" id="edit-history-topic"
+                            placeholder="Selecione ou digite..."
+                            autocomplete="off" spellcheck="false"
+                            oninput="filterEditTopicDD(this.value)"
+                            onfocus="openEditTopicDD()"
+                            class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none placeholder-gray-600">
+                        <button type="button" onclick="toggleEditTopicDD()" title="Ver tópicos"
+                            class="px-3 h-full text-gray-400 hover:text-yellow-400 transition flex-shrink-0 flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="edit-topic-chevron"></i>
+                        </button>
+                    </div>
+                    <div id="edit-topic-dropdown"
+                        class="hidden absolute left-0 right-0 top-full mt-1 z-[200] rounded-xl shadow-2xl overflow-hidden"
+                        style="background:#0d1830;border:1.5px solid #1e3a5f;max-height:220px;overflow-y:auto;">
+                    </div>
+                </div>
+                <p class="text-xxs text-gray-600 pt-0.5">Você pode digitar um tópico personalizado se preferir.</p>
+            </div>
+
+            <!-- Duração -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-clock mr-1 text-yellow-400"></i> Duração (horas e minutos)
+                </label>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <div class="flex items-center bg-input-dark border border-blue-800 rounded-xl overflow-hidden focus-within:border-yellow-400 transition">
+                            <input type="number" id="edit-history-hours" min="0" max="23" placeholder="0"
+                                class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none text-center font-bold">
+                            <span class="pr-3 text-gray-500 text-xs font-bold">h</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center bg-input-dark border border-blue-800 rounded-xl overflow-hidden focus-within:border-yellow-400 transition">
+                            <input type="number" id="edit-history-minutes" min="0" max="59" placeholder="0"
+                                class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none text-center font-bold">
+                            <span class="pr-3 text-gray-500 text-xs font-bold">min</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-600 pt-0.5">Duração atual será substituída pelos valores acima.</p>
+            </div>
+
+            <!-- Tipo de Estudo -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-tags mr-1 text-yellow-400"></i> Tipo de Estudo
+                </label>
+                <select id="edit-history-type" onchange="toggleEditHistoryQuestoes()"
+                    class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400 transition">
+                    <option value="Teoria">📖 Teoria</option>
+                    <option value="Questões">📝 Questões</option>
+                    <option value="Revisão">🔁 Revisão</option>
+                    <option value="Flashcards">🃏 Flashcards</option>
+                    <option value="Mapa Mental">🗺️ Mapa Mental</option>
+                    <option value="Resumo">✍️ Resumo</option>
+                    <option value="Simulado">🎯 Simulado</option>
+                    <option value="Videoaula">🎥 Videoaula</option>
+                    <option value="Áudio">🎧 Áudio</option>
+                    <option value="Outros">⚡ Outros</option>
+                </select>
+            </div>
+
+            <!-- Questões (visível apenas se tipo = Questões ou Simulado) -->
+            <div id="edit-history-questoes-section" class="space-y-2 bg-blue-950/40 border border-blue-800/60 rounded-xl p-4 hidden">
+                <p class="text-xs font-black text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-bullseye"></i> Desempenho nas Questões
+                </p>
+                <div class="flex gap-3">
+                    <div class="flex-1 space-y-1">
+                        <label class="text-xxs font-bold text-gray-500 uppercase tracking-wider">Total de Questões</label>
+                        <input type="number" id="edit-history-qtotal" min="0" placeholder="Ex.: 30"
+                            oninput="calcEditAccuracyPreview()"
+                            class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400 transition text-center font-bold">
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <label class="text-xxs font-bold text-gray-500 uppercase tracking-wider">Questões Corretas</label>
+                        <input type="number" id="edit-history-qcorrect" min="0" placeholder="Ex.: 26"
+                            oninput="calcEditAccuracyPreview()"
+                            class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400 transition text-center font-bold">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-xxs text-gray-500">Aproveitamento</span>
+                    <span id="edit-history-accuracy-preview" class="text-sm font-black text-emerald-400">0%</span>
+                </div>
+                <p class="text-xxs text-gray-600">⚠️ Alterar questões atualiza também o Edital Verticalizado e os gráficos.</p>
+            </div>
+
+            <!-- Observações -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-note-sticky mr-1 text-yellow-400"></i> Observações <span class="text-gray-600 normal-case font-normal">(opcional)</span>
+                </label>
+                <textarea id="edit-history-notes" rows="2" placeholder="Ex.: Trilha 2, Tarefa 31. Só resumos ativos."
+                    class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400 transition placeholder-gray-600 resize-none"></textarea>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeEditHistoryModal()" class="flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-gray-300 font-bold rounded-xl transition text-sm">
+                    <i class="fa-solid fa-xmark mr-1"></i> Cancelar
+                </button>
+                <button onclick="saveEditHistory()" class="flex-1 px-4 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-black rounded-xl transition text-sm shadow-lg">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Central Sincronização -->
     <div id="modal-sync-center" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden">
         <div class="bg-card-dark border-2 border-yellow-400 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative">
@@ -2935,11 +3103,29 @@
                         <div class="flex items-center gap-2 truncate"><i class="fa-solid fa-book"></i> <span class="truncate">${subject}</span></div>
                         <i class="fa-solid fa-chevron-down text-[10px] flex-shrink-0 transition-transform" style="transform:${chevronRotate}"></i>
                     </div>
-                    <div class="pl-2 space-y-2" style="display:${bodyDisplay}">`;
+                    <div class="pl-2 space-y-1" style="display:${bodyDisplay}">`;
                 
                 const sortedTopics = Object.keys(groups[subject]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
                 for (const topic of sortedTopics) {
-                    subjectHtml += `<div><div class="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold py-1"><i class="fa-regular fa-folder-open text-yellow-500"></i> <span class="truncate">${topic}</span></div><div class="pl-3 space-y-0.5 mt-0.5 border-l border-blue-900/60">`;
+                    const topicKey = 'tree_topic_' + btoa(encodeURIComponent(subject + '||' + topic)).replace(/=/g,'');
+                    const isTopicCollapsed = _treeCollapsed[topicKey] === true;
+                    const topicChevron = isTopicCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    const topicDisplay = isTopicCollapsed ? 'none' : 'block';
+                    const count = groups[subject][topic].length;
+
+                    subjectHtml += `
+                    <div>
+                        <div class="flex items-center justify-between gap-1 py-1 px-1 rounded cursor-pointer select-none hover:bg-blue-900/20 transition group"
+                             onclick="toggleTreeTopic('${topicKey}', this)">
+                            <div class="flex items-center gap-1.5 text-[11px] text-gray-300 font-bold truncate">
+                                <i class="fa-regular fa-folder-open text-yellow-500 flex-shrink-0 group-hover:text-yellow-400 transition"></i>
+                                <span class="truncate">${topic}</span>
+                                <span style="font-size:9px;background:rgba(59,130,246,0.18);color:#93c5fd;border-radius:99px;padding:0 5px;font-weight:700;flex-shrink:0;">${count}</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-[9px] text-gray-600 flex-shrink-0 transition-transform group-hover:text-gray-400"
+                               style="transform:${topicChevron}"></i>
+                        </div>
+                        <div class="pl-3 space-y-0.5 mt-0.5 border-l border-blue-900/60" id="${topicKey}" style="display:${topicDisplay}">`;
                     
                     groups[subject][topic].forEach(sum => {
                         const activeClass = (sum.id === activeSummaryId) ? 'bg-blue-900/60 text-white font-bold border-blue-500' : 'text-gray-400 hover:bg-blue-900/30 hover:text-gray-200 border-transparent';
@@ -2952,6 +3138,15 @@
                 container.innerHTML += subjectHtml;
             }
         }
+
+        function toggleTreeTopic(key, headerEl) {
+            _treeCollapsed[key] = !_treeCollapsed[key];
+            const body = document.getElementById(key);
+            const chevron = headerEl.querySelector('.fa-chevron-right');
+            if (body) body.style.display = _treeCollapsed[key] ? 'none' : 'block';
+            if (chevron) chevron.style.transform = _treeCollapsed[key] ? 'rotate(-90deg)' : 'rotate(90deg)';
+        }
+        window.toggleTreeTopic = toggleTreeTopic;
 
         function openCreateSummaryModal() { document.getElementById('modal-create-summary').classList.remove('hidden'); }
         function closeCreateSummaryModal() { document.getElementById('modal-create-summary').classList.add('hidden'); }
@@ -3586,31 +3781,377 @@ function renderHistoryTab() {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 font-bold">Nenhum registo encontrado.</td></tr>`; return;
             }
 
+            // Group by date
+            const ptDays = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+            const ptMonths = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            const groups = {};
+            const groupOrder = [];
             sorted.forEach(s => {
-                const d = s.date.split('-');
-                let typeBadge = s.type === "Questões" ? "bg-yellow-400/20 text-yellow-400" : (s.type === "Revisão" ? "bg-emerald-500/20 text-emerald-400" : "bg-blue-900/40 text-blue-300");
-                let qStats = s.qTotal > 0 ? `${s.qCorrect}/${s.qTotal} (${Math.round(s.qCorrect/s.qTotal*100)}%)` : "--";
-                let pagesCell = s.pages > 0 ? `<span class="text-cyan-400 font-bold">${s.pages}p</span>` : `<span class="text-gray-600">--</span>`;
-                let notesCell = s.notes ? `<span class="text-gray-300 text-xs italic" title="${s.notes.replace(/"/g,"'")}">${s.notes.length > 40 ? s.notes.substring(0,40)+'…' : s.notes}</span>` : `<span class="text-gray-600">--</span>`;
+                if (!groups[s.date]) { groups[s.date] = []; groupOrder.push(s.date); }
+                groups[s.date].push(s);
+            });
 
+            groupOrder.forEach((date, gIdx) => {
+                const sessions = groups[date];
+                const [y, mo, d] = date.split('-').map(Number);
+                const dateObj = new Date(y, mo - 1, d);
+                const dayName = ptDays[dateObj.getDay()];
+                const isToday = date === (() => { const n = new Date(); const tz = new Date(n.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})); return `${tz.getFullYear()}-${String(tz.getMonth()+1).padStart(2,'0')}-${String(tz.getDate()).padStart(2,'0')}`; })();
+                const isYesterday = (() => { const n = new Date(); const tz = new Date(n.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})); tz.setDate(tz.getDate()-1); return `${tz.getFullYear()}-${String(tz.getMonth()+1).padStart(2,'0')}-${String(tz.getDate()).padStart(2,'0')}`; })() === date;
+
+                const totalMins = sessions.reduce((a,s) => a + (parseInt(s.duration)||0), 0);
+                const th = Math.floor(totalMins/60), tm = totalMins%60;
+                const totalStr = th > 0 ? `${th}h ${String(tm).padStart(2,'0')}min` : `${tm}min`;
+                const dayLabel = isToday ? '🟡 Hoje' : isYesterday ? '🔵 Ontem' : `${dayName}-feira`.replace('Sábado-feira','Sábado').replace('Domingo-feira','Domingo').replace('Segunda-feira','Segunda-feira').replace('Terça-feira','Terça-feira').replace('Quarta-feira','Quarta-feira').replace('Quinta-feira','Quinta-feira').replace('Sexta-feira','Sexta-feira');
+
+                const typeIcons = {Teoria:'📖',Questões:'📝',Revisão:'🔁',Flashcards:'🃏','Mapa Mental':'🗺️',Resumo:'✍️',Simulado:'🎯',Videoaula:'🎥',Outros:'⚡'};
+                const typesSummary = [...new Set(sessions.map(s=>typeIcons[s.type]||'📚'))].join(' ');
+
+                // Date separator row
                 tbody.innerHTML += `
-                    <tr class="hover:bg-blue-950/20">
-                        <td class="px-4 py-3 text-gray-400 text-xs">${d[2]}/${d[1]}/${d[0]}</td>
-                        <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
-                        <td class="px-4 py-3 text-gray-300 text-xs">${s.topic}</td>
-                        <td class="px-4 py-3 text-center text-prf-yellow">${formatDurationHMS(s.duration)}</td>
-                        <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
-                        <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
-                        <td class="px-4 py-3 text-center text-xs">${pagesCell}</td>
-                        <td class="px-4 py-3 text-xs max-w-[200px]">${notesCell}</td>
-                        <td class="px-4 py-3 text-right"><button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button></td>
+                    <tr style="${gIdx > 0 ? 'border-top: 2px solid rgba(30,58,138,0.4);' : ''}">
+                        <td colspan="9" style="padding:0;">
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 16px 8px;
+                                        background:linear-gradient(90deg,rgba(30,58,138,0.25) 0%,rgba(30,58,138,0.05) 100%);
+                                        border-left: 3px solid ${isToday ? '#FFD400' : '#3b82f6'};">
+                                <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                        <span style="font-size:13px;font-weight:900;color:${isToday ? '#FFD400' : '#93c5fd'};">
+                                            ${String(d).padStart(2,'0')} ${ptMonths[mo-1]} ${y}
+                                        </span>
+                                        <span style="font-size:11px;font-weight:700;color:#6b7280;">${dayLabel}</span>
+                                        <span style="font-size:11px;">${typesSummary}</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+                                    <span style="font-size:11px;color:#94a3b8;font-weight:600;">
+                                        <i class="fa-solid fa-layer-group" style="color:#60a5fa;margin-right:4px;font-size:10px;"></i>${sessions.length} sessão${sessions.length>1?'ões':''}
+                                    </span>
+                                    <span style="font-size:12px;font-weight:900;color:#FFD400;">
+                                        <i class="fa-solid fa-clock" style="font-size:10px;margin-right:3px;opacity:.8;"></i>${totalStr}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 `;
+
+                // Session rows for this date
+                sessions.forEach(s => {
+                    let typeBadge = s.type === "Questões" ? "bg-yellow-400/20 text-yellow-400" :
+                                    s.type === "Revisão"  ? "bg-emerald-500/20 text-emerald-400" :
+                                    s.type === "Flashcards" ? "bg-purple-500/20 text-purple-400" :
+                                    s.type === "Simulado"   ? "bg-orange-500/20 text-orange-400" :
+                                    "bg-blue-900/40 text-blue-300";
+                    let qStats = s.qTotal > 0 ? `${s.qCorrect}/${s.qTotal} (${Math.round(s.qCorrect/s.qTotal*100)}%)` : "--";
+                    let pagesCell = s.pages > 0 ? `<span class="text-cyan-400 font-bold">${s.pages}p</span>` : `<span class="text-gray-600">--</span>`;
+                    let notesCell = s.notes ? `<span class="text-gray-300 text-xs italic" title="${s.notes.replace(/"/g,"'")}">${s.notes.length > 40 ? s.notes.substring(0,40)+'…' : s.notes}</span>` : `<span class="text-gray-600">--</span>`;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-blue-950/20" style="border-left:3px solid transparent;">
+                            <td class="px-4 py-3 text-gray-600 text-xs" style="padding-left:20px;">—</td>
+                            <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
+                            <td class="px-4 py-3 text-gray-300 text-xs">${s.topic}</td>
+                            <td class="px-4 py-3 text-center text-prf-yellow">${formatDurationHMS(s.duration)}</td>
+                            <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
+                            <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
+                            <td class="px-4 py-3 text-center text-xs">${pagesCell}</td>
+                            <td class="px-4 py-3 text-xs max-w-[200px]">${notesCell}</td>
+                            <td class="px-4 py-3 text-right flex items-center justify-end gap-2">
+                                <button onclick="openEditHistoryModal(${s.id})" class="text-blue-400 hover:text-blue-300 p-1" title="Editar registo"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1" title="Apagar registo"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
             });
         }
 
         function deleteHistorySession(id) {
             showConfirm("Apagar registo?", () => { studyDb.history = studyDb.history.filter(s => s.id !== id); saveDatabase(); renderAllTabs(); });
+        }
+
+        function openEditHistoryModal(id) {
+            const session = studyDb.history.find(s => s.id === id);
+            if (!session) return;
+
+            // Fill basic fields
+            document.getElementById('edit-history-id').value = id;
+            document.getElementById('edit-history-subject').value = session.subject || '';
+            document.getElementById('edit-history-topic').value = session.topic || '';
+
+            // Pre-build topic options for this subject
+            _editBuildTopicOptions(session.subject || '');
+
+            // Convert minutes → hours and minutes
+            const totalMin = Math.round((Number(session.duration) || 0));
+            document.getElementById('edit-history-hours').value = Math.floor(totalMin / 60);
+            document.getElementById('edit-history-minutes').value = totalMin % 60;
+
+            // Fill tipo
+            const typeEl = document.getElementById('edit-history-type');
+            if (typeEl) typeEl.value = session.type || 'Teoria';
+
+            // Fill questões
+            document.getElementById('edit-history-qtotal').value = session.qTotal > 0 ? session.qTotal : '';
+            document.getElementById('edit-history-qcorrect').value = session.qCorrect > 0 ? session.qCorrect : '';
+            calcEditAccuracyPreview();
+
+            // Fill observações
+            document.getElementById('edit-history-notes').value = session.notes || '';
+
+            // Show/hide questões section
+            toggleEditHistoryQuestoes();
+
+            // Ensure dropdowns are closed
+            _closeEditSubjectDD(); _closeEditTopicDD();
+
+            // Show modal
+            document.getElementById('modal-edit-history').classList.remove('hidden');
+        }
+
+        function toggleEditHistoryQuestoes() {
+            const typeEl = document.getElementById('edit-history-type');
+            const section = document.getElementById('edit-history-questoes-section');
+            if (!typeEl || !section) return;
+            const showQ = typeEl.value === 'Questões' || typeEl.value === 'Simulado';
+            section.classList.toggle('hidden', !showQ);
+        }
+
+        function calcEditAccuracyPreview() {
+            const qT = parseInt(document.getElementById('edit-history-qtotal')?.value) || 0;
+            const qC = parseInt(document.getElementById('edit-history-qcorrect')?.value) || 0;
+            const el = document.getElementById('edit-history-accuracy-preview');
+            if (!el) return;
+            if (qT > 0 && qC <= qT) {
+                const pct = Math.round((qC / qT) * 100);
+                el.innerText = pct + '%';
+                el.className = `text-sm font-black ${pct >= 80 ? 'text-emerald-400' : pct >= 60 ? 'text-yellow-400' : 'text-red-400'}`;
+            } else {
+                el.innerText = '0%';
+                el.className = 'text-sm font-black text-gray-400';
+            }
+        }
+
+        function closeEditHistoryModal() {
+            document.getElementById('modal-edit-history').classList.add('hidden');
+            _closeEditSubjectDD(); _closeEditTopicDD();
+        }
+
+        // ── EDIT HISTORY: Custom dropdown helpers ──────────────────────────────
+        let _editTopicBank = [];
+
+        function _editBuildSubjectOptions() {
+            const fromSyllabus = studyDb.syllabus.map(s => s.subject);
+            const fromHistory  = studyDb.history.map(s => s.subject);
+            return [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        }
+
+        function _editBuildTopicOptions(subject) {
+            const subObj = studyDb.syllabus.find(s => s.subject === subject);
+            const fromSyllabus = subObj ? subObj.topics.map(t => t.name) : [];
+            const fromHistory  = studyDb.history.filter(s => s.subject === subject).map(s => s.topic);
+            _editTopicBank = [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        }
+
+        function _renderEditDD(containerId, items, onClickFn, emptyMsg, icon, color) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:#6b7280;font-style:italic;">${emptyMsg}</div>`;
+                return;
+            }
+            el.innerHTML = items.map((item, i) => {
+                const safe = item.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                return `<div onclick="${onClickFn}('${safe}');event.stopPropagation()"
+                    style="display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;font-weight:600;
+                           color:#cbd5e1;cursor:pointer;transition:background .12s;
+                           border-bottom:${i<items.length-1?'1px solid rgba(59,130,246,0.12)':'none'};"
+                    onmouseover="this.style.background='rgba(59,130,246,0.18)';this.style.color='#fbbf24';"
+                    onmouseout="this.style.background='transparent';this.style.color='#cbd5e1';">
+                    <i class="fa-solid ${icon}" style="font-size:10px;color:${color};flex-shrink:0;opacity:.7;"></i>
+                    <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function _openEditSubjectDD() {
+            const items = _editBuildSubjectOptions();
+            const val   = document.getElementById('edit-history-subject')?.value || '';
+            const term  = val.toLowerCase();
+            const filtered = term ? items.filter(s => s.toLowerCase().includes(term)) : items;
+            _renderEditDD('edit-subject-dropdown', filtered, 'selectEditSubject',
+                'Nenhuma disciplina encontrada', 'fa-book', '#fbbf24');
+            const dd = document.getElementById('edit-subject-dropdown');
+            if (dd) dd.classList.remove('hidden');
+            const chev = document.getElementById('edit-subject-chevron');
+            if (chev) { chev.style.transform = 'rotate(180deg)'; chev.style.color = '#fbbf24'; }
+            _closeEditTopicDD();
+        }
+
+        function _closeEditSubjectDD() {
+            const dd = document.getElementById('edit-subject-dropdown');
+            if (dd) dd.classList.add('hidden');
+            const chev = document.getElementById('edit-subject-chevron');
+            if (chev) { chev.style.transform = ''; chev.style.color = ''; }
+        }
+
+        function toggleEditSubjectDD() {
+            const dd = document.getElementById('edit-subject-dropdown');
+            dd && !dd.classList.contains('hidden') ? _closeEditSubjectDD() : _openEditSubjectDD();
+        }
+
+        function filterEditSubjectDD(val) {
+            const items = _editBuildSubjectOptions();
+            const term  = val.toLowerCase();
+            const filtered = term ? items.filter(s => s.toLowerCase().includes(term)) : items;
+            _renderEditDD('edit-subject-dropdown', filtered, 'selectEditSubject',
+                'Nenhuma disciplina encontrada', 'fa-book', '#fbbf24');
+            const dd = document.getElementById('edit-subject-dropdown');
+            if (dd) dd.classList.remove('hidden');
+            const chev = document.getElementById('edit-subject-chevron');
+            if (chev) { chev.style.transform = 'rotate(180deg)'; chev.style.color = '#fbbf24'; }
+        }
+
+        function selectEditSubject(subject) {
+            const inp = document.getElementById('edit-history-subject');
+            if (inp) inp.value = subject;
+            _closeEditSubjectDD();
+            // Reset topic and rebuild its bank for the new subject
+            const topicInp = document.getElementById('edit-history-topic');
+            if (topicInp) topicInp.value = '';
+            _editBuildTopicOptions(subject);
+        }
+
+        function openEditSubjectDD() { _openEditSubjectDD(); }
+
+        // ── Topic dropdown ──
+        function _openEditTopicDD() {
+            const subject = document.getElementById('edit-history-subject')?.value || '';
+            _editBuildTopicOptions(subject);
+            const val  = document.getElementById('edit-history-topic')?.value || '';
+            const term = val.toLowerCase();
+            const filtered = term ? _editTopicBank.filter(t => t.toLowerCase().includes(term)) : _editTopicBank;
+            _renderEditDD('edit-topic-dropdown', filtered, 'selectEditTopic',
+                'Nenhum tópico no banco — pode digitar livremente', 'fa-tag', '#60a5fa');
+            const dd = document.getElementById('edit-topic-dropdown');
+            if (dd) dd.classList.remove('hidden');
+            const chev = document.getElementById('edit-topic-chevron');
+            if (chev) { chev.style.transform = 'rotate(180deg)'; chev.style.color = '#60a5fa'; }
+            _closeEditSubjectDD();
+        }
+
+        function _closeEditTopicDD() {
+            const dd = document.getElementById('edit-topic-dropdown');
+            if (dd) dd.classList.add('hidden');
+            const chev = document.getElementById('edit-topic-chevron');
+            if (chev) { chev.style.transform = ''; chev.style.color = ''; }
+        }
+
+        function toggleEditTopicDD() {
+            const dd = document.getElementById('edit-topic-dropdown');
+            dd && !dd.classList.contains('hidden') ? _closeEditTopicDD() : _openEditTopicDD();
+        }
+
+        function filterEditTopicDD(val) {
+            const subject = document.getElementById('edit-history-subject')?.value || '';
+            _editBuildTopicOptions(subject);
+            const term = val.toLowerCase();
+            const filtered = term ? _editTopicBank.filter(t => t.toLowerCase().includes(term)) : _editTopicBank;
+            _renderEditDD('edit-topic-dropdown', filtered, 'selectEditTopic',
+                'Nenhum tópico no banco — pode digitar livremente', 'fa-tag', '#60a5fa');
+            const dd = document.getElementById('edit-topic-dropdown');
+            if (dd) dd.classList.remove('hidden');
+            const chev = document.getElementById('edit-topic-chevron');
+            if (chev) { chev.style.transform = 'rotate(180deg)'; chev.style.color = '#60a5fa'; }
+        }
+
+        function selectEditTopic(topic) {
+            const inp = document.getElementById('edit-history-topic');
+            if (inp) inp.value = topic;
+            _closeEditTopicDD();
+        }
+
+        function openEditTopicDD() { _openEditTopicDD(); }
+
+        // Close both dropdowns on outside click
+        document.addEventListener('click', function(e) {
+            const sw = document.getElementById('edit-subject-wrapper');
+            const tw = document.getElementById('edit-topic-wrapper');
+            if (sw && !sw.contains(e.target)) _closeEditSubjectDD();
+            if (tw && !tw.contains(e.target)) _closeEditTopicDD();
+        }, true);
+        // ── end Edit History dropdowns ─────────────────────────────────────────
+
+        function saveEditHistory() {
+            const id = Number(document.getElementById('edit-history-id').value);
+            const subject = document.getElementById('edit-history-subject').value.trim();
+            const topic = document.getElementById('edit-history-topic').value.trim();
+            const hours = parseInt(document.getElementById('edit-history-hours').value) || 0;
+            const minutes = parseInt(document.getElementById('edit-history-minutes').value) || 0;
+            const type = document.getElementById('edit-history-type')?.value || 'Teoria';
+            const newQTotal = parseInt(document.getElementById('edit-history-qtotal')?.value) || 0;
+            const newQCorrect = parseInt(document.getElementById('edit-history-qcorrect')?.value) || 0;
+            const notes = document.getElementById('edit-history-notes')?.value.trim() || '';
+
+            if (!subject) { showAlert('Por favor, preencha a disciplina.'); return; }
+            if (hours === 0 && minutes === 0) { showAlert('A duração não pode ser zero.'); return; }
+            if ((type === 'Questões' || type === 'Simulado') && newQCorrect > newQTotal && newQTotal > 0) {
+                showAlert('As questões corretas não podem ser maiores que o total.');
+                return;
+            }
+
+            const totalMinutes = hours * 60 + minutes;
+            const idx = studyDb.history.findIndex(s => s.id === id);
+            if (idx === -1) { showAlert('Registo não encontrado.'); return; }
+
+            // ── Sync syllabus: undo old qTotal/qCorrect, apply new ones ──
+            const oldSession = studyDb.history[idx];
+            const oldQTotal   = oldSession.qTotal   || 0;
+            const oldQCorrect = oldSession.qCorrect || 0;
+            const oldSubject  = oldSession.subject;
+            const oldTopic    = oldSession.topic;
+
+            // Remove old values from the OLD syllabus topic
+            if (oldQTotal > 0 || oldQCorrect > 0) {
+                const oldSub = studyDb.syllabus.find(s => s.subject === oldSubject);
+                if (oldSub) {
+                    const oldT = oldSub.topics.find(t => t.name === oldTopic);
+                    if (oldT) {
+                        oldT.qTotal   = Math.max(0, (oldT.qTotal   || 0) - oldQTotal);
+                        oldT.qCorrect = Math.max(0, (oldT.qCorrect || 0) - oldQCorrect);
+                    }
+                }
+            }
+
+            // Add new values to the NEW syllabus topic
+            const showQ = type === 'Questões' || type === 'Simulado';
+            const appliedQTotal   = showQ ? newQTotal   : 0;
+            const appliedQCorrect = showQ ? newQCorrect : 0;
+            if (appliedQTotal > 0 || appliedQCorrect > 0) {
+                const newSub = studyDb.syllabus.find(s => s.subject === subject);
+                if (newSub) {
+                    const newT = newSub.topics.find(t => t.name === topic);
+                    if (newT) {
+                        newT.qTotal   = (newT.qTotal   || 0) + appliedQTotal;
+                        newT.qCorrect = (newT.qCorrect || 0) + appliedQCorrect;
+                    }
+                }
+            }
+
+            // Update history entry
+            studyDb.history[idx].subject  = subject;
+            studyDb.history[idx].topic    = topic;
+            studyDb.history[idx].duration = totalMinutes;
+            studyDb.history[idx].type     = type;
+            studyDb.history[idx].qTotal   = appliedQTotal;
+            studyDb.history[idx].qCorrect = appliedQCorrect;
+            studyDb.history[idx].notes    = notes;
+
+            saveDatabase();
+            renderAllTabs();
+            closeEditHistoryModal();
+            showToast('✅ Registo atualizado! Edital e gráficos sincronizados.', 'success');
         }
 
         function exportStudyHistory() {
@@ -4081,6 +4622,7 @@ function renderHistoryTab() {
         window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
         window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
         window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
+        window.openEditHistoryModal = openEditHistoryModal; window.closeEditHistoryModal = closeEditHistoryModal; window.saveEditHistory = saveEditHistory;
         // Funções usadas via onclick mas que estavam faltando no escopo global
         window.closeAlert = closeAlert; window.handleConfirm = handleConfirm;
         window.openSyncCenterModal = openSyncCenterModal; window.closeSyncCenterModal = closeSyncCenterModal;
@@ -5323,327 +5865,377 @@ function renderHistoryTab() {
         window.openConfigureCycleModal = openConfigureCycleModal; window.addSubjectToCycleConfig = addSubjectToCycleConfig; window.saveCycleConfig = saveCycleConfig; window.closeConfigureCycleModal = closeConfigureCycleModal;
         window.saveScratchpad = saveScratchpad; window.loginWithEmail = loginWithEmail; window.registerWithEmail = registerWithEmail; window.logoutEmail = logoutEmail; window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar; window.stCmd = stCmd; window.stHighlight = stHighlight; window.stInsertAlert = stInsertAlert; window.stInsertObs = stInsertObs;
         window.switchAuthTab = switchAuthTab; window.loadFromCloud = loadFromCloud; window.generateEncryptedSyncCode = generateEncryptedSyncCode;
+
+        // ╔══════════════════════════════════════════════════════════════════════╗
+        // ║       MOTOR DE INTELIGÊNCIA ADAPTATIVA — ESTUDEI PRF v3            ║
+        // ║  SM2 + Ebbinghaus + Mastery + Score Global  (sem hoisting traps)   ║
+        // ╚══════════════════════════════════════════════════════════════════════╝
+
+        // ── OFFLINE QUEUE ────────────────────────────────────────────────────
+        let _offlineQueue = [];
+        window.addEventListener('online',  () => { if (_offlineQueue.length && currentUser) { smartSyncNow(true); _offlineQueue = []; } });
+        window.addEventListener('offline', () => { _offlineQueue.push(Date.now()); });
+
+        // ── INTEGRIDADE DE DADOS ─────────────────────────────────────────────
+        function validateAndRepairDb() {
+            let repaired = false;
+            if (!Array.isArray(studyDb.syllabus))  { studyDb.syllabus  = []; repaired = true; }
+            if (!Array.isArray(studyDb.history))   { studyDb.history   = []; repaired = true; }
+            if (!Array.isArray(studyDb.revisions)) { studyDb.revisions = []; repaired = true; }
+            if (!Array.isArray(studyDb.summaries)) { studyDb.summaries = []; repaired = true; }
+
+            studyDb.syllabus.forEach(sub => {
+                if (!Array.isArray(sub.topics)) { sub.topics = []; repaired = true; }
+                sub.topics.forEach(t => {
+                    if (t.qCorrect  == null) { t.qCorrect = 0; repaired = true; }
+                    if (t.qTotal    == null) { t.qTotal   = 0; repaired = true; }
+                    if (!t.status)           { t.status   = 'Não Estudado'; repaired = true; }
+                    if (t.qCorrect > t.qTotal) { t.qCorrect = t.qTotal; repaired = true; }
+                });
+            });
+
+            const seenH = new Set();
+            studyDb.history = studyDb.history.filter(h => {
+                if (!h || !h.id || !h.date || !h.subject) { repaired = true; return false; }
+                if (seenH.has(h.id)) { repaired = true; return false; }
+                seenH.add(h.id);
+                if (!h.type)         h.type     = 'Teoria';
+                if (h.qCorrect==null) h.qCorrect = 0;
+                if (h.qTotal  ==null) h.qTotal   = 0;
+                if (h.duration==null) h.duration = 0;
+                if (!h.notes)        h.notes    = '';
+                if (!h.topic)        h.topic    = '';
+                return true;
+            });
+
+            const seenR = new Set();
+            studyDb.revisions = studyDb.revisions.filter(r => {
+                if (!r || !r.id) { repaired = true; return false; }
+                if (seenR.has(String(r.id))) { repaired = true; return false; }
+                seenR.add(String(r.id));
+                return true;
+            });
+
+            if (repaired) {
+                console.warn('[Estudei] DB reparado automaticamente.');
+                saveDatabase();
+            }
+            return repaired;
+        }
+
+        // ── SM2: REVISÃO ESPAÇADA ADAPTATIVA ────────────────────────────────
+        // NÃO usa "function scheduleAutomaticRevisions" — override via variável
+        // para evitar conflito de hoisting com a declaração original
+        const _sm2Schedule = function(subject, topic, dateStr, accuracy) {
+            const acc = (typeof accuracy === 'number' && accuracy >= 0) ? accuracy : 0.5;
+            let intervals;
+            if      (acc >= 0.90) intervals = [{l:'R1·24h',d:1},{l:'R2·5d',d:5},{l:'R3·14d',d:14},{l:'R4·30d',d:30},{l:'R5·60d',d:60}];
+            else if (acc >= 0.75) intervals = [{l:'R1·24h',d:1},{l:'R2·4d',d:4},{l:'R3·10d',d:10},{l:'R4·21d',d:21},{l:'R5·45d',d:45}];
+            else if (acc >= 0.60) intervals = [{l:'R1·24h',d:1},{l:'R2·3d',d:3},{l:'R3·7d',d:7},{l:'R4·14d',d:14},{l:'R5·30d',d:30}];
+            else                  intervals = [{l:'R1·24h',d:1},{l:'R2·2d',d:2},{l:'R3·5d',d:5},{l:'R4·10d',d:10},{l:'R5·21d',d:21}];
+
+            const baseDate = new Date(dateStr + 'T12:00:00');
+            // Remove pendentes duplicados do mesmo conteúdo
+            studyDb.revisions = studyDb.revisions.filter(r =>
+                !(r.subject === subject && r.topic === topic && !r.done)
+            );
+            intervals.forEach(i => {
+                const d = new Date(baseDate);
+                d.setDate(d.getDate() + i.d);
+                studyDb.revisions.push({
+                    id: Date.now() + Math.random(),
+                    subject, topic,
+                    dueDate: d.toISOString().split('T')[0],
+                    label: i.l, done: false, sm2: true
+                });
+            });
+        };
+
+        // ── MASTERY SCORE POR DISCIPLINA (0-100) ─────────────────────────────
+        function calcMasteryScore(subject) {
+            const hist = studyDb.history.filter(h => h.subject === subject);
+            if (!hist.length) return 0;
+            const mins = hist.reduce((a, h) => a + (Number(h.duration) || 0), 0);
+            const hoursScore = Math.min((mins / 60) / 20, 1) * 30;
+            const sub = studyDb.syllabus.find(s => s.subject === subject);
+            let tQ = 0, tC = 0;
+            if (sub) sub.topics.forEach(t => { tQ += t.qTotal||0; tC += t.qCorrect||0; });
+            const accScore = tQ > 10 ? (tC / tQ) * 40 : (tQ > 0 ? (tC / tQ) * 20 : 0);
+            const lastTs = Math.max(...hist.map(h => new Date(h.date + 'T12:00:00').getTime()));
+            const daysSince = (Date.now() - lastTs) / 86400000;
+            const recencyScore = Math.max(0, 1 - daysSince / 30) * 30;
+            return Math.min(100, Math.round(hoursScore + accScore + recencyScore));
+        }
+
+        // ── RISCO DE ESQUECIMENTO EBBINGHAUS ─────────────────────────────────
+        function calcForgettingRisk(subject, topicName) {
+            const sess = studyDb.history.filter(h => h.subject === subject && h.topic === topicName);
+            if (!sess.length) return null;
+            const lastDate = Math.max(...sess.map(h => new Date(h.date + 'T12:00:00').getTime()));
+            const days = (Date.now() - lastDate) / 86400000;
+            const revsDone = studyDb.revisions.filter(r => r.subject === subject && r.topic === topicName && r.done).length;
+            const stability = Math.max(1, 2 + revsDone * 1.8);
+            return Math.round((1 - Math.exp(-days / stability)) * 100);
+        }
+
+        // ── SCORE GLOBAL ─────────────────────────────────────────────────────
+        function calcGlobalScore() {
+            const studyDates = new Set(studyDb.history.map(s => s.date));
+            const today0 = todayBrazil();
+            let streak = 0;
+            let d = new Date(today0 + 'T12:00:00');
+            if (!studyDates.has(today0)) d.setDate(d.getDate() - 1);
+            for (let i = 0; i < 365; i++) {
+                const ds = d.toISOString().slice(0, 10);
+                if (!studyDates.has(ds)) break;
+                streak++; d.setDate(d.getDate() - 1);
+            }
+            const streakPts = Math.min(streak * 10, 300);
+            const totalHours = studyDb.history.reduce((a, h) => a + (Number(h.duration)||0), 0) / 60;
+            const hoursPts = Math.min(totalHours, 300);
+            let tQ = 0, tC = 0;
+            studyDb.syllabus.forEach(sub => sub.topics.forEach(t => { tQ += t.qTotal||0; tC += t.qCorrect||0; }));
+            const accPts = tQ > 0 ? Math.round((tC / tQ) * 250) : 0;
+            const revPts = Math.min(studyDb.revisions.filter(r => r.done).length * 5, 150);
+            return Math.min(1000, Math.round(streakPts + hoursPts + accPts + revPts));
+        }
+
+        function _scoreRank(s) {
+            if (s >= 900) return { label:'Elite',          color:'#fbbf24', icon:'🏆' };
+            if (s >= 700) return { label:'Avançado',       color:'#10b981', icon:'🎯' };
+            if (s >= 500) return { label:'Intermediário',  color:'#3b82f6', icon:'📈' };
+            if (s >= 300) return { label:'Iniciante',      color:'#a855f7', icon:'🚀' };
+            return             { label:'Começando',        color:'#6b7280', icon:'📚' };
+        }
+
+        // ── PAINEL DE INTELIGÊNCIA ───────────────────────────────────────────
+        function updateIntelligencePanel() {
+            const panel = document.getElementById('intelligence-panel');
+            if (!panel || !studyDb.history.length) { if (panel) panel.innerHTML = ''; return; }
+
+            const score = calcGlobalScore();
+            const rank  = _scoreRank(score);
+
+            const masteries = studyDb.syllabus.map(sub => ({
+                subject: sub.subject, mastery: calcMasteryScore(sub.subject)
+            })).filter(m => m.mastery > 0).sort((a,b) => b.mastery - a.mastery);
+
+            const riskyTopics = [];
+            studyDb.syllabus.forEach(sub => sub.topics.forEach(t => {
+                const r = calcForgettingRisk(sub.subject, t.name);
+                if (r !== null && r >= 60) riskyTopics.push({ subject:sub.subject, topic:t.name, risk:r });
+            }));
+            riskyTopics.sort((a,b) => b.risk - a.risk);
+
+            const neglected = [];
+            studyDb.syllabus.forEach(sub => {
+                const hist = studyDb.history.filter(h => h.subject === sub.subject);
+                if (!hist.length) return;
+                const lastTs = Math.max(...hist.map(h => new Date(h.date+'T12:00:00').getTime()));
+                const days = (Date.now()-lastTs)/86400000;
+                if (days >= 7) neglected.push({ subject:sub.subject, days:Math.floor(days) });
+            });
+            neglected.sort((a,b) => b.days - a.days);
+
+            let tQ2=0, tC2=0;
+            studyDb.syllabus.forEach(s=>s.topics.forEach(t=>{tQ2+=t.qTotal||0;tC2+=t.qCorrect||0;}));
+            const efficiency = tQ2 > 0 ? Math.round((tC2/tQ2)*100) : null;
+
+            let rec = '';
+            if (riskyTopics.length)  rec = `⚠️ <strong>${riskyTopics[0].topic}</strong> (${riskyTopics[0].subject}) com risco de esquecimento de ${riskyTopics[0].risk}%. Revise hoje.`;
+            else if (neglected.length) rec = `📅 <strong>${neglected[0].subject}</strong> não estudada há ${neglected[0].days} dias. Priorize no ciclo.`;
+            else if (masteries.length && masteries[masteries.length-1].mastery < 40) rec = `📉 <strong>${masteries[masteries.length-1].subject}</strong> com domínio baixo (${masteries[masteries.length-1].mastery}%). Aumente o foco.`;
+            else rec = `✅ Ótimo equilíbrio! Continue a consistência e execute as revisões agendadas.`;
+
+            const barsHTML = masteries.slice(0,6).map(m => {
+                const c = m.mastery>=70?'#10b981':m.mastery>=45?'#fbbf24':'#ef4444';
+                const n = m.subject.length>22 ? m.subject.substring(0,22)+'…' : m.subject;
+                return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="font-size:11px;color:#94a3b8;min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n}</span>
+                    <div style="flex:1;background:#0d1e36;border-radius:99px;height:7px;overflow:hidden;">
+                        <div style="width:${m.mastery}%;height:100%;background:${c};border-radius:99px;"></div>
+                    </div>
+                    <span style="font-size:11px;font-weight:900;color:${c};min-width:32px;text-align:right;">${m.mastery}%</span>
+                </div>`;
+            }).join('');
+
+            const riskyHTML = riskyTopics.slice(0,4).map(r => {
+                const rc = r.risk>=85?'#ef4444':r.risk>=70?'#f97316':'#fbbf24';
+                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:9px;background:rgba(239,68,68,0.07);margin-bottom:4px;border-left:3px solid ${rc};">
+                    <div>
+                        <div style="font-size:12px;font-weight:700;color:#e2e8f0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.topic}</div>
+                        <div style="font-size:10px;color:#6b7280;">${r.subject}</div>
+                    </div>
+                    <span style="font-size:12px;font-weight:900;color:${rc};">${r.risk}%</span>
+                </div>`;
+            }).join('') || `<p style="font-size:12px;color:#10b981;font-weight:700;padding:8px;">✅ Nenhum conteúdo em risco!</p>`;
+
+            panel.innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+              <div style="background:linear-gradient(135deg,#0f1d38,#1a2a4a);border:1px solid rgba(251,191,36,0.3);border-radius:20px;padding:20px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                  <i class="fa-solid fa-star" style="color:#fbbf24;"></i>
+                  <span style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Score Global</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+                  <div style="font-size:48px;font-weight:900;color:${rank.color};line-height:1;">${score}</div>
+                  <div>
+                    <div style="font-size:18px;">${rank.icon}</div>
+                    <div style="font-size:13px;font-weight:800;color:${rank.color};">${rank.label}</div>
+                    <div style="font-size:10px;color:#6b7280;">de 1000 pts</div>
+                  </div>
+                </div>
+                <div style="background:#0d1e36;border-radius:99px;height:8px;overflow:hidden;">
+                  <div style="width:${score/10}%;height:100%;background:linear-gradient(90deg,#3b82f6,${rank.color});border-radius:99px;"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;">
+                  <div style="background:rgba(59,130,246,0.1);border-radius:10px;padding:8px;text-align:center;">
+                    <div style="font-size:10px;color:#6b7280;font-weight:700;">EFICIÊNCIA</div>
+                    <div style="font-size:15px;font-weight:900;color:${efficiency>=80?'#10b981':efficiency>=60?'#fbbf24':'#ef4444'};">${efficiency!==null?efficiency+'%':'--'}</div>
+                  </div>
+                  <div style="background:rgba(59,130,246,0.1);border-radius:10px;padding:8px;text-align:center;">
+                    <div style="font-size:10px;color:#6b7280;font-weight:700;">REVISÕES</div>
+                    <div style="font-size:15px;font-weight:900;color:#a855f7;">${studyDb.revisions.filter(r=>r.done).length}</div>
+                  </div>
+                </div>
+              </div>
+              <div style="background:#15294a;border:1px solid rgba(59,130,246,0.25);border-radius:20px;padding:20px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                  <i class="fa-solid fa-brain" style="color:#a855f7;"></i>
+                  <span style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Índice de Domínio</span>
+                </div>
+                ${masteries.length ? barsHTML : '<p style="font-size:12px;color:#6b7280;">Registre sessões para ver o domínio.</p>'}
+                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                  <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>≥70% Forte</span>
+                  <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>45-69% Médio</span>
+                  <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>&lt;45% Fraco</span>
+                </div>
+              </div>
+              <div style="background:#15294a;border:1px solid rgba(239,68,68,0.2);border-radius:20px;padding:20px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                  <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
+                  <span style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Risco de Esquecimento</span>
+                  <span style="font-size:9px;color:#6b7280;margin-left:auto;">Ebbinghaus</span>
+                </div>
+                ${riskyHTML}
+                ${riskyTopics.length>4?`<p style="font-size:10px;color:#6b7280;margin-top:6px;">+${riskyTopics.length-4} conteúdos em risco — ver Revisões.</p>`:''}
+              </div>
+            </div>
+            <div style="background:linear-gradient(90deg,rgba(59,130,246,0.12),rgba(30,58,138,0.06));border:1px solid rgba(59,130,246,0.25);border-left:4px solid #3b82f6;border-radius:16px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
+              <i class="fa-solid fa-robot" style="color:#60a5fa;margin-top:2px;flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:10px;font-weight:900;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Recomendação Adaptativa</div>
+                <div style="font-size:13px;color:#cbd5e1;line-height:1.5;">${rec}</div>
+              </div>
+            </div>
+            ${neglected.length?`<div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:16px;padding:14px 18px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#f59e0b;"></i>
+                <span style="font-size:11px;font-weight:900;color:#f59e0b;text-transform:uppercase;">Disciplinas Negligenciadas</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                ${neglected.slice(0,6).map(n=>`<span style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;">${n.subject} <span style="color:#d97706;">${n.days}d</span></span>`).join('')}
+              </div>
+            </div>`:''}`;
+        }
+
+        // ── OVERRIDE CORRETO de renderAllTabs (função declarada após a original) ──
+        // Em JS, a última declaração de mesmo nome vence no hoisting
+        function renderAllTabs() {
+            try { updateDashboardMetrics();  } catch(e) { console.error('dash',e); }
+            try { renderSyllabusTab();       } catch(e) { console.error('syllabus',e); }
+            try { renderStudyCycleTab();     } catch(e) { console.error('cycle',e); }
+            try { renderRevisionsTab();      } catch(e) { console.error('rev',e); }
+            try { renderHistoryTab();        } catch(e) { console.error('hist',e); }
+            try { populateFormDropdowns();   } catch(e) { console.error('form',e); }
+            try { renderSummariesTree();     } catch(e) { console.error('tree',e); }
+            try { updateChartData();         } catch(e) { console.error('chart',e); }
+            try { initCalendar();            } catch(e) { console.error('cal',e); }
+            try { renderDailyTip();          } catch(e) { console.error('tip',e); }
+            try { updateIntelligencePanel(); } catch(e) { console.error('intel',e); }
+            const _df = document.getElementById('form-session-date');
+            if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
+        }
+
+        // ── OVERRIDE saveStudySession: usa SM2 em vez de intervalos fixos ────
+        function saveStudySession(e) {
+            e.preventDefault();
+            const subject = document.getElementById('form-subject').value;
+            const topic   = document.getElementById('form-topic').value;
+            const type    = document.getElementById('form-study-type').value;
+            const qC = parseInt(document.getElementById('form-questions-correct').value) || 0;
+            const qT = parseInt(document.getElementById('form-questions-total').value) || 0;
+            const accuracy = qT > 0 ? qC / qT : 0.5;
+
+            syncDurationFromHMS();
+            const duration = parseInt(document.getElementById('form-duration').value) || 0;
+
+            const sData = studyDb.syllabus.find(s => s.subject === subject);
+            if (sData) {
+                const tData = sData.topics.find(t => t.name === topic);
+                if (tData) {
+                    tData.qCorrect = (tData.qCorrect||0) + qC;
+                    tData.qTotal   = (tData.qTotal||0)   + qT;
+                    if (type === 'Teoria')   tData.status = 'Teoria Vista';
+                    else if (type === 'Questões') tData.status = 'Questões Feitas';
+                    else if (type === 'Revisão')  tData.status = 'Revisado';
+                }
+            }
+
+            const pages = parseInt(document.getElementById('form-pages').value) || 0;
+            const notes = (document.getElementById('form-notes').value || '').trim();
+            const sessionDateEl = document.getElementById('form-session-date');
+            const sessionDate   = (sessionDateEl && sessionDateEl.value && sessionDateEl.value.length === 10)
+                ? brToISO(sessionDateEl.value) : todayBrazil();
+
+            studyDb.history.push({
+                id: Date.now(), date: sessionDate,
+                subject, topic, duration, type,
+                qCorrect: qC, qTotal: qT, pages, notes
+            });
+
+            _sm2Schedule(subject, topic, sessionDate, accuracy);
+
+            const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
+            if (cStep && cStep.subject === subject) {
+                cStep.status = 'Concluído';
+                studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
+            }
+
+            saveDatabase();
+            renderAllTabs();
+            switchTab('dashboard');
+
+            document.getElementById('study-session-form').reset();
+            const _df2 = document.getElementById('form-session-date');
+            if (_df2) _df2.value = isoToBR(todayBrazil());
+            clearInterval(timerInterval); clearInterval(pauseInterval);
+            totalSeconds = 0; pauseSeconds = 0;
+            timerBaseSeconds = 0; timerStartTs = null;
+            pauseBaseSeconds = 0; pauseStartTs = null;
+            isTimerRunning = false; isTimerPaused = false;
+            updateTimerDisplays();
+            showToast('✅ Sessão salva! Revisões SM2 agendadas.', 'success');
+        }
+
+        // ── onload: substitui via assignment (sem hoisting, sem recursão) ─────
+        window.onload = async function() {
+            try { await loadDatabase(); } catch(e) { console.error('[Estudei] loadDatabase:', e); }
+            validateAndRepairDb();
+            try { renderAllTabs(); } catch(e) { console.error('[Estudei] renderAllTabs:', e); }
+            try { initCharts(); initStudyTypeChart(); } catch(e) { console.error('[Estudei] charts:', e); }
+            checkUrlHash();
+            cycleMotivationalQuote();
+            try { restoreSessionIfLoggedIn(); } catch(e) {}
+            setInterval(() => { try { validateAndRepairDb(); } catch(e) {} }, 10 * 60 * 1000);
+        };
+
+        window.validateAndRepairDb   = validateAndRepairDb;
+        window.calcMasteryScore      = calcMasteryScore;
+        window.calcForgettingRisk    = calcForgettingRisk;
+        window.calcGlobalScore       = calcGlobalScore;
+        window.updateIntelligencePanel = updateIntelligencePanel;
+        window.saveStudySession      = saveStudySession;
+
+        console.info('🚀 [Estudei PRF v3] Motor carregado. SM2 + Ebbinghaus + Mastery + Score Global ativos.');
     </script>
-
-    <!-- Modal: Editar Questões/Registros do Tópico -->
-    <div id="modal-edit-questions" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden">
-        <div class="bg-card-dark border border-blue-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
-            <button onclick="closeEditQuestionsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-base font-black text-white"><i class="fa-solid fa-sliders text-prf-yellow mr-2"></i>Editar Registros</h3>
-            <p class="text-xs text-gray-400" id="edit-q-topic-label"></p>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Questões resolvidas</label>
-                    <input type="number" id="edit-q-total" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" min="0">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">Respostas certas</label>
-                    <input type="number" id="edit-q-correct" class="w-full bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400" min="0">
-                </div>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="saveEditQuestions()" class="flex-1 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl text-sm">
-                    <i class="fa-solid fa-floppy-disk mr-1"></i> Salvar
-                </button>
-                <button onclick="clearTopicRecords()" class="flex-1 py-2 bg-red-900/60 hover:bg-red-900 text-red-300 font-bold rounded-xl text-sm border border-red-800">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Zerar tudo
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- EDITOR TELA CHEIA -->
-    <div id="fullscreen-editor-overlay" class="hidden fixed inset-0 z-[999] flex flex-col" style="background: #0a0f1e;">
-        <!-- Floating toolbar (auto-hide) -->
-        <div id="fs-toolbar" class="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300"
-             style="background: linear-gradient(135deg, #0d1530 0%, #111827 100%); border-bottom: 1px solid rgba(59,130,246,0.3); box-shadow: 0 4px 32px rgba(0,0,0,0.6);">
-            <div class="flex flex-wrap items-center gap-1.5 px-4 py-2">
-                <!-- Close -->
-                <button onclick="exitFullscreenEditor()" class="w-8 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 flex items-center justify-center transition mr-2" title="Sair da Tela Cheia (Esc)">
-                    <i class="fa-solid fa-compress text-xs"></i>
-                </button>
-                <div class="w-px h-6 bg-blue-900 mr-1"></div>
-                <button onclick="execCmd('bold')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition font-bold text-xs" title="Negrito"><i class="fa-solid fa-bold"></i></button>
-                <button onclick="execCmd('italic')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition italic text-xs" title="Itálico"><i class="fa-solid fa-italic"></i></button>
-                <button onclick="execCmd('underline')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition underline text-xs" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
-                <button onclick="execCmd('strikeThrough')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
-                <div class="w-px h-6 bg-blue-900 mx-1"></div>
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
-                    <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
-                </div>
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
-                    <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
-                </div>
-                <div class="w-px h-6 bg-blue-900 mx-1"></div>
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-blue-800/40">
-                    <span class="text-xxs font-bold text-gray-500 mr-1 uppercase">Mark:</span>
-                    <button onclick="applyStudyHighlight('red')" class="w-5 h-5 rounded bg-red-500 hover:ring-2 ring-white transition" title="Vermelho"></button>
-                    <button onclick="applyStudyHighlight('yellow')" class="w-5 h-5 rounded bg-yellow-400 hover:ring-2 ring-white transition" title="Amarelo"></button>
-                    <button onclick="applyStudyHighlight('green')" class="w-5 h-5 rounded bg-emerald-500 hover:ring-2 ring-white transition" title="Verde"></button>
-                    <button onclick="applyStudyHighlight('blue')" class="w-5 h-5 rounded bg-blue-500 hover:ring-2 ring-white transition" title="Azul"></button>
-                    <button onclick="applyStudyHighlight('purple')" class="w-5 h-5 rounded bg-purple-500 hover:ring-2 ring-white transition" title="Roxo"></button>
-                    <button onclick="applyStudyHighlight('orange')" class="w-5 h-5 rounded bg-orange-500 hover:ring-2 ring-white transition" title="Laranja"></button>
-                </div>
-                <div class="w-px h-6 bg-blue-900 mx-1"></div>
-                <select onchange="changeFont(this.value)" class="bg-white/5 text-xs text-white rounded-lg px-2 py-1.5 border border-blue-800/40 focus:outline-none cursor-pointer">
-                    <option value="">Fonte</option>
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="'Times New Roman', serif">Times New Roman</option>
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="'Courier New', monospace">Courier New</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                </select>
-                <select onchange="execCmd('fontSize', this.value)" class="bg-white/5 text-xs text-white rounded-lg px-2 py-1.5 border border-blue-800/40 focus:outline-none cursor-pointer">
-                    <option value="3">Normal</option>
-                    <option value="1">Micro</option>
-                    <option value="2">Pequeno</option>
-                    <option value="4">Subtítulo</option>
-                    <option value="5">Título H2</option>
-                    <option value="6">Título H1</option>
-                </select>
-                <div class="w-px h-6 bg-blue-900 mx-1"></div>
-                <button onclick="execCmd('justifyLeft')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-align-left"></i></button>
-                <button onclick="execCmd('justifyCenter')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-align-center"></i></button>
-                <button onclick="execCmd('justifyFull')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-align-justify"></i></button>
-                <div class="w-px h-6 bg-blue-900 mx-1"></div>
-                <button onclick="execCmd('insertUnorderedList')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-list-ul"></i></button>
-                <button onclick="execCmd('insertOrderedList')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-list-ol"></i></button>
-                <button onclick="insertBlockquote()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-quote-right"></i></button>
-                <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-900/30 text-red-400 transition text-xs"><i class="fa-solid fa-triangle-exclamation"></i></button>
-                <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-yellow-900/30 text-yellow-400 transition text-xs"><i class="fa-solid fa-thumbtack"></i></button>
-                <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white transition text-xs"><i class="fa-solid fa-table"></i></button>
-                <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar esquerda"><i class="fa-solid fa-outdent"></i></button>
-                <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar direita"><i class="fa-solid fa-indent"></i></button>
-                <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-cyan-900/30 text-cyan-400 transition text-xs" title="Toggle expansível"><i class="fa-solid fa-caret-right"></i></button>
-                <div class="flex-1"></div>
-                <!-- Title display -->
-                <span id="fs-title-label" class="text-sm font-black text-white/60 truncate max-w-xs hidden lg:block"></span>
-                <div class="flex-1"></div>
-                <button onclick="exportToPDF()" class="px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-pdf"></i> Exportar
-                </button>
-            </div>
-        </div>
-
-        <!-- Document area -->
-        <div id="fs-doc-area" class="flex-1 overflow-y-auto" style="padding-top: 56px; padding-bottom: 48px;"
-             onmousemove="handleFsMouseMove(event)">
-            <!-- Watermark / background glow -->
-            <div class="pointer-events-none fixed inset-0 z-0" style="background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(250,204,21,0.03) 0%, transparent 50%);"></div>
-
-            <div id="fs-editor-content" class="relative z-10 w-full max-w-4xl mx-auto px-8 py-10 text-white outline-none"
-                 contenteditable="true"
-                 style="font-size: 15px; line-height: 1.8; caret-color: #fbbf24; min-height: calc(100vh - 120px); box-sizing: border-box;"
-                 onkeyup="syncFsToMain()" oninput="syncFsToMain()">
-            </div>
-        </div>
-
-        <!-- Bottom bar: word count + hint -->
-        <div class="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-2 text-xxs text-gray-600 z-[1000]" style="background: rgba(10,15,30,0.95); border-top: 1px solid rgba(59,130,246,0.15);">
-            <span><i class="fa-solid fa-keyboard mr-1"></i> Pressione <kbd class="bg-white/10 text-white px-1 rounded">Esc</kbd> para sair</span>
-            <span id="fs-word-count">0 palavras</span>
-            <span id="fs-save-indicator" class="text-emerald-500"></span>
-        </div>
-    </div>
-
-    <!-- EDITOR TELA CHEIA -->
-    <div id="fullscreen-editor-overlay" class="hidden fixed inset-0 z-[999] flex flex-col" style="background:#0a0f1e;">
-
-        <!-- Floating Toolbar -->
-        <div id="fs-toolbar" style="position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1530,#111827);border-bottom:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 32px rgba(0,0,0,0.7);">
-            <div class="flex flex-wrap items-center gap-1 px-3 py-2">
-                <!-- Sair -->
-                <button onclick="exitFullscreenEditor()" class="w-8 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/50 text-red-400 flex items-center justify-center transition mr-1" title="Sair (Esc)"><i class="fa-solid fa-compress text-xs"></i></button>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Formatação básica -->
-                <button onclick="execCmd('bold')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition font-bold text-xs" title="Negrito"><i class="fa-solid fa-bold"></i></button>
-                <button onclick="execCmd('italic')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs" title="Itálico"><i class="fa-solid fa-italic"></i></button>
-                <button onclick="execCmd('underline')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
-                <button onclick="execCmd('strikeThrough')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Cores -->
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
-                    <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
-                </div>
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
-                    <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
-                </div>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Marcadores -->
-                <div class="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-blue-800/40">
-                    <span class="text-[9px] font-bold text-gray-500 uppercase mr-0.5">Mark</span>
-                    <button onclick="applyStudyHighlight('red')" class="w-4 h-4 rounded bg-red-500 hover:ring-2 ring-white transition" title="Vermelho"></button>
-                    <button onclick="applyStudyHighlight('yellow')" class="w-4 h-4 rounded bg-yellow-400 hover:ring-2 ring-white transition" title="Amarelo"></button>
-                    <button onclick="applyStudyHighlight('green')" class="w-4 h-4 rounded bg-emerald-500 hover:ring-2 ring-white transition" title="Verde"></button>
-                    <button onclick="applyStudyHighlight('blue')" class="w-4 h-4 rounded bg-blue-500 hover:ring-2 ring-white transition" title="Azul"></button>
-                    <button onclick="applyStudyHighlight('purple')" class="w-4 h-4 rounded bg-purple-500 hover:ring-2 ring-white transition" title="Roxo"></button>
-                    <button onclick="applyStudyHighlight('orange')" class="w-4 h-4 rounded bg-orange-500 hover:ring-2 ring-white transition" title="Laranja"></button>
-                </div>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Fonte e Tamanho -->
-                <select onchange="changeFont(this.value)" class="bg-white/5 text-xs text-white rounded-lg px-2 py-1.5 border border-blue-800/40 focus:outline-none cursor-pointer">
-                    <option value="">Fonte</option>
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="'Times New Roman', serif">Times New Roman</option>
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="'Courier New', monospace">Courier New</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                </select>
-                <select onchange="execCmd('fontSize',this.value)" class="bg-white/5 text-xs text-white rounded-lg px-2 py-1.5 border border-blue-800/40 focus:outline-none cursor-pointer">
-                    <option value="3">Normal</option><option value="1">Micro</option><option value="2">Pequeno</option>
-                    <option value="4">Subtítulo</option><option value="5">Título H2</option><option value="6">Título H1</option>
-                </select>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Alinhamento -->
-                <button onclick="execCmd('justifyLeft')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-align-left"></i></button>
-                <button onclick="execCmd('justifyCenter')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-align-center"></i></button>
-                <button onclick="execCmd('justifyFull')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-align-justify"></i></button>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Listas e blocos -->
-                <button onclick="execCmd('insertUnorderedList')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-list-ul"></i></button>
-                <button onclick="execCmd('insertOrderedList')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-list-ol"></i></button>
-                <button onclick="insertBlockquote()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-quote-right"></i></button>
-                <button onclick="insertAlertBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-900/30 text-red-400 transition text-xs"><i class="fa-solid fa-triangle-exclamation"></i></button>
-                <button onclick="insertObsBox()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-yellow-900/30 text-yellow-400 transition text-xs"><i class="fa-solid fa-thumbtack"></i></button>
-                <button onclick="insertTable()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-white transition text-xs"><i class="fa-solid fa-table"></i></button>
-                <button onclick="indentOut()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar esquerda"><i class="fa-solid fa-outdent"></i></button>
-                <button onclick="indentIn()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-900/30 text-purple-400 transition text-xs" title="Recuar direita"><i class="fa-solid fa-indent"></i></button>
-                <button onclick="insertToggle()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-cyan-900/30 text-cyan-400 transition text-xs" title="Toggle expansível"><i class="fa-solid fa-caret-right"></i></button>
-                <div class="w-px h-5 bg-blue-900 mx-1"></div>
-                <!-- Modo Claro/Escuro -->
-                <button onclick="toggleFsTheme()" id="btn-fs-theme" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-blue-800/40 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5" title="Alternar Tema">
-                    <i id="fs-theme-icon" class="fa-solid fa-sun text-yellow-400"></i>
-                    <span id="fs-theme-label" class="hidden sm:inline">Modo Claro</span>
-                </button>
-                <!-- Spacer + title -->
-                <div class="flex-1 flex justify-center">
-                    <span id="fs-title-label" class="text-sm font-black text-white/40 truncate max-w-xs hidden lg:block"></span>
-                </div>
-                <!-- Exportar + ocultar toolbar -->
-                <button onclick="exportToPDF()" class="px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-pdf"></i><span class="hidden sm:inline">PDF</span>
-                </button>
-                <button onclick="toggleFsToolbar()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-gray-400 flex items-center justify-center transition text-xs ml-1" title="Ocultar barra (mover mouse ao topo para reabrir)">
-                    <i class="fa-solid fa-chevron-up"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto" style="padding-top:56px; padding-bottom:48px;"
-             onmousemove="handleFsMouseMove(event)">
-            <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
-            <div id="fs-editor-content"
-                 class="fs-dark editor-canvas relative z-10 w-full max-w-4xl mx-auto px-8 py-10 rounded-2xl shadow-2xl outline-none"
-                 contenteditable="true"
-                 style="caret-color:#fbbf24; min-height:calc(100vh - 120px); box-sizing:border-box;"
-                 onmouseup="saveSelection()" onkeyup="saveSelection(); syncFsToMain()" oninput="syncFsToMain()" onfocus="_activeEditorId='fs-editor-content'; saveSelection();">
-            </div>
-        </div>
-
-        <!-- Bottom status bar -->
-        <div class="fixed bottom-0 left-0 right-0 flex items-center justify-between px-6 py-1.5 z-[1001]"
-             style="background:rgba(10,15,30,0.96);border-top:1px solid rgba(59,130,246,0.15);">
-            <span class="text-[10px] text-gray-600"><i class="fa-solid fa-keyboard mr-1"></i> <kbd class="bg-white/10 text-gray-400 px-1 rounded text-[9px]">Esc</kbd> sair &nbsp;·&nbsp; Mova o mouse ao topo para a barra</span>
-            <span id="fs-word-count" class="text-[10px] text-gray-600">0 palavras</span>
-            <span id="fs-save-indicator" class="text-[10px] text-emerald-500 font-bold w-20 text-right"></span>
-        </div>
-    </div>
-
-    <!-- FLOATING SELECTION TOOLBAR -->
-    <div id="selection-toolbar" role="toolbar" aria-label="Formatação rápida">
-        <!-- Negrito / Itálico / Sublinhado / Tachado -->
-        <button onmousedown="e=>{e.preventDefault();}" onclick="stCmd('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
-        <button onclick="stCmd('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
-        <button onclick="stCmd('underline')" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
-        <button onclick="stCmd('strikeThrough')" title="Tachado"><i class="fa-solid fa-strikethrough"></i></button>
-        <div class="st-sep"></div>
-        <!-- Marcadores -->
-        <div title="Amarelo" class="st-mark" style="background:#facc15;" onclick="stHighlight('yellow')"></div>
-        <div title="Vermelho" class="st-mark" style="background:#ef4444;" onclick="stHighlight('red')"></div>
-        <div title="Verde" class="st-mark" style="background:#10b981;" onclick="stHighlight('green')"></div>
-        <div title="Azul" class="st-mark" style="background:#3b82f6;" onclick="stHighlight('blue')"></div>
-        <div title="Roxo" class="st-mark" style="background:#a855f7;" onclick="stHighlight('purple')"></div>
-        <div title="Laranja" class="st-mark" style="background:#f97316;" onclick="stHighlight('orange')"></div>
-        <div class="st-sep"></div>
-        <!-- Caixa de Alerta e Observação -->
-        <button onclick="stInsertAlert()" title="Caixa de Atenção" style="color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></button>
-        <button onclick="stInsertObs()" title="Caixa de Observação" style="color:#fbbf24;"><i class="fa-solid fa-thumbtack"></i></button>
-        <div class="st-sep"></div>
-        <!-- Tamanho -->
-        <button onclick="stCmd('fontSize','2')" title="Texto Pequeno" style="font-size:9px;font-weight:bold;">A</button>
-        <button onclick="stCmd('fontSize','3')" title="Texto Normal" style="font-size:11px;font-weight:bold;">A</button>
-        <button onclick="stCmd('fontSize','5')" title="Título" style="font-size:14px;font-weight:bold;">A</button>
-        <div class="st-sep"></div>
-        <!-- Limpar formatação -->
-        <button onclick="stCmd('removeFormat')" title="Limpar formatação" style="color:#94a3b8;"><i class="fa-solid fa-eraser"></i></button>
-    </div>
-
-
-    <!-- COLOR PALETTE POPUP -->
-    <div id="color-palette-popup" class="color-palette-popup" onmousedown="event.preventDefault()">
-        <div class="cp-label" id="cp-popup-label">Cor da Letra</div>
-        <div class="cp-grid" id="cp-grid"></div>
-        <div style="height:1px;background:rgba(255,255,255,0.08);margin:2px 0;"></div>
-        <div>
-            <div class="cp-label">Recentes</div>
-            <div class="cp-recent" id="cp-recent"></div>
-        </div>
-        <div class="cp-custom">
-            <input type="color" id="cp-custom-input" title="Cor personalizada">
-            <span>Cor personalizada</span>
-        </div>
-    </div>
-
-    <!-- MIND MAP EDITOR MODAL -->
-    <div id="mindmap-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center" style="background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
-        <div class="flex flex-col rounded-2xl border border-blue-800 shadow-2xl overflow-hidden" style="width:96vw;max-width:1200px;height:90vh;background:#0a0f1e;">
-            <!-- Header -->
-            <div class="flex items-center justify-between px-5 py-3 border-b border-blue-900" style="background:#0d1530;">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-diagram-project text-yellow-400"></i>
-                    <span class="font-black text-white text-sm">Editor de Mapa Mental</span>
-                    <input id="mm-title" placeholder="Título do mapa..." value="Meu Mapa Mental"
-                        class="ml-4 bg-transparent border-b border-blue-700 text-white text-sm font-bold focus:outline-none focus:border-yellow-400 px-1 w-48">
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="mmAddChild(mmSelectedId)" title="Adicionar filho (Tab)" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Nó</button>
-                    <button onclick="mmDeleteNode(mmSelectedId)" title="Excluir nó (Del)" class="px-3 py-1.5 bg-red-800/60 hover:bg-red-700 text-red-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="mmResetPan()" title="Centralizar mapa" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-gray-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-crosshairs"></i> Centralizar</button>
-                    <button onclick="mmExportToEditor()" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 rounded-lg text-xs font-black transition flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Inserir no Resumo</button>
-                    <button onclick="closeMindmapEditor()" class="w-8 h-8 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            </div>
-            <!-- Hint bar -->
-            <div class="flex flex-wrap items-center gap-3 px-4 py-2 text-[10px] text-gray-600 border-b border-blue-950" style="background:#080d1c;">
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Clique</kbd> selecionar</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">2× clique</kbd> editar</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Tab</kbd> filho</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Enter</kbd> irmão</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Del</kbd> excluir</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste nó</kbd> mover</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste fundo</kbd> pan</span>
-                <span class="flex items-center gap-1">Cor: <span id="mm-color-swatches" class="inline-flex gap-1 ml-1"></span></span>
-                <span class="flex items-center gap-1">Ícone: <span id="mm-emoji-swatches" class="inline-flex gap-1 ml-1 flex-wrap max-w-xs"></span></span>
-            </div>
-            <!-- Canvas -->
-            <div class="flex-1 relative overflow-hidden" id="mm-canvas-wrap">
-                <svg id="mm-svg" width="100%" height="100%" style="position:absolute;inset:0;cursor:default;">
-                    <defs>
-                        <filter id="mm-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    </defs>
-                    <g id="mm-pan-group">
-                        <g id="mm-links"></g>
-                        <g id="mm-nodes"></g>
-                    </g>
-                </svg>
-            </div>
-        </div>
-    </div>
-
-</body>
-</html>
