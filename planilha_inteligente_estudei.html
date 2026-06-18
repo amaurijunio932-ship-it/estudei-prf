@@ -146,6 +146,116 @@
         }
         #selection-toolbar .st-mark:hover { transform: scale(1.2); border-color: rgba(255,255,255,0.5); }
 
+        /* ═══════════════════════════════════════════════
+           ── PAINEL FLUTUANTE DE FORMATAÇÃO (Editor) ──
+           ═══════════════════════════════════════════════ */
+        #float-editor-panel {
+            position: fixed;
+            z-index: 8888;
+            width: 46px;
+            background: linear-gradient(160deg, #0d1a35 0%, #111827 100%);
+            border: 1px solid rgba(59,130,246,0.30);
+            border-radius: 18px;
+            padding: 8px 6px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            user-select: none;
+            transition: box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+        #float-editor-panel.fep-visible { display: flex; animation: fepIn 0.25s cubic-bezier(.4,0,.2,1) forwards; }
+        @keyframes fepIn {
+            from { opacity:0; transform: scale(0.88) translateX(10px); }
+            to   { opacity:1; transform: scale(1) translateX(0); }
+        }
+        #float-editor-panel.fep-dragging {
+            box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 2px rgba(250,204,21,0.3);
+            opacity: 0.95;
+        }
+        /* Alça de arrastar */
+        #fep-drag-handle {
+            width: 28px; height: 18px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            cursor: grab; border-radius: 8px; padding: 2px;
+            transition: background 0.15s;
+            margin-bottom: 2px;
+        }
+        #fep-drag-handle:hover { background: rgba(255,255,255,0.08); }
+        #fep-drag-handle:active { cursor: grabbing; }
+        #fep-drag-handle span { width: 14px; height: 2px; background: rgba(255,255,255,0.25); border-radius: 99px; display:block; }
+
+        /* Botões do painel flutuante */
+        .fep-btn {
+            width: 32px; height: 32px;
+            border-radius: 10px; border: none;
+            background: transparent; color: rgba(255,255,255,0.75);
+            cursor: pointer; font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s, transform 0.1s;
+            flex-shrink: 0; position: relative;
+        }
+        .fep-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: scale(1.08); }
+        .fep-btn:active { transform: scale(0.94); }
+        .fep-btn.fep-active { background: rgba(250,204,21,0.18); color: #facc15; }
+        .fep-btn.fep-danger { color: rgba(248,113,113,0.8); }
+        .fep-btn.fep-danger:hover { background: rgba(239,68,68,0.18); color: #f87171; }
+        .fep-btn.fep-warn { color: rgba(251,191,36,0.8); }
+        .fep-btn.fep-warn:hover { background: rgba(245,158,11,0.18); color: #fbbf24; }
+        .fep-btn.fep-cyan { color: rgba(34,211,238,0.8); }
+        .fep-btn.fep-cyan:hover { background: rgba(6,182,212,0.18); color: #22d3ee; }
+
+        /* Separador */
+        .fep-sep {
+            width: 24px; height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 3px 0; flex-shrink: 0;
+        }
+
+        /* Seção agrupada */
+        .fep-group {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 2px;
+            width: 100%;
+        }
+
+        /* Marcadores de cor no painel */
+        .fep-mark {
+            width: 20px; height: 20px; border-radius: 6px;
+            cursor: pointer; border: 2px solid transparent;
+            transition: transform 0.1s, border-color 0.1s, box-shadow 0.1s;
+            flex-shrink: 0;
+        }
+        .fep-mark:hover { transform: scale(1.2); border-color: rgba(255,255,255,0.6); box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+
+        /* Badge do tooltip */
+        .fep-btn::after {
+            content: attr(data-tip);
+            position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+            background: rgba(15,25,50,0.97); color: #e2e8f0;
+            font-size: 11px; font-weight: 700;
+            padding: 4px 10px; border-radius: 8px;
+            white-space: nowrap; pointer-events: none;
+            opacity: 0; transition: opacity 0.15s ease;
+            border: 1px solid rgba(59,130,246,0.2);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        .fep-btn:hover::after { opacity: 1; }
+
+        /* Botão toggle do painel (fica na barra superior do editor) */
+        #btn-float-panel-toggle {
+            position: absolute; top: 10px; right: 12px; z-index: 20;
+            width: 32px; height: 32px; border-radius: 10px;
+            background: rgba(29,53,92,0.7); border: 1px solid rgba(59,130,246,0.3);
+            color: #60a5fa; cursor: pointer; font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s, box-shadow 0.2s;
+        }
+        #btn-float-panel-toggle:hover { background: rgba(59,130,246,0.25); color: #fff; box-shadow: 0 0 12px rgba(59,130,246,0.3); }
+        #btn-float-panel-toggle.fep-panel-on { background: rgba(250,204,21,0.18); color: #facc15; border-color: rgba(250,204,21,0.4); }
+
         /* FULLSCREEN WORKSPACE — expande o editor original */
         .workspace-fullscreen {
             position: fixed !important;
@@ -1206,12 +1316,18 @@
                         </div>
 
                         <!-- Canvas do Editor -->
-                        <div id="summary-editor-canvas" class="flex-grow editor-canvas editor-paper-dark p-6 md:p-10 overflow-y-auto" contenteditable="true" 
-                             oninput="saveActiveSummary()"
-                             onmouseup="_activeEditorId='summary-editor-canvas'; saveSelection()"
-                             onkeyup="saveSelection()"
-                             onfocus="saveSelection()"
-                             onblur="saveSelection()">
+                        <div class="relative flex-grow flex flex-col overflow-hidden">
+                            <!-- Botão toggle do painel flutuante -->
+                            <button id="btn-float-panel-toggle" onclick="toggleFloatEditorPanel()" title="Painel de Formatação Flutuante">
+                                <i class="fa-solid fa-palette"></i>
+                            </button>
+                            <div id="summary-editor-canvas" class="flex-grow editor-canvas editor-paper-dark p-6 md:p-10 overflow-y-auto" contenteditable="true" 
+                                 oninput="saveActiveSummary()"
+                                 onmouseup="_activeEditorId='summary-editor-canvas'; saveSelection()"
+                                 onkeyup="saveSelection()"
+                                 onfocus="saveSelection()"
+                                 onblur="saveSelection()">
+                            </div>
                         </div>
 
                         <!-- Legenda de Cores Flutuante -->
@@ -1846,7 +1962,19 @@
             confirmCallback = null;
         }
 
-        function openSyncCenterModal() { document.getElementById('modal-sync-center').classList.remove('hidden'); }
+        function openSyncCenterModal() {
+            document.getElementById('modal-sync-center').classList.remove('hidden');
+            // Pré-preenche o email salvo se o utilizador não estiver logado
+            if (!currentUser) {
+                try {
+                    const savedEmail = localStorage.getItem('estudei_prf_saved_email') || '';
+                    if (savedEmail) {
+                        const emailInput = document.getElementById('sync-email');
+                        if (emailInput && !emailInput.value) emailInput.value = savedEmail;
+                    }
+                } catch(e) {}
+            }
+        }
         function closeSyncCenterModal() { document.getElementById('modal-sync-center').classList.add('hidden'); }
 
         // === BANCO DE DADOS PADRÃO PRF ===
@@ -4244,6 +4372,83 @@ ${conteudo}
         </div>
     </div>
 
+    <!-- PAINEL FLUTUANTE DE FORMATAÇÃO -->
+    <div id="float-editor-panel" onmousedown="fepStartDrag(event)" role="toolbar" aria-label="Formatação flutuante">
+        <!-- Alça de arrastar -->
+        <div id="fep-drag-handle" title="Arrastar painel">
+            <span></span><span></span><span></span>
+        </div>
+
+        <!-- Formatação básica -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Negrito (Ctrl+B)" onmousedown="event.stopPropagation()" onclick="fepCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="fep-btn" data-tip="Itálico (Ctrl+I)" onmousedown="event.stopPropagation()" onclick="fepCmd('italic')"><i class="fa-solid fa-italic"></i></button>
+            <button class="fep-btn" data-tip="Sublinhado (Ctrl+U)" onmousedown="event.stopPropagation()" onclick="fepCmd('underline')"><i class="fa-solid fa-underline"></i></button>
+            <button class="fep-btn" data-tip="Tachado" onmousedown="event.stopPropagation()" onclick="fepCmd('strikeThrough')"><i class="fa-solid fa-strikethrough"></i></button>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Tamanhos -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Título H1" onmousedown="event.stopPropagation()" onclick="fepCmd('fontSize','6')" style="font-size:15px;font-weight:900;color:#facc15;">H1</button>
+            <button class="fep-btn" data-tip="Título H2" onmousedown="event.stopPropagation()" onclick="fepCmd('fontSize','5')" style="font-size:13px;font-weight:900;color:#93c5fd;">H2</button>
+            <button class="fep-btn" data-tip="Subtítulo" onmousedown="event.stopPropagation()" onclick="fepCmd('fontSize','4')" style="font-size:11px;font-weight:700;color:#a5b4fc;">H3</button>
+            <button class="fep-btn" data-tip="Normal" onmousedown="event.stopPropagation()" onclick="fepCmd('fontSize','3')" style="font-size:11px;">P</button>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Alinhamento -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Alinhar esquerda" onmousedown="event.stopPropagation()" onclick="fepCmd('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="fep-btn" data-tip="Centralizar" onmousedown="event.stopPropagation()" onclick="fepCmd('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="fep-btn" data-tip="Justificar" onmousedown="event.stopPropagation()" onclick="fepCmd('justifyFull')"><i class="fa-solid fa-align-justify"></i></button>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Listas e blocos -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Lista com marcadores" onmousedown="event.stopPropagation()" onclick="fepCmd('insertUnorderedList')"><i class="fa-solid fa-list-ul"></i></button>
+            <button class="fep-btn" data-tip="Lista numerada" onmousedown="event.stopPropagation()" onclick="fepCmd('insertOrderedList')"><i class="fa-solid fa-list-ol"></i></button>
+            <button class="fep-btn" data-tip="Recuar" onmousedown="event.stopPropagation()" onclick="fepCmd('indent')"><i class="fa-solid fa-indent"></i></button>
+            <button class="fep-btn" data-tip="Desrecuar" onmousedown="event.stopPropagation()" onclick="fepCmd('outdent')"><i class="fa-solid fa-outdent"></i></button>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Blocos especiais -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Citação" onmousedown="event.stopPropagation()" onclick="fepInsert('blockquote')"><i class="fa-solid fa-quote-right"></i></button>
+            <button class="fep-btn fep-danger" data-tip="Caixa de Atenção" onmousedown="event.stopPropagation()" onclick="fepInsert('alert')"><i class="fa-solid fa-triangle-exclamation"></i></button>
+            <button class="fep-btn fep-warn" data-tip="Caixa de Observação" onmousedown="event.stopPropagation()" onclick="fepInsert('obs')"><i class="fa-solid fa-thumbtack"></i></button>
+            <button class="fep-btn fep-cyan" data-tip="Toggle expansível" onmousedown="event.stopPropagation()" onclick="fepInsert('toggle')"><i class="fa-solid fa-caret-right"></i></button>
+            <button class="fep-btn" data-tip="Tabela" onmousedown="event.stopPropagation()" onclick="fepInsert('table')"><i class="fa-solid fa-table"></i></button>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Marcadores de estudo -->
+        <div class="fep-group" style="gap:4px;">
+            <div class="fep-mark" style="background:#ef4444;" title="Erro / Pegadinha" onmousedown="event.stopPropagation()" onclick="fepHighlight('red')"></div>
+            <div class="fep-mark" style="background:#facc15;" title="Conceito Chave" onmousedown="event.stopPropagation()" onclick="fepHighlight('yellow')"></div>
+            <div class="fep-mark" style="background:#10b981;" title="Exceção / Jurisprudência" onmousedown="event.stopPropagation()" onclick="fepHighlight('green')"></div>
+            <div class="fep-mark" style="background:#3b82f6;" title="Definição" onmousedown="event.stopPropagation()" onclick="fepHighlight('blue')"></div>
+            <div class="fep-mark" style="background:#a855f7;" title="Artigo de Lei" onmousedown="event.stopPropagation()" onclick="fepHighlight('purple')"></div>
+            <div class="fep-mark" style="background:#f97316;" title="Frequente em Provas" onmousedown="event.stopPropagation()" onclick="fepHighlight('orange')"></div>
+        </div>
+
+        <div class="fep-sep"></div>
+
+        <!-- Cor e limpar -->
+        <div class="fep-group">
+            <button class="fep-btn" data-tip="Cor da letra" onmousedown="event.stopPropagation(); saveSelection(); openColorPalette(event,'foreColor');" style="color:#e2e8f0;font-size:12px;font-weight:900;">A<span style="display:block;width:14px;height:2px;background:#ffffff;border-radius:99px;position:absolute;bottom:5px;left:50%;transform:translateX(-50%);"></span></button>
+            <button class="fep-btn" data-tip="Cor de fundo" onmousedown="event.stopPropagation(); saveSelection(); openColorPalette(event,'backColor');"><i class="fa-solid fa-fill-drip" style="font-size:12px;"></i></button>
+            <button class="fep-btn" data-tip="Limpar formatação" onmousedown="event.stopPropagation()" onclick="fepCmd('removeFormat')" style="color:#94a3b8;"><i class="fa-solid fa-eraser"></i></button>
+        </div>
+    </div>
+
     <!-- FLOATING SELECTION TOOLBAR -->
     <div id="selection-toolbar" role="toolbar" aria-label="Formatação rápida">
         <!-- Negrito / Itálico / Sublinhado / Tachado -->
@@ -5106,6 +5311,7 @@ function renderHistoryTab() {
                 const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
                 currentUser = { email: cred.user.email, uid: cred.user.uid };
                 await storageSet('estudei_prf_current_user', email);
+                try { localStorage.setItem('estudei_prf_saved_email', email); } catch(e) {}
                 // Enviar dados locais para Firestore
                 await fbDb.collection('users').doc(cred.user.uid).set({ studyDb: JSON.stringify(studyDb), updatedAt: new Date().toISOString() });
                 onUserLoggedIn(email);
@@ -5134,6 +5340,7 @@ function renderHistoryTab() {
                 const cred = await fbAuth.signInWithEmailAndPassword(email, password);
                 currentUser = { email: cred.user.email, uid: cred.user.uid };
                 await storageSet('estudei_prf_current_user', email);
+                try { localStorage.setItem('estudei_prf_saved_email', email); } catch(e) {}
                 // Carregar dados da nuvem
                 const doc = await fbDb.collection('users').doc(cred.user.uid).get();
                 if (doc.exists && doc.data().studyDb) {
@@ -6613,6 +6820,168 @@ function renderHistoryTab() {
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') hideSelectionToolbar();
         });
+
+        // ═══════════════════════════════════════════════════════════
+        // ── PAINEL FLUTUANTE DE FORMATAÇÃO (Float Editor Panel) ───
+        // ═══════════════════════════════════════════════════════════
+        let _fepVisible = false;
+        let _fepDragging = false;
+        let _fepDragOffX = 0, _fepDragOffY = 0;
+
+        // Posição padrão: canto direito do editor
+        function _fepDefaultPos() {
+            const panel = document.getElementById('float-editor-panel');
+            if (!panel) return;
+            const editorEl = document.getElementById('summary-editor-canvas');
+            if (editorEl) {
+                const rect = editorEl.getBoundingClientRect();
+                panel.style.left = (rect.right + 12) + 'px';
+                panel.style.top  = (rect.top + 60)  + 'px';
+            } else {
+                panel.style.right = '20px';
+                panel.style.top   = '120px';
+            }
+            // Se sair da tela, reposiciona dentro
+            const pr = panel.getBoundingClientRect();
+            if (pr.right > window.innerWidth - 8)  panel.style.left = (window.innerWidth - pr.width - 14) + 'px';
+            if (pr.left < 8) panel.style.left = '8px';
+            if (pr.bottom > window.innerHeight - 8) panel.style.top = (window.innerHeight - pr.height - 14) + 'px';
+            if (pr.top < 8)  panel.style.top = '8px';
+        }
+
+        function toggleFloatEditorPanel() {
+            const panel = document.getElementById('float-editor-panel');
+            const btn   = document.getElementById('btn-float-panel-toggle');
+            if (!panel) return;
+            _fepVisible = !_fepVisible;
+            if (_fepVisible) {
+                panel.classList.add('fep-visible');
+                if (btn) btn.classList.add('fep-panel-on');
+                // Lê posição salva ou usa padrão
+                const saved = localStorage.getItem('estudei_fep_pos');
+                if (saved) {
+                    try {
+                        const p = JSON.parse(saved);
+                        panel.style.left = p.x + 'px';
+                        panel.style.top  = p.y + 'px';
+                        // Garante dentro da tela após resize
+                        setTimeout(() => {
+                            const pr = panel.getBoundingClientRect();
+                            if (pr.right > window.innerWidth - 8)  panel.style.left = (window.innerWidth - pr.width - 14) + 'px';
+                            if (pr.left < 8) panel.style.left = '8px';
+                            if (pr.bottom > window.innerHeight - 8) panel.style.top = (window.innerHeight - pr.height - 14) + 'px';
+                            if (pr.top < 8)  panel.style.top = '8px';
+                        }, 50);
+                    } catch(e) { _fepDefaultPos(); }
+                } else {
+                    _fepDefaultPos();
+                }
+            } else {
+                panel.classList.remove('fep-visible');
+                if (btn) btn.classList.remove('fep-panel-on');
+            }
+        }
+
+        function fepStartDrag(e) {
+            // Só arrastar pela alça ou pelo fundo do painel (não em botões)
+            const panel = document.getElementById('float-editor-panel');
+            if (!panel) return;
+            if (e.target.closest('.fep-btn') || e.target.closest('.fep-mark')) return;
+            e.preventDefault();
+            _fepDragging = true;
+            panel.classList.add('fep-dragging');
+            const rect = panel.getBoundingClientRect();
+            _fepDragOffX = e.clientX - rect.left;
+            _fepDragOffY = e.clientY - rect.top;
+
+            function onMove(ev) {
+                if (!_fepDragging) return;
+                let x = ev.clientX - _fepDragOffX;
+                let y = ev.clientY - _fepDragOffY;
+                // Limitar dentro da viewport
+                const pw = panel.offsetWidth, ph = panel.offsetHeight;
+                x = Math.max(4, Math.min(x, window.innerWidth  - pw - 4));
+                y = Math.max(4, Math.min(y, window.innerHeight - ph - 4));
+                panel.style.left = x + 'px';
+                panel.style.top  = y + 'px';
+            }
+            function onUp() {
+                _fepDragging = false;
+                panel.classList.remove('fep-dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                // Salvar posição
+                try { localStorage.setItem('estudei_fep_pos', JSON.stringify({x: parseInt(panel.style.left), y: parseInt(panel.style.top)})); } catch(ex) {}
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        }
+
+        // Comandos do painel flutuante — restauram seleção antes de executar
+        function fepCmd(cmd, val) {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus({ preventScroll: true });
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            document.execCommand(cmd, false, val || null);
+            if (typeof saveActiveSummary === 'function') saveActiveSummary();
+        }
+
+        function fepHighlight(type) {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus({ preventScroll: true });
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            applyStudyHighlight(type);
+        }
+
+        function fepInsert(type) {
+            const canvas = _getEditorEl();
+            if (!canvas) return;
+            canvas.focus({ preventScroll: true });
+            if (_stSavedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(_stSavedRange);
+            }
+            switch(type) {
+                case 'blockquote': insertBlockquote(); break;
+                case 'alert':      insertAlertBox();   break;
+                case 'obs':        insertObsBox();     break;
+                case 'toggle':     insertToggle();     break;
+                case 'table':      insertTable();      break;
+            }
+        }
+
+        // Oculta painel flutuante ao sair da aba de resumos
+        (function() {
+            const origSwitchTab = window.switchTab || function(){};
+            window.switchTab = function(tabId) {
+                origSwitchTab(tabId);
+                if (tabId !== 'resumos' && _fepVisible) {
+                    // Apenas oculta visualmente, mantém estado para restaurar
+                    const panel = document.getElementById('float-editor-panel');
+                    if (panel) panel.style.display = 'none';
+                } else if (tabId === 'resumos' && _fepVisible) {
+                    const panel = document.getElementById('float-editor-panel');
+                    if (panel) panel.style.display = 'flex';
+                }
+            };
+        })();
+
+        window.toggleFloatEditorPanel = toggleFloatEditorPanel;
+        window.fepStartDrag           = fepStartDrag;
+        window.fepCmd                 = fepCmd;
+        window.fepHighlight           = fepHighlight;
+        window.fepInsert              = fepInsert;
 
         // === DICA DO DIA ===
         const dailyTips = [
