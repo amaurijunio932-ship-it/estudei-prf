@@ -284,12 +284,162 @@
             #summary-print-container { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff;}
             .study-hl { border: 1px solid #000; } 
         }
+
+        /* ═══════════════════════════════════════════════════
+           ── OVERLAY DE SINCRONIZAÇÃO AUTOMÁTICA AO ABRIR ──
+           ═══════════════════════════════════════════════════ */
+        #sync-boot-overlay {
+            position: fixed; inset: 0; z-index: 99999;
+            background: linear-gradient(135deg, #060e1e 0%, #0d1e36 55%, #060e1e 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 28px;
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+        #sync-boot-overlay.sbo-fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+        .sbo-logo { display:flex; flex-direction:column; align-items:center; gap:10px; }
+        .sbo-logo-icon {
+            background: #FFD400; color: #003366;
+            width: 68px; height: 68px; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; font-weight: 900;
+            box-shadow: 0 0 0 0 rgba(255,212,0,0.5);
+            animation: sboLogoPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes sboLogoPulse {
+            0%   { box-shadow: 0 0 20px rgba(255,212,0,0.3); }
+            50%  { box-shadow: 0 0 50px rgba(255,212,0,0.65); }
+            100% { box-shadow: 0 0 20px rgba(255,212,0,0.3); }
+        }
+        .sbo-card {
+            background: rgba(15,31,66,0.85);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 22px; padding: 26px 32px;
+            width: 100%; max-width: 430px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+            margin: 0 16px;
+        }
+        .sbo-step {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(59,130,246,0.08);
+            transition: all 0.35s ease;
+        }
+        .sbo-step:last-child { border-bottom: none; }
+        .sbo-icon {
+            width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 900;
+            transition: all 0.35s ease;
+        }
+        .sbo-icon.sbo-pending { background: rgba(29,53,92,0.7); border: 2px solid #1d355c; color: #334e6a; }
+        .sbo-icon.sbo-active  { background: rgba(59,130,246,0.15); border: 2px solid #3b82f6; color: #60a5fa; animation: sboIconPulse 0.9s ease-in-out infinite; }
+        .sbo-icon.sbo-done    { background: rgba(16,185,129,0.18); border: 2px solid #10b981; color: #10b981; }
+        .sbo-icon.sbo-skip    { background: rgba(100,116,139,0.15); border: 2px solid #475569; color: #64748b; }
+        .sbo-icon.sbo-error   { background: rgba(239,68,68,0.18); border: 2px solid #ef4444; color: #f87171; }
+        @keyframes sboIconPulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+        .sbo-label { font-size: 13px; font-weight: 700; color: #64748b; flex: 1; transition: color 0.35s; }
+        .sbo-label.sbo-active { color: #e2e8f0; }
+        .sbo-label.sbo-done   { color: #6ee7b7; }
+        .sbo-label.sbo-skip   { color: #475569; }
+        .sbo-label.sbo-error  { color: #fca5a5; }
+        .sbo-badge {
+            font-size: 9px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: .07em; padding: 2px 9px; border-radius: 99px;
+            white-space: nowrap; flex-shrink: 0;
+            background: transparent;
+        }
+        .sbo-badge.sbo-active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .sbo-badge.sbo-done   { background: rgba(16,185,129,0.15); color: #10b981; }
+        .sbo-badge.sbo-skip   { background: rgba(100,116,139,0.12); color: #64748b; }
+        .sbo-badge.sbo-error  { background: rgba(239,68,68,0.15); color: #f87171; }
+        .sbo-progress-wrap { margin-top: 16px; height: 4px; background: rgba(29,53,92,0.8); border-radius: 99px; overflow: hidden; }
+        .sbo-progress-bar {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, #3b82f6, #FFD400);
+            transition: width 0.55s cubic-bezier(.4,0,.2,1); width: 0%;
+        }
+        #sbo-status-msg { font-size: 11px; color: #475569; text-align: center; margin-top: 10px; font-weight: 600; min-height: 16px; }
+
+        /* ── BADGE SYNC PENDENTE ── */
+        #pending-sync-badge {
+            position: absolute; top: -5px; right: -5px;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #f59e0b; border: 2px solid #003366;
+            display: none; animation: pendingPulse 1.4s ease-in-out infinite;
+        }
+        #pending-sync-badge.visible { display: block; }
+        @keyframes pendingPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.7);} }
+
+        /* ── BANNER OFFLINE ── */
+        #offline-banner {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 9998;
+            background: linear-gradient(90deg, #92400e, #b45309);
+            color: #fef3c7; font-size: 12px; font-weight: 800;
+            padding: 10px 20px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transform: translateY(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+            border-top: 2px solid #f59e0b;
+        }
+        #offline-banner.visible { transform: translateY(0); }
+
+        /* ── TOAST DE MERGE ── */
+        .toast-merge {
+            background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(30,58,138,0.95)) !important;
+            border: 1px solid rgba(96,165,250,0.4) !important;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-12">
 
     <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
+
+    <!-- OVERLAY DE SINCRONIZAÇÃO AUTOMÁTICA AO ABRIR -->
+    <div id="sync-boot-overlay">
+        <div class="sbo-logo">
+            <div class="sbo-logo-icon"><i class="fa-solid fa-road-shield"></i></div>
+            <div style="text-align:center;">
+                <div style="font-size:21px;font-weight:900;color:#fff;letter-spacing:2px;">ESTUDEI <span style="color:#FFD400;">| PRF</span></div>
+                <div style="font-size:11px;color:#475569;font-weight:600;margin-top:3px;letter-spacing:.05em;">SINCRONIZAÇÃO AUTOMÁTICA</div>
+            </div>
+        </div>
+        <div class="sbo-card">
+            <div style="font-size:10px;font-weight:900;color:#334e6a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-shield-halved" style="color:#3b82f6;"></i>
+                Sequência de Inicialização Segura
+            </div>
+            <div class="sbo-step">
+                <div class="sbo-icon sbo-pending" id="sbo-icon-1"><span id="sbo-num-1">1</span></div>
+                <div class="sbo-label" id="sbo-label-1">Verificar conexão com a internet</div>
+                <div class="sbo-badge" id="sbo-badge-1"></div>
+            </div>
+            <div class="sbo-step">
+                <div class="sbo-icon sbo-pending" id="sbo-icon-2"><span id="sbo-num-2">2</span></div>
+                <div class="sbo-label" id="sbo-label-2">Conectar ao banco de dados remoto</div>
+                <div class="sbo-badge" id="sbo-badge-2"></div>
+            </div>
+            <div class="sbo-step">
+                <div class="sbo-icon sbo-pending" id="sbo-icon-3"><span id="sbo-num-3">3</span></div>
+                <div class="sbo-label" id="sbo-label-3">Buscar versão mais recente dos dados</div>
+                <div class="sbo-badge" id="sbo-badge-3"></div>
+            </div>
+            <div class="sbo-step">
+                <div class="sbo-icon sbo-pending" id="sbo-icon-4"><span id="sbo-num-4">4</span></div>
+                <div class="sbo-label" id="sbo-label-4">Atualizar automaticamente dados locais</div>
+                <div class="sbo-badge" id="sbo-badge-4"></div>
+            </div>
+            <div class="sbo-step">
+                <div class="sbo-icon sbo-pending" id="sbo-icon-5"><span id="sbo-num-5">5</span></div>
+                <div class="sbo-label" id="sbo-label-5">Liberar utilização da planilha</div>
+                <div class="sbo-badge" id="sbo-badge-5"></div>
+            </div>
+            <div class="sbo-progress-wrap">
+                <div class="sbo-progress-bar" id="sbo-progress-bar"></div>
+            </div>
+            <div id="sbo-status-msg">Iniciando sistema...</div>
+        </div>
+    </div>
 
     <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="prf-blue border-b-4 border-prf-yellow shadow-lg px-4 py-3 sticky top-0 z-50">
@@ -874,7 +1024,7 @@
         <section id="pane-resumos" class="tab-pane hidden h-[calc(100vh-180px)] flex flex-col">
             
             <!-- Barra de Ferramentas Global -->
-            <div class="bg-card-dark rounded-t-2xl border border-blue-900 p-2 flex flex-wrap items-center justify-between gap-3 shadow-md z-10 relative">
+            <div id="summary-toolbar" class="bg-card-dark rounded-t-2xl border border-blue-900 p-2 flex flex-wrap items-center justify-between gap-3 shadow-md z-10 relative">
                 
                 <!-- Ferramentas Básicas -->
                 <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
@@ -886,11 +1036,13 @@
                     <div class="w-px h-6 bg-blue-900 mx-1"></div>
 
                     <!-- Cores Customizadas -->
-                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor da Letra" onclick="openColorPalette(event,'foreColor')">
+                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor da Letra"
+                            onmousedown="event.preventDefault(); saveSelection(); openColorPalette(event,'foreColor');">
                         <i class="fa-solid fa-a text-xs text-white"></i>
                         <span class="cp-color-bar" id="cp-bar-fore" style="background:#ffffff;"></span>
                     </button>
-                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor de Fundo" onclick="openColorPalette(event,'backColor')">
+                    <button class="cp-trigger-btn bg-input-dark rounded-lg px-2 py-1.5 border border-blue-800 shadow-sm hover:border-yellow-400 transition" title="Cor de Fundo"
+                            onmousedown="event.preventDefault(); saveSelection(); openColorPalette(event,'backColor');">
                         <i class="fa-solid fa-fill-drip text-xs text-white"></i>
                         <span class="cp-color-bar" id="cp-bar-back" style="background:#3b82f6;"></span>
                     </button>
@@ -1402,11 +1554,18 @@
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <button onclick="smartSyncNow()" id="btn-manual-sync" title="Sincronizar agora"
-                        class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-xs shadow flex items-center justify-center gap-2">
-                        <i id="btn-sync-icon" class="fa-solid fa-arrows-rotate text-xl"></i>
-                    </button>
-                    <p class="text-center text-[10px] text-gray-500">A sincronização também acontece automaticamente ao fazer login e ao salvar dados.</p>
+                    <div class="relative">
+                        <button onclick="smartSyncNow()" id="btn-manual-sync" title="Sincronizar agora"
+                            class="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-lg text-xs shadow flex items-center justify-center gap-2">
+                            <i id="btn-sync-icon" class="fa-solid fa-arrows-rotate text-xl"></i>
+                            <span id="btn-sync-label">Sincronizar Agora</span>
+                        </button>
+                        <div id="pending-sync-badge" title="Dados locais pendentes de sincronização"></div>
+                    </div>
+                    <div id="sync-conflict-info" class="hidden text-xxs text-amber-400 font-bold bg-amber-900/20 border border-amber-800/40 rounded-lg px-3 py-2 text-center">
+                        <i class="fa-solid fa-code-merge mr-1"></i> Última sync: merge automático de dados de 2 dispositivos
+                    </div>
+                    <p class="text-center text-[10px] text-gray-500">Sync automático ao abrir e ao voltar a ter internet. Merge inteligente sem perda de dados.</p>
                 </div>
                 <div class="border-t border-blue-900 pt-3 flex gap-2">
                     <button onclick="generateEncryptedSyncCode()" class="flex-1 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-lg text-xs border border-emerald-800">
@@ -1418,9 +1577,18 @@
                 </div>
             </div>
 
-            <div class="flex justify-between items-center text-xxs text-gray-400 border-t border-blue-900 pt-3 font-mono">
-                <span>Estado: <strong id="sync-status-text" class="text-yellow-400">Local</strong></span>
-                <span>Último sync: <strong class="text-white" id="last-sync-time">Nunca</strong></span>
+            <div class="space-y-1.5 border-t border-blue-900 pt-3">
+                <div class="flex justify-between items-center text-xxs text-gray-400 font-mono">
+                    <span>Estado: <strong id="sync-status-text" class="text-yellow-400">Local</strong></span>
+                    <span>Último sync: <strong class="text-white" id="last-sync-time">Nunca</strong></span>
+                </div>
+                <div class="flex justify-between items-center text-xxs text-gray-500 font-mono">
+                    <span id="cross-device-status" style="display:none;">
+                        <i class="fa-solid fa-arrows-rotate text-blue-400 mr-1" style="font-size:9px;"></i>
+                        <span id="cross-device-status-text" class="text-blue-300">Listener ativo</span>
+                    </span>
+                    <span>Timestamp: <strong class="text-gray-400 tabular-nums" id="last-sync-full">—</strong></span>
+                </div>
             </div>
         </div>
     </div>
@@ -1769,21 +1937,158 @@
             if (!studyDb.syncCode) { studyDb.syncCode = generateRandomSyncCode(); await saveDatabase(); }
         }
 
-        async function saveDatabase() {
-            studyDb.updatedAt = new Date().toISOString();
-            const ok = await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-            updateSyncStatusDisplay(ok);
+        // LAST_SYNC_AT — chave local separada do studyDb (por dispositivo)
+        const LAST_SYNC_KEY = 'estudei_prf_last_sync_at';
+
+        async function _getLastSyncAt() {
+            try { return await storageGet(LAST_SYNC_KEY) || '1970-01-01T00:00:00.000Z'; } catch(e) { return '1970-01-01T00:00:00.000Z'; }
+        }
+        async function _setLastSyncAt(ts) {
+            try { await storageSet(LAST_SYNC_KEY, ts || new Date().toISOString()); } catch(e) {}
         }
 
-        function updateSyncStatusDisplay(ok) {
-            const el = document.getElementById('sync-status-text');
-            const timeEl = document.getElementById('last-sync-time');
-            if (el) el.innerText = ok ? 'Salvo ✓' : 'Erro ao Salvar ⚠';
-            if (el) el.style.color = ok ? '#10b981' : '#ef4444';
-            if (timeEl && ok) {
-                const now = new Date();
-                timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        // Flag global: tem alterações locais não sincronizadas?
+        let _hasPendingSync = false;
+
+        function _markPendingSync(hasPending) {
+            _hasPendingSync = hasPending;
+            const badge = document.getElementById('pending-sync-badge');
+            const label = document.getElementById('btn-sync-label');
+            const statusEl = document.getElementById('sync-status-text');
+            if (badge) badge.classList.toggle('visible', hasPending);
+            if (label && hasPending) label.textContent = 'Sincronizar (pendente)';
+            else if (label) label.textContent = 'Sincronizar Agora';
+            if (statusEl && hasPending && !navigator.onLine) {
+                statusEl.innerText = 'Offline — pendente';
+                statusEl.style.color = '#f59e0b';
             }
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // ── SALVAMENTO AUTOMÁTICO INSTANTÂNEO + SYNC IMEDIATO PARA NUVEM ─────
+        // Toda alteração nos dados dispara:
+        //   1. Timestamp preciso (data/hora/min/seg/ms)
+        //   2. Gravação local imediata
+        //   3. Push para Firestore (se logado e online), sem botão "Salvar"
+        // ══════════════════════════════════════════════════════════════════════
+
+        // Fila de cloud-push: evita múltiplos pushes simultâneos
+        let _cloudPushPending = false;
+        let _cloudPushTimer   = null;
+        const CLOUD_PUSH_DEBOUNCE_MS = 800; // agrupa edições rápidas (ex: digitação) em 1 push
+
+        async function saveDatabase() {
+            // 1. Timestamp preciso com milissegundos
+            studyDb.updatedAt = new Date().toISOString(); // ex: "2025-06-18T14:32:07.483Z"
+
+            // 2. Gravação LOCAL imediata (síncrona quanto possível)
+            const ok = await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+
+            // 3. Atualiza indicadores visuais
+            _updateInstantSaveUI(ok);
+
+            // 4. Agenda push para a nuvem (debounce para não sobrecarregar em edições rápidas)
+            _scheduleCloudPush();
+
+            return ok;
+        }
+
+        // Atualiza o indicador de "Salvando... / Salvo ✓" instantaneamente
+        function _updateInstantSaveUI(ok) {
+            const statusEl = document.getElementById('sync-status-text');
+            const timeEl   = document.getElementById('last-sync-time');
+            const indicator = document.getElementById('autosave-indicator');
+
+            if (ok) {
+                if (statusEl) { statusEl.innerText = 'Salvo localmente ✓'; statusEl.style.color = '#10b981'; }
+                if (timeEl) {
+                    const now = new Date();
+                    timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+                }
+            } else {
+                if (statusEl) { statusEl.innerText = 'Erro ao Salvar ⚠'; statusEl.style.color = '#ef4444'; }
+            }
+
+            // Mostra indicador de auto-save visual
+            if (indicator) {
+                const dot  = indicator.querySelector('.as-dot');
+                const span = indicator.querySelector('span:last-child');
+                if (dot)  dot.style.background = '#f59e0b';
+                if (span) span.innerText = 'Salvando…';
+                indicator.classList.add('visible');
+                // Após confirmação local, muda para "Salvo"
+                setTimeout(() => {
+                    if (dot)  dot.style.background = '#10b981';
+                    if (span) span.innerText = 'Salvo';
+                    setTimeout(() => indicator.classList.remove('visible'), 2500);
+                }, 300);
+            }
+        }
+
+        // Agenda push para Firestore com debounce
+        function _scheduleCloudPush() {
+            clearTimeout(_cloudPushTimer);
+            _cloudPushTimer = setTimeout(() => _pushToCloud(), CLOUD_PUSH_DEBOUNCE_MS);
+        }
+
+        // Envia dados para o Firestore imediatamente (chamado após o debounce)
+        async function _pushToCloud() {
+            if (!currentUser || !navigator.onLine) {
+                _markPendingSync(true);
+                return;
+            }
+            if (_cloudPushPending) {
+                // Já há um push em andamento — reagenda para depois que ele terminar
+                _scheduleCloudPush();
+                return;
+            }
+
+            _cloudPushPending = true;
+            const statusEl = document.getElementById('sync-status-text');
+            const iconEl   = document.getElementById('btn-sync-icon');
+
+            try {
+                if (iconEl) iconEl.classList.add('sync-spinning');
+                if (statusEl) { statusEl.innerText = 'Enviando para nuvem…'; statusEl.style.color = '#60a5fa'; }
+
+                // Garante que o updatedAt está atualizado (pode ter sido chamado logo após saveDatabase)
+                const payload = {
+                    studyDb:   JSON.stringify(studyDb),
+                    updatedAt: studyDb.updatedAt   // ISO com milissegundos
+                };
+                await fbDb.collection('users').doc(currentUser.uid).set(payload);
+                await _setLastSyncAt(studyDb.updatedAt);
+
+                _markPendingSync(false);
+
+                // Atualiza UI de sync
+                const now = new Date();
+                const timeEl = document.getElementById('last-sync-time');
+                if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
+                if (timeEl)   timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+                // Indicador no topo do modal de sync
+                const lastSyncFull = document.getElementById('last-sync-full');
+                if (lastSyncFull) {
+                    lastSyncFull.innerText = now.toLocaleString('pt-BR', {
+                        day:'2-digit', month:'2-digit', year:'numeric',
+                        hour:'2-digit', minute:'2-digit', second:'2-digit'
+                    }) + '.' + String(now.getMilliseconds()).padStart(3,'0');
+                }
+
+            } catch(e) {
+                console.warn('[AutoSync] Falha no push para nuvem:', e.message);
+                _markPendingSync(true);
+                if (statusEl) { statusEl.innerText = 'Salvo local (nuvem pendente)'; statusEl.style.color = '#f59e0b'; }
+            } finally {
+                _cloudPushPending = false;
+                if (iconEl) iconEl.classList.remove('sync-spinning');
+            }
+        }
+
+        // Mantida por compatibilidade com código antigo que chama updateSyncStatusDisplay
+        function updateSyncStatusDisplay(ok) {
+            _updateInstantSaveUI(ok);
         }
 
         // === NAVEGAÇÃO ===
@@ -3462,7 +3767,7 @@ ${conteudo}
     <div id="fullscreen-editor-overlay" class="hidden fixed inset-0 z-[999] flex flex-col" style="background:#0a0f1e;">
 
         <!-- Floating Toolbar -->
-        <div id="fs-toolbar" style="position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1530,#111827);border-bottom:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 32px rgba(0,0,0,0.7);">
+        <div id="fs-toolbar" onmousedown="event.preventDefault()" style="position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1530,#111827);border-bottom:1px solid rgba(59,130,246,0.3);box-shadow:0 4px 32px rgba(0,0,0,0.7);">
             <div class="flex flex-wrap items-center gap-1 px-3 py-2">
                 <!-- Sair -->
                 <button onclick="exitFullscreenEditor()" class="w-8 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/50 text-red-400 flex items-center justify-center transition mr-1" title="Sair (Esc)"><i class="fa-solid fa-compress text-xs"></i></button>
@@ -3476,11 +3781,11 @@ ${conteudo}
                 <!-- Cores -->
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor da Letra">
                     <i class="fa-solid fa-a text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'foreColor')" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
+                    <button class="cp-trigger-btn" onmousedown="event.preventDefault();saveSelection();openColorPalette(event,'foreColor');" title="Cor da Letra" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-a" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#ffffff;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1 border border-blue-800/40" title="Cor de Fundo">
                     <i class="fa-solid fa-fill-drip text-xs text-gray-400"></i>
-                    <button class="cp-trigger-btn" onclick="openColorPalette(event,'backColor')" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
+                    <button class="cp-trigger-btn" onmousedown="event.preventDefault();saveSelection();openColorPalette(event,'backColor');" title="Cor de Fundo" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;"><i class="fa-solid fa-fill-drip" style="font-size:11px;color:#e2e8f0;"></i><span class="cp-color-bar" style="background:#3b82f6;width:12px;height:3px;border-radius:2px;"></span></button>
                 </div>
                 <div class="w-px h-5 bg-blue-900 mx-1"></div>
                 <!-- Marcadores -->
@@ -3650,6 +3955,12 @@ ${conteudo}
                 </svg>
             </div>
         </div>
+    </div>
+
+    <!-- BANNER DE MODO OFFLINE -->
+    <div id="offline-banner">
+        <i class="fa-solid fa-wifi-slash"></i>
+        <span>Modo Offline — os seus estudos estão a ser guardados localmente e serão sincronizados automaticamente ao voltar à internet.</span>
     </div>
 
 </body></html>`;
@@ -4466,8 +4777,9 @@ function renderHistoryTab() {
                 }
                 onUserLoggedIn(email);
                 showAlert("✅ Sessão iniciada com sucesso!");
-                // Sincronização automática ao entrar
+                // Sincronização automática ao entrar + listener de tempo real
                 setTimeout(() => smartSyncNow(true), 500);
+                _startCrossDeviceListener(cred.user.uid);
             } catch(e) {
                 const msgs = {
                     'auth/user-not-found': 'Conta não encontrada. Crie uma conta primeiro.',
@@ -4491,9 +4803,13 @@ function renderHistoryTab() {
             document.getElementById('sync-status-text').innerText = 'Conta Conectada ✓';
             document.getElementById('sync-status-text').style.color = '#10b981';
             document.getElementById('auth-error-msg').classList.add('hidden');
+            // Mostra indicador de listener entre dispositivos
+            const cdStatus = document.getElementById('cross-device-status');
+            if (cdStatus) cdStatus.style.display = 'inline';
         }
 
         async function logoutEmail() {
+            _stopCrossDeviceListener(); // Para o listener de tempo real
             try { await fbAuth.signOut(); } catch(e) {}
             currentUser = null;
             await storageSet('estudei_prf_current_user', '');
@@ -4529,56 +4845,128 @@ function renderHistoryTab() {
             }
         }
 
-        // Sincronização inteligente: compara timestamps local vs nuvem e usa o mais recente
+        // ══════════════════════════════════════════════════════════════════════
+        // ── SMART SYNC COM MERGE INTELIGENTE ─────────────────────────────────
+        // Detecta conflito (ambos os lados mudaram desde o último sync) e faz
+        // merge automático sem perda de dados.
+        // ══════════════════════════════════════════════════════════════════════
         async function smartSyncNow(silent) {
             if (!currentUser) {
                 await saveDatabase();
                 if (!silent) showAlert("Dados guardados localmente. Faça login para sincronizar entre dispositivos.");
                 return;
             }
-            const btn = document.getElementById('btn-manual-sync');
+            if (!navigator.onLine) {
+                if (!silent) showAlert("Sem internet. Os dados serão sincronizados automaticamente ao reconectar.");
+                return;
+            }
+
+            const btn    = document.getElementById('btn-manual-sync');
             const iconEl = document.getElementById('btn-sync-icon');
-            if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+            const labelEl = document.getElementById('btn-sync-label');
+            if (btn)    { btn.disabled = true; btn.style.opacity = '0.6'; }
             if (iconEl) iconEl.classList.add('sync-spinning');
+            if (labelEl) labelEl.textContent = 'Sincronizando...';
+
             try {
                 const cloudDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+                const lastSyncAt    = await _getLastSyncAt();
                 const localUpdatedAt = studyDb.updatedAt || '1970-01-01T00:00:00.000Z';
-                let cloudUpdatedAt = '1970-01-01T00:00:00.000Z';
-                if (cloudDoc.exists && cloudDoc.data().updatedAt) cloudUpdatedAt = cloudDoc.data().updatedAt;
+                const cloudUpdatedAt = (cloudDoc.exists && cloudDoc.data().updatedAt) ? cloudDoc.data().updatedAt : '1970-01-01T00:00:00.000Z';
 
-                const localIsNewer = new Date(localUpdatedAt) >= new Date(cloudUpdatedAt);
+                const localChangedSinceSync = new Date(localUpdatedAt) > new Date(lastSyncAt);
+                const cloudChangedSinceSync = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
+                const conflict = localChangedSinceSync && cloudChangedSinceSync;
 
-                if (localIsNewer || !cloudDoc.exists || !cloudDoc.data().studyDb) {
-                    // Local mais recente → envia para nuvem
+                let action = 'upload'; // default
+                if (!cloudDoc.exists || !cloudDoc.data().studyDb) {
+                    action = 'upload'; // nada na nuvem → envia local
+                } else if (conflict) {
+                    action = 'merge';  // ambos mudaram → merge inteligente
+                } else if (cloudChangedSinceSync && !localChangedSinceSync) {
+                    action = 'download'; // só nuvem mudou → baixa
+                } else {
+                    action = 'upload';   // só local mudou ou iguais → envia
+                }
+
+                if (action === 'merge') {
+                    // ── MERGE: combina local + nuvem sem perda de dados ──
+                    const cloudParsed = JSON.parse(cloudDoc.data().studyDb);
+                    if (!cloudParsed.summaries) cloudParsed.summaries = [];
+                    if (!cloudParsed.history)   cloudParsed.history   = [];
+                    if (!cloudParsed.revisions) cloudParsed.revisions = [];
+
+                    const beforeCount = { history: (cloudParsed.history||[]).length };
+                    const merged = _mergeStudyDbs(studyDb, cloudParsed);
+                    const diff   = _countMergeDiff(cloudParsed, merged);
+
+                    studyDb = merged;
+                    // Envia resultado do merge para nuvem
+                    await fbDb.collection('users').doc(currentUser.uid).set({
+                        studyDb: JSON.stringify(studyDb),
+                        updatedAt: studyDb.updatedAt
+                    });
+                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                    await _setLastSyncAt();
+                    renderAllTabs();
+
+                    // Mostra info do merge
+                    const conflictInfo = document.getElementById('sync-conflict-info');
+                    if (conflictInfo) conflictInfo.classList.remove('hidden');
+                    setTimeout(() => { if(conflictInfo) conflictInfo.classList.add('hidden'); }, 8000);
+
+                    const parts = [];
+                    if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                    if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                    if (diff.revDiff  > 0) parts.push(`+${diff.revDiff} revisão(ões)`);
+                    const detail = parts.length ? ` (${parts.join(', ')} recuperados)` : '';
+
+                    if (!silent) showToast(`🔀 Merge concluído! Dados de 2 dispositivos unidos${detail}.`, 'info');
+                    else         showToast(`🔀 Sync: dados offline + nuvem fundidos${detail}.`, 'info');
+
+                } else if (action === 'download') {
+                    // ── DOWNLOAD: nuvem mais recente, local não mudou ──
+                    const parsed = JSON.parse(cloudDoc.data().studyDb);
+                    if (parsed && parsed.syllabus) {
+                        if (!parsed.summaries) parsed.summaries = [];
+                        if (!parsed.history)   parsed.history   = [];
+                        if (!parsed.revisions) parsed.revisions = [];
+                        studyDb = parsed;
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                        await _setLastSyncAt();
+                        renderAllTabs();
+                    }
+                    if (!silent) showAlert("✅ Dados atualizados da nuvem!");
+
+                } else {
+                    // ── UPLOAD: local mais recente ──
                     studyDb.updatedAt = new Date().toISOString();
                     await fbDb.collection('users').doc(currentUser.uid).set({
                         studyDb: JSON.stringify(studyDb),
                         updatedAt: studyDb.updatedAt
                     });
-                    await saveDatabase();
-                } else {
-                    // Nuvem mais recente → baixa para local
-                    const parsed = JSON.parse(cloudDoc.data().studyDb);
-                    if (parsed && parsed.syllabus) {
-                        if (!parsed.summaries)  parsed.summaries  = [];
-                        if (!parsed.history)    parsed.history    = [];
-                        if (!parsed.revisions)  parsed.revisions  = [];
-                        studyDb = parsed;
-                        await saveDatabase();
-                        renderAllTabs();
-                    }
+                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                    await _setLastSyncAt();
+                    if (!silent) showAlert("✅ Sincronizado! Dados enviados para a nuvem.");
                 }
+
+                // Atualiza UI
                 const now = new Date();
-                const timeEl = document.getElementById('last-sync-time');
-                if (timeEl) timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                const timeEl   = document.getElementById('last-sync-time');
                 const statusEl = document.getElementById('sync-status-text');
+                if (timeEl)   timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                 if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
-                if (!silent) showAlert("✅ Sincronizado! Todos os dispositivos estão atualizados.");
+                _markPendingSync(false);
+                _showOfflineBanner(false);
+
             } catch(e) {
+                console.error('[smartSyncNow]', e);
                 if (!silent) showAlert("Erro ao sincronizar: " + e.message);
+                else         showToast('⚠ Falha no sync automático. Tentará novamente.', 'warn');
             } finally {
-                if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-                if (iconEl) iconEl.classList.remove('sync-spinning');
+                if (btn)     { btn.disabled = false; btn.style.opacity = '1'; }
+                if (iconEl)  iconEl.classList.remove('sync-spinning');
+                if (labelEl) labelEl.textContent = _hasPendingSync ? 'Sincronizar (pendente)' : 'Sincronizar Agora';
             }
         }
 
@@ -4586,22 +4974,101 @@ function renderHistoryTab() {
         const _stBar = document.getElementById('selection-toolbar');
         if (_stBar) _stBar.addEventListener('mousedown', e => e.preventDefault());
 
-        // Auto-sync silencioso a cada 2 minutos quando logado
-        setInterval(() => { if (currentUser) smartSyncNow(true); }, 2 * 60 * 1000);
+        // Auto-sync silencioso a cada 3 minutos quando logado e online
+        setInterval(async () => {
+            if (currentUser && navigator.onLine) {
+                await smartSyncNow(true);
+            } else if (!navigator.onLine && _hasPendingSync) {
+                _markPendingSync(true); // reforça indicador visual
+            }
+        }, 3 * 60 * 1000);
 
         async function generateEncryptedSyncCode() {
             generateTextSyncCode();
         }
 
         function restoreSessionIfLoggedIn() {
-            // Firebase Auth mantém a sessão automaticamente via onAuthStateChanged
             if (!fbAuth) return;
             fbAuth.onAuthStateChanged(async (user) => {
                 if (user) {
                     currentUser = { email: user.email, uid: user.uid };
-                    onUserLoggedIn(user.email);
+                    try { onUserLoggedIn(user.email); } catch(e) {}
+                    // Inicia listener de tempo real para sync entre dispositivos
+                    _startCrossDeviceListener(user.uid);
+                } else {
+                    _stopCrossDeviceListener();
                 }
             });
+        }
+
+        // ── LISTENER EM TEMPO REAL (Sincronização entre dispositivos) ──────────
+        // Detecta alterações feitas em outro dispositivo e atualiza automaticamente.
+        let _crossDeviceUnsubscribe = null;
+        let _lastAppliedCloudTs = null; // evita loop: não reaplica o que nós mesmos enviamos
+
+        function _startCrossDeviceListener(uid) {
+            if (_crossDeviceUnsubscribe) {
+                _crossDeviceUnsubscribe();
+                _crossDeviceUnsubscribe = null;
+            }
+            if (!fbDb) return;
+            try {
+                _crossDeviceUnsubscribe = fbDb.collection('users').doc(uid)
+                    .onSnapshot(async (doc) => {
+                        if (!doc.exists || !doc.data().studyDb) return;
+
+                        const cloudUpdatedAt = doc.data().updatedAt || '1970-01-01T00:00:00.000Z';
+                        const localUpdatedAt = studyDb.updatedAt   || '1970-01-01T00:00:00.000Z';
+
+                        // Ignora se já aplicamos este timestamp (foi nosso próprio push)
+                        if (_lastAppliedCloudTs === cloudUpdatedAt) return;
+
+                        // Só atualiza se a nuvem tiver dados MAIS RECENTES (com margem de 2s)
+                        const diffMs = new Date(cloudUpdatedAt) - new Date(localUpdatedAt);
+                        if (diffMs < 2000) return;
+
+                        try {
+                            const cloudParsed = JSON.parse(doc.data().studyDb);
+                            if (!cloudParsed || !cloudParsed.syllabus) return;
+
+                            if (!cloudParsed.summaries)  cloudParsed.summaries  = [];
+                            if (!cloudParsed.history)    cloudParsed.history    = [];
+                            if (!cloudParsed.revisions)  cloudParsed.revisions  = [];
+
+                            _lastAppliedCloudTs = cloudUpdatedAt;
+                            studyDb = cloudParsed;
+                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                            await _setLastSyncAt(cloudUpdatedAt);
+                            renderAllTabs();
+
+                            const cloudTime = new Date(cloudUpdatedAt).toLocaleTimeString('pt-BR', {
+                                hour:'2-digit', minute:'2-digit', second:'2-digit'
+                            });
+                            showToast(`☁ Dados atualizados de outro dispositivo (${cloudTime})`, 'info', 4000);
+
+                            const statusEl = document.getElementById('sync-status-text');
+                            const timeEl   = document.getElementById('last-sync-time');
+                            if (statusEl) { statusEl.innerText = 'Sincronizado ✓ (outro dispositivo)'; statusEl.style.color = '#10b981'; }
+                            if (timeEl)   timeEl.innerText = cloudTime;
+
+                        } catch(e) {
+                            console.warn('[CrossDevice] Erro ao aplicar dados da nuvem:', e);
+                        }
+                    }, (err) => {
+                        console.warn('[CrossDevice] Listener error:', err.message);
+                        setTimeout(() => { if (currentUser) _startCrossDeviceListener(currentUser.uid); }, 30000);
+                    });
+                console.info('[CrossDevice] Listener ativo para uid:', uid);
+            } catch(e) {
+                console.warn('[CrossDevice] Não foi possível iniciar listener:', e.message);
+            }
+        }
+
+        function _stopCrossDeviceListener() {
+            if (_crossDeviceUnsubscribe) {
+                _crossDeviceUnsubscribe();
+                _crossDeviceUnsubscribe = null;
+            }
         }
 
         // === EXPORTS ===
@@ -5534,31 +6001,43 @@ function renderHistoryTab() {
         }
 
         function openColorPalette(e, mode) {
-            e.stopPropagation();
-            e.preventDefault();
-            saveSelection();
+            // Works from both mousedown and click contexts
+            if (e.stopPropagation) e.stopPropagation();
             _cpMode = mode;
+
             const popup = document.getElementById('color-palette-popup');
+            if (!popup) return;
+
             const label = document.getElementById('cp-popup-label');
-            label.innerText = mode === 'foreColor' ? 'Cor da Letra' : 'Cor de Fundo';
+            if (label) label.innerText = mode === 'foreColor' ? 'Cor da Letra' : 'Cor de Fundo';
+
             buildCpGrid();
             updateCpRecent();
 
-            // Position near button
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pw = 196, ph = 220;
-            let left = rect.left;
-            let top = rect.bottom + 6;
-            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-            if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
-            popup.style.left = left + 'px';
-            popup.style.top = top + 'px';
+            // Get position from the button (currentTarget or target, whichever is valid)
+            const btn = (e.currentTarget && e.currentTarget.getBoundingClientRect)
+                ? e.currentTarget
+                : (e.target && e.target.closest ? e.target.closest('button') : null);
+
+            if (btn) {
+                const rect = btn.getBoundingClientRect();
+                const pw = 196, ph = 240;
+                let left = rect.left;
+                let top  = rect.bottom + 6;
+                if (left + pw > window.innerWidth - 8)  left = window.innerWidth - pw - 8;
+                if (top  + ph > window.innerHeight - 8) top  = rect.top - ph - 6;
+                popup.style.left = Math.max(4, left) + 'px';
+                popup.style.top  = Math.max(4, top)  + 'px';
+            } else {
+                popup.style.left = '50%';
+                popup.style.top  = '100px';
+            }
+
             popup.classList.add('open');
             _cpOpen = true;
 
-            // Custom color input
             const customInput = document.getElementById('cp-custom-input');
-            customInput.oninput = () => pickColor(customInput.value);
+            if (customInput) customInput.oninput = () => pickColor(customInput.value);
         }
 
         function pickColor(hex) {
@@ -5596,6 +6075,21 @@ function renderHistoryTab() {
 
         window.openColorPalette = openColorPalette;
         window.pickColor = pickColor;
+
+        // ── TOOLBAR FOCUS LOCK ───────────────────────────────────────────────
+        function _initToolbarFocusLock() {
+            ['summary-toolbar','fs-toolbar','selection-toolbar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.querySelectorAll('button').forEach(btn => {
+                    if (!btn.getAttribute('onmousedown')) {
+                        btn.addEventListener('mousedown', e => e.preventDefault());
+                    }
+                });
+            });
+        }
+        // Toolbar HTML is static — one-time init is enough
+        setTimeout(_initToolbarFocusLock, 300);
 
         // === FLOATING SELECTION TOOLBAR ===
         let _stSavedRange = null;
@@ -5871,10 +6365,156 @@ function renderHistoryTab() {
         // ║  SM2 + Ebbinghaus + Mastery + Score Global  (sem hoisting traps)   ║
         // ╚══════════════════════════════════════════════════════════════════════╝
 
-        // ── OFFLINE QUEUE ────────────────────────────────────────────────────
-        let _offlineQueue = [];
-        window.addEventListener('online',  () => { if (_offlineQueue.length && currentUser) { smartSyncNow(true); _offlineQueue = []; } });
-        window.addEventListener('offline', () => { _offlineQueue.push(Date.now()); });
+        // ── MONITORAMENTO OFFLINE / ONLINE ──────────────────────────────────
+        let _offlineQueue = []; // mantido por compatibilidade
+
+        function _showOfflineBanner(show) {
+            const el = document.getElementById('offline-banner');
+            if (el) el.classList.toggle('visible', show);
+        }
+
+        window.addEventListener('offline', () => {
+            _offlineQueue.push(Date.now());
+            _showOfflineBanner(true);
+            _markPendingSync(true);
+            const statusEl = document.getElementById('sync-status-text');
+            if (statusEl) { statusEl.innerText = 'Offline — pendente'; statusEl.style.color = '#f59e0b'; }
+        });
+
+        window.addEventListener('online', async () => {
+            _showOfflineBanner(false);
+            // Aguarda 1.5s para a ligação estabilizar
+            await new Promise(r => setTimeout(r, 1500));
+            if (currentUser) {
+                showToast('🔄 Internet restaurada — sincronizando dados...', 'info');
+                // Se há alterações locais pendentes, envia imediatamente
+                if (_hasPendingSync) {
+                    await _pushToCloud();
+                }
+                await smartSyncNow(true);
+                _offlineQueue = [];
+                // Reinicia o listener entre dispositivos se não estiver ativo
+                if (!_crossDeviceUnsubscribe) {
+                    _startCrossDeviceListener(currentUser.uid);
+                }
+            } else {
+                _markPendingSync(false);
+            }
+        });
+
+        // ══════════════════════════════════════════════════════════════════════
+        // ── MOTOR DE MERGE INTELIGENTE ────────────────────────────────────────
+        // Combina dados de dois dispositivos sem perder sessões, resumos ou
+        // revisões. Resolve conflitos item a item, nunca sobrescreve no bruto.
+        // ══════════════════════════════════════════════════════════════════════
+
+        /**
+         * Merge de dois objetos studyDb.
+         * Garante que NENHUMA sessão de estudo, resumo ou revisão se perde.
+         * @param {object} localDb  - dados do dispositivo local
+         * @param {object} cloudDb  - dados vindos da nuvem
+         * @returns {object} merged - objecto fundido
+         */
+        function _mergeStudyDbs(localDb, cloudDb) {
+            const merged = JSON.parse(JSON.stringify(cloudDb)); // base = nuvem
+
+            // ── 1. HISTÓRICO: união por ID — garante que sessões offline não se perdem ──
+            const cloudHistIds = new Set((cloudDb.history || []).map(h => String(h.id)));
+            const localOnlyHist = (localDb.history || []).filter(h => !cloudHistIds.has(String(h.id)));
+            merged.history = [...(cloudDb.history || []), ...localOnlyHist];
+            merged.history.sort((a, b) => String(a.date||'').localeCompare(String(b.date||'')));
+
+            // ── 2. RESUMOS: união por ID, conflito → versão com lastEdited mais recente ──
+            const cloudSumMap = {};
+            (cloudDb.summaries || []).forEach(s => { cloudSumMap[s.id] = s; });
+            (localDb.summaries || []).forEach(s => {
+                if (!cloudSumMap[s.id]) {
+                    cloudSumMap[s.id] = s; // só no local → adiciona
+                } else {
+                    // Ambos têm → guarda o mais recentemente editado
+                    const cloudDate = new Date(cloudSumMap[s.id].lastEdited || 0);
+                    const localDate = new Date(s.lastEdited || 0);
+                    if (localDate > cloudDate) cloudSumMap[s.id] = s;
+                }
+            });
+            merged.summaries = Object.values(cloudSumMap);
+
+            // ── 3. REVISÕES SM2: por chave subject+topic, guarda o mais recente ──
+            const revKey = r => `${r.subject || ''}||${r.topic || ''}`;
+            const cloudRevMap = {};
+            (cloudDb.revisions || []).forEach(r => { cloudRevMap[revKey(r)] = r; });
+            (localDb.revisions || []).forEach(r => {
+                const k = revKey(r);
+                if (!cloudRevMap[k]) {
+                    cloudRevMap[k] = r; // só no local → adiciona
+                } else {
+                    // Ambos têm → guarda o com próxima revisão mais cedo (mais urgente)
+                    const cloudNext = new Date(cloudRevMap[k].nextReview || 0);
+                    const localNext = new Date(r.nextReview || 0);
+                    if (localNext < cloudNext) cloudRevMap[k] = r;
+                }
+            });
+            merged.revisions = Object.values(cloudRevMap);
+
+            // ── 4. SYLLABUS: merge de status por tópico (sempre avança, nunca regride) ──
+            const STATUS_ORDER = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
+            const localSylMap = {};
+            (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; });
+
+            merged.syllabus = (cloudDb.syllabus || []).map(cloudSubj => {
+                const localSubj = localSylMap[cloudSubj.subject];
+                if (!localSubj) return cloudSubj;
+
+                const mergedTopics = (cloudSubj.topics || []).map(cloudT => {
+                    const localT = (localSubj.topics || []).find(t => t.name === cloudT.name);
+                    if (!localT) return cloudT;
+
+                    const cIdx = STATUS_ORDER.indexOf(cloudT.status);
+                    const lIdx = STATUS_ORDER.indexOf(localT.status);
+
+                    return {
+                        ...cloudT,
+                        // Questões: pega o máximo (local pode ter feito mais enquanto offline)
+                        qCorrect: Math.max(cloudT.qCorrect || 0, localT.qCorrect || 0),
+                        qTotal:   Math.max(cloudT.qTotal   || 0, localT.qTotal   || 0),
+                        // Status: pega o mais avançado (progresso nunca regride)
+                        status: lIdx > cIdx ? localT.status : cloudT.status
+                    };
+                });
+
+                // Tópicos que existem só no local (adicionados offline) → adiciona
+                const cloudTopicNames = new Set((cloudSubj.topics || []).map(t => t.name));
+                const localOnlyTopics = (localSubj.topics || []).filter(t => !cloudTopicNames.has(t.name));
+
+                return { ...cloudSubj, topics: [...mergedTopics, ...localOnlyTopics] };
+            });
+
+            // Disciplinas que existem só no local (adicionadas offline) → adiciona
+            const cloudSubjNames = new Set((cloudDb.syllabus || []).map(s => s.subject));
+            (localDb.syllabus || []).filter(s => !cloudSubjNames.has(s.subject))
+                .forEach(s => merged.syllabus.push(s));
+
+            // ── 5. CICLO DE ESTUDOS: usa local (o utilizador activo prevalece) ──
+            merged.studyCycle      = localDb.studyCycle      || cloudDb.studyCycle      || [];
+            merged.currentCycleStep = localDb.currentCycleStep ?? cloudDb.currentCycleStep ?? 0;
+
+            // ── 6. META DIÁRIA + SYNC CODE ──
+            merged.dailyGoalMinutes = Math.max(localDb.dailyGoalMinutes || 0, cloudDb.dailyGoalMinutes || 0) || undefined;
+            merged.syncCode = localDb.syncCode || cloudDb.syncCode || '';
+            merged.updatedAt = new Date().toISOString();
+
+            return merged;
+        }
+
+        /**
+         * Conta quantos itens foram adicionados no merge (para informar ao utilizador).
+         */
+        function _countMergeDiff(baseDb, mergedDb) {
+            const histDiff = (mergedDb.history  || []).length - (baseDb.history  || []).length;
+            const sumDiff  = (mergedDb.summaries || []).length - (baseDb.summaries || []).length;
+            const revDiff  = (mergedDb.revisions || []).length - (baseDb.revisions || []).length;
+            return { histDiff, sumDiff, revDiff };
+        }
 
         // ── INTEGRIDADE DE DADOS ─────────────────────────────────────────────
         function validateAndRepairDb() {
@@ -6218,15 +6858,298 @@ function renderHistoryTab() {
             showToast('✅ Sessão salva! Revisões SM2 agendadas.', 'success');
         }
 
-        // ── onload: substitui via assignment (sem hoisting, sem recursão) ─────
+        // ═══════════════════════════════════════════════════════════════════════
+        // ── MOTOR DE SINCRONIZAÇÃO AUTOMÁTICA AO ABRIR (Boot Sync Engine) ────
+        // ═══════════════════════════════════════════════════════════════════════
+
+        /** Espera N milissegundos */
+        function _sboDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        /**
+         * Atualiza o estado visual de uma etapa do overlay.
+         * @param {number} n       - Número da etapa (1–5)
+         * @param {string} state   - 'active' | 'done' | 'skip' | 'error'
+         * @param {string} badge   - Texto da badge (ex: "online ✓")
+         * @param {number} pct     - Percentagem da barra de progresso (0–100)
+         */
+        function _sboSetStep(n, state, badge, pct) {
+            const iconEl  = document.getElementById('sbo-icon-' + n);
+            const numEl   = document.getElementById('sbo-num-' + n);
+            const labelEl = document.getElementById('sbo-label-' + n);
+            const badgeEl = document.getElementById('sbo-badge-' + n);
+            const barEl   = document.getElementById('sbo-progress-bar');
+            if (!iconEl) return;
+
+            // Ícones por estado
+            const icons = {
+                active: '<i class="fa-solid fa-circle-notch fa-spin" style="font-size:11px;"></i>',
+                done:   '<i class="fa-solid fa-check" style="font-size:11px;"></i>',
+                skip:   '<i class="fa-solid fa-minus" style="font-size:11px;"></i>',
+                error:  '<i class="fa-solid fa-triangle-exclamation" style="font-size:11px;"></i>'
+            };
+
+            iconEl.className  = 'sbo-icon sbo-' + state;
+            iconEl.innerHTML  = (icons[state] || String(n));
+            labelEl.className = 'sbo-label sbo-' + state;
+
+            if (badge) {
+                badgeEl.className   = 'sbo-badge sbo-' + state;
+                badgeEl.textContent = badge;
+            }
+            if (pct !== undefined && barEl) {
+                barEl.style.width = pct + '%';
+            }
+        }
+
+        /** Atualiza a linha de status abaixo da barra de progresso */
+        function _sboStatus(msg) {
+            const el = document.getElementById('sbo-status-msg');
+            if (el) el.textContent = msg;
+        }
+
+        /** Oculta o overlay com animação suave */
+        function _sboHide() {
+            const el = document.getElementById('sync-boot-overlay');
+            if (el) {
+                el.classList.add('sbo-fade-out');
+                setTimeout(() => { el.style.display = 'none'; }, 600);
+            }
+        }
+
+        /**
+         * Aguarda o Firebase Auth determinar o estado da sessão (com timeout).
+         * Retorna o objeto user ou null.
+         */
+        function _sboWaitForAuth(timeoutMs) {
+            timeoutMs = timeoutMs || 6000;
+            return new Promise(function(resolve) {
+                if (!window.fbAuth) { resolve(null); return; }
+                var settled = false;
+                var timer = setTimeout(function() {
+                    if (!settled) { settled = true; resolve(null); }
+                }, timeoutMs);
+                window.fbAuth.onAuthStateChanged(function(user) {
+                    if (!settled) {
+                        settled = true;
+                        clearTimeout(timer);
+                        resolve(user || null);
+                    }
+                });
+            });
+        }
+
+        /**
+         * Executa a sequência completa de sincronização ao abrir.
+         * Controla o overlay passo a passo e bloqueia a UI até concluir.
+         */
+        async function _sboRunBootSync() {
+
+            // ── ETAPA 1 : Verificar conexão com a internet ──────────────────────
+            _sboSetStep(1, 'active', 'verificando...', 5);
+            _sboStatus('Verificando conexão com a internet...');
+            await _sboDelay(380);
+
+            const isOnline = navigator.onLine;
+
+            if (!isOnline) {
+                _sboSetStep(1, 'skip', 'offline',  20);
+                _sboSetStep(2, 'skip', 'pulado',   40);
+                _sboSetStep(3, 'skip', 'pulado',   60);
+                _sboSetStep(4, 'skip', 'local',    80);
+                _sboSetStep(5, 'active', 'aguarde...');
+                _sboStatus('Sem internet — carregando dados locais...');
+                await _sboDelay(700);
+                _sboSetStep(5, 'done', 'pronto ✓', 100);
+                _sboStatus('Planilha carregada com dados locais.');
+                return; // sai sem sync na nuvem
+            }
+
+            _sboSetStep(1, 'done', 'online ✓', 20);
+
+            // ── ETAPA 2 : Conectar ao banco de dados remoto ─────────────────────
+            _sboSetStep(2, 'active', 'conectando...', 25);
+            _sboStatus('Conectando ao banco de dados remoto (Firebase)...');
+
+            // Carrega dados locais primeiro (necessário para comparação)
+            try { await loadDatabase(); } catch(e) { console.error('[SBO] loadDatabase:', e); }
+            try { validateAndRepairDb(); } catch(e) {}
+
+            // Aguarda Firebase Auth restaurar a sessão (timeout 6s)
+            const fbUser = await _sboWaitForAuth(6000);
+
+            if (!fbUser) {
+                // Não autenticado — modo local
+                _sboSetStep(2, 'skip', 'sem login',  40);
+                _sboSetStep(3, 'skip', 'pulado',     60);
+                _sboSetStep(4, 'skip', 'dados locais', 80);
+                _sboSetStep(5, 'active', 'aguarde...');
+                _sboStatus('Não autenticado — usando dados locais. Faça login para sincronizar.');
+                await _sboDelay(700);
+                _sboSetStep(5, 'done', 'pronto ✓', 100);
+                _sboStatus('Planilha carregada. Faça login para sincronizar entre dispositivos.');
+                return;
+            }
+
+            // Usuário autenticado
+            currentUser = { email: fbUser.email, uid: fbUser.uid };
+            try { onUserLoggedIn(fbUser.email); } catch(e) {}
+            _sboSetStep(2, 'done', 'conectado ✓', 40);
+
+            // ── ETAPA 3 : Buscar versão mais recente dos dados ──────────────────
+            _sboSetStep(3, 'active', 'buscando...', 45);
+            _sboStatus('Buscando a versão mais recente dos dados na nuvem...');
+            await _sboDelay(200);
+
+            let cloudDoc = null;
+            try {
+                cloudDoc = await fbDb.collection('users').doc(fbUser.uid).get();
+                _sboSetStep(3, 'done', 'concluído ✓', 60);
+            } catch(e) {
+                console.error('[SBO] Firestore get:', e);
+                _sboSetStep(3, 'error', 'erro!', 60);
+                _sboStatus('Erro ao acessar a nuvem — mantendo dados locais.');
+                await _sboDelay(900);
+                _sboSetStep(4, 'skip', 'usando local', 80);
+                _sboSetStep(5, 'active', 'aguarde...');
+                await _sboDelay(400);
+                _sboSetStep(5, 'done', 'pronto ✓', 100);
+                _sboStatus('Planilha carregada com dados locais (erro de rede).');
+                return;
+            }
+
+            // ── ETAPA 4 : Atualizar automaticamente dados locais ────────────────
+            _sboSetStep(4, 'active', 'atualizando...', 65);
+            _sboStatus('Comparando versões e atualizando dados locais...');
+            await _sboDelay(300);
+
+            if (cloudDoc && cloudDoc.exists && cloudDoc.data().studyDb) {
+                const lastSyncAt     = await _getLastSyncAt();
+                const localUpdatedAt = studyDb.updatedAt           || '1970-01-01T00:00:00.000Z';
+                const cloudUpdatedAt = cloudDoc.data().updatedAt   || '1970-01-01T00:00:00.000Z';
+
+                const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
+                const cloudChanged = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
+                const conflict     = localChanged && cloudChanged;
+
+                try {
+                    const cloudParsed = JSON.parse(cloudDoc.data().studyDb);
+                    if (!cloudParsed.summaries) cloudParsed.summaries = [];
+                    if (!cloudParsed.history)   cloudParsed.history   = [];
+                    if (!cloudParsed.revisions) cloudParsed.revisions = [];
+
+                    if (conflict) {
+                        // ── CONFLITO: merge inteligente sem perda de dados ──────────────
+                        _sboStatus('Conflito detectado! Fundindo dados de 2 dispositivos...');
+                        const diff   = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
+                        studyDb = _mergeStudyDbs(studyDb, cloudParsed);
+                        // Envia resultado do merge para nuvem
+                        await fbDb.collection('users').doc(fbUser.uid).set({
+                            studyDb: JSON.stringify(studyDb),
+                            updatedAt: studyDb.updatedAt
+                        });
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                        await _setLastSyncAt();
+                        const parts = [];
+                        if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                        if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                        const detail = parts.length ? ` (${parts.join(', ')})` : '';
+                        _sboSetStep(4, 'done', `merge ✓${detail}`, 80);
+                        _sboStatus(`Dados offline + nuvem fundidos${detail}. Nenhum dado perdido!`);
+
+                    } else if (cloudChanged && !localChanged) {
+                        // ── SÓ NUVEM MUDOU: baixa ──────────────────────────────────────
+                        studyDb = cloudParsed;
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                        await _setLastSyncAt();
+                        _sboSetStep(4, 'done', '☁ → local ✓', 80);
+                        _sboStatus('Dados atualizados com a versão mais recente da nuvem!');
+
+                    } else {
+                        // ── SÓ LOCAL MUDOU (ou iguais): envia ──────────────────────────
+                        studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
+                        await fbDb.collection('users').doc(fbUser.uid).set({
+                            studyDb: JSON.stringify(studyDb),
+                            updatedAt: studyDb.updatedAt
+                        });
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                        await _setLastSyncAt();
+                        _sboSetStep(4, 'done', 'local → ☁ ✓', 80);
+                        _sboStatus('Dados locais enviados para a nuvem.');
+                    }
+                } catch(e) {
+                    console.error('[SBO] Etapa 4 erro:', e);
+                    _sboSetStep(4, 'error', 'erro parse', 80);
+                    _sboStatus('Erro ao processar dados — dados locais mantidos.');
+                }
+
+            } else {
+                // Sem dados na nuvem → envia os locais (primeira vez / conta nova)
+                try {
+                    studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
+                    await fbDb.collection('users').doc(fbUser.uid).set({
+                        studyDb: JSON.stringify(studyDb),
+                        updatedAt: studyDb.updatedAt
+                    });
+                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                    await _setLastSyncAt();
+                    _sboSetStep(4, 'done', 'dados enviados ✓', 80);
+                    _sboStatus('Dados locais enviados para a nuvem pela primeira vez.');
+                } catch(e) {
+                    console.error('[SBO] Upload inicial:', e);
+                    _sboSetStep(4, 'skip', 'upload falhou', 80);
+                    _sboStatus('Conta nova — dados locais usados.');
+                }
+            }
+
+            // Atualiza display de sync no modal
+            try {
+                const now = new Date();
+                const timeEl = document.getElementById('last-sync-time');
+                if (timeEl) timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+                const statusEl = document.getElementById('sync-status-text');
+                if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
+                const fullEl = document.getElementById('last-sync-full');
+                if (fullEl) fullEl.innerText = now.toLocaleString('pt-BR', {
+                    day:'2-digit', month:'2-digit', year:'numeric',
+                    hour:'2-digit', minute:'2-digit', second:'2-digit'
+                }) + '.' + String(now.getMilliseconds()).padStart(3,'0');
+            } catch(e) {}
+
+            // ── ETAPA 5 : Liberar utilização da planilha ────────────────────────
+            _sboSetStep(5, 'active', 'aguarde...', 90);
+            _sboStatus('Sincronização concluída! Preparando a planilha...');
+            await _sboDelay(500);
+            _sboSetStep(5, 'done', 'pronto ✓', 100);
+            _sboStatus('✓ Planilha sincronizada e pronta para uso!');
+        }
+
+        // ── onload FINAL: com Sincronização Automática ao Abrir ───────────────
         window.onload = async function() {
-            try { await loadDatabase(); } catch(e) { console.error('[Estudei] loadDatabase:', e); }
-            validateAndRepairDb();
+
+            // Executa a sequência completa (overlay bloqueia a UI durante este tempo)
+            try {
+                await _sboRunBootSync();
+            } catch(e) {
+                console.error('[Estudei] Erro no boot sync:', e);
+                // Garante que o DB local está carregado mesmo em caso de erro
+                try { await loadDatabase(); } catch(e2) {}
+                try { validateAndRepairDb(); } catch(e2) {}
+                _sboSetStep(5, 'error', 'erro', 100);
+                _sboStatus('Erro durante sincronização. Usando dados locais.');
+                await _sboDelay(1500);
+            }
+
+            // Renderiza toda a interface
             try { renderAllTabs(); } catch(e) { console.error('[Estudei] renderAllTabs:', e); }
             try { initCharts(); initStudyTypeChart(); } catch(e) { console.error('[Estudei] charts:', e); }
             checkUrlHash();
             cycleMotivationalQuote();
-            try { restoreSessionIfLoggedIn(); } catch(e) {}
+
+            // Oculta o overlay (a interface já está pronta)
+            await _sboDelay(700);
+            _sboHide();
+
+            // Intervalo de reparação automática do banco
             setInterval(() => { try { validateAndRepairDb(); } catch(e) {} }, 10 * 60 * 1000);
         };
 
