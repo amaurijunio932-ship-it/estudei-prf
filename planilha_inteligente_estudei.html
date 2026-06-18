@@ -2091,6 +2091,380 @@
             _updateInstantSaveUI(ok);
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        // ── 8. PROTEÇÃO CONTRA PERDA DE DADOS ────────────────────────────────
+        // Cache local redundante, backup automático rotativo, fila de
+        // sincronização persistente e validação de integridade.
+        // Garante que fechamentos inesperados, travamentos, queda de energia e
+        // perda de conexão NÃO resultem em perda de informações.
+        // ══════════════════════════════════════════════════════════════════════
+
+        // ── Chaves de armazenamento ───────────────────────────────────────────
+        const BACKUP_KEY_PREFIX  = 'estudei_prf_backup_';   // estudei_prf_backup_0..2
+        const BACKUP_SLOTS       = 3;                        // rotação circular de 3 slots
+        const BACKUP_SLOT_KEY    = 'estudei_prf_backup_slot';// índice do próximo slot
+        const SYNC_QUEUE_KEY     = 'estudei_prf_sync_queue'; // fila persistente de ops
+        const INTEGRITY_KEY      = 'estudei_prf_integrity';  // hash/checksum do último save
+        const CRASH_FLAG_KEY     = 'estudei_prf_crash_flag'; // detecta fechamento abrupto
+        const SHADOW_KEY         = 'estudei_prf_shadow';     // cópia sombra (escrita antes)
+
+        // ── Estado interno ────────────────────────────────────────────────────
+        let _dlpInitialized  = false;
+        let _syncQueue       = [];   // [{id, op, payload, ts, retries}]
+        let _syncQueueTimer  = null;
+        let _backupTimer     = null;
+        const BACKUP_INTERVAL_MS   = 5 * 60 * 1000;  // backup a cada 5 min
+        const QUEUE_FLUSH_MS       = 2000;             // drena fila 2s após adição
+        const MAX_QUEUE_RETRIES    = 10;
+        const QUEUE_RETRY_BASE_MS  = 3000;
+
+        // ── Checksum simples (djb2) para detecção de corrupção ───────────────
+        function _dlpChecksum(str) {
+            let h = 5381;
+            for (let i = 0; i < str.length; i++) {
+                h = ((h << 5) + h) ^ str.charCodeAt(i);
+                h = h >>> 0;
+            }
+            return h.toString(16);
+        }
+
+        // ── storageSet com fallback triplo ────────────────────────────────────
+        async function _dlpStorageSet(key, value) {
+            // Tenta window.storage (Artifacts), depois localStorage, depois sessionStorage
+            if (window.storage) {
+                try { await window.storage.set(key, value); return true; } catch(e) {}
+            }
+            try { localStorage.setItem(key, value); return true; } catch(e) {}
+            try { sessionStorage.setItem(key, value); return true; } catch(e) {}
+            return false;
+        }
+
+        async function _dlpStorageGet(key) {
+            if (window.storage) {
+                try { const r = await window.storage.get(key); if (r) return r.value; } catch(e) {}
+            }
+            try { const v = localStorage.getItem(key); if (v !== null) return v; } catch(e) {}
+            try { const v = sessionStorage.getItem(key); if (v !== null) return v; } catch(e) {}
+            return null;
+        }
+
+        // ── Write-Ahead Log: escreve shadow ANTES do dado real ────────────────
+        // Garante que mesmo se o processo morrer no meio do save, o shadow fica
+        async function _dlpShadowWrite(data) {
+            try {
+                const shadowPayload = JSON.stringify({ ts: new Date().toISOString(), data });
+                await _dlpStorageSet(SHADOW_KEY, shadowPayload);
+            } catch(e) { console.warn('[DLP] Shadow write falhou:', e); }
+        }
+
+        async function _dlpShadowClear() {
+            try {
+                if (window.storage) await window.storage.delete(SHADOW_KEY).catch(()=>{});
+                else localStorage.removeItem(SHADOW_KEY);
+            } catch(e) {}
+        }
+
+        // ── Backup rotativo em 3 slots ────────────────────────────────────────
+        async function _dlpBackup(dbObj) {
+            try {
+                const slotStr = await _dlpStorageGet(BACKUP_SLOT_KEY);
+                const slot    = (parseInt(slotStr) || 0) % BACKUP_SLOTS;
+                const key     = BACKUP_KEY_PREFIX + slot;
+                const payload = JSON.stringify({
+                    ts:   new Date().toISOString(),
+                    slot,
+                    data: dbObj
+                });
+                await _dlpStorageSet(key, payload);
+                await _dlpStorageSet(BACKUP_SLOT_KEY, String((slot + 1) % BACKUP_SLOTS));
+                console.info(`[DLP] Backup salvo no slot ${slot}`);
+            } catch(e) { console.warn('[DLP] Backup falhou:', e); }
+        }
+
+        // Schedula backup automático
+        function _dlpScheduleBackup() {
+            clearTimeout(_backupTimer);
+            _backupTimer = setTimeout(async () => {
+                await _dlpBackup(studyDb);
+            }, BACKUP_INTERVAL_MS);
+        }
+
+        // ── Recuperação de emergência ─────────────────────────────────────────
+        // Chamada no boot se o dado principal estiver corrompido/ausente
+        async function _dlpRecoverFromBackup() {
+            console.warn('[DLP] Tentando recuperar de backup...');
+
+            // 1. Verifica shadow (write-ahead log)
+            try {
+                const shadowRaw = await _dlpStorageGet(SHADOW_KEY);
+                if (shadowRaw) {
+                    const shadow = JSON.parse(shadowRaw);
+                    if (shadow && shadow.data && shadow.data.syllabus) {
+                        console.info('[DLP] Recuperado do shadow (write-ahead log)');
+                        return shadow.data;
+                    }
+                }
+            } catch(e) {}
+
+            // 2. Varre slots de backup do mais recente para o mais antigo
+            const candidates = [];
+            for (let i = 0; i < BACKUP_SLOTS; i++) {
+                try {
+                    const raw = await _dlpStorageGet(BACKUP_KEY_PREFIX + i);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.data && parsed.data.syllabus) {
+                        candidates.push({ ts: new Date(parsed.ts || 0), data: parsed.data });
+                    }
+                } catch(e) {}
+            }
+            if (candidates.length > 0) {
+                candidates.sort((a, b) => b.ts - a.ts);
+                console.info(`[DLP] Recuperado de backup (${candidates[0].ts.toISOString()})`);
+                return candidates[0].data;
+            }
+            return null;
+        }
+
+        // ── Detectar fechamento abrupto (crash detection) ─────────────────────
+        async function _dlpSetCrashFlag() {
+            await _dlpStorageSet(CRASH_FLAG_KEY, new Date().toISOString());
+        }
+        async function _dlpClearCrashFlag() {
+            try {
+                if (window.storage) await window.storage.delete(CRASH_FLAG_KEY).catch(()=>{});
+                else localStorage.removeItem(CRASH_FLAG_KEY);
+            } catch(e) {}
+        }
+        async function _dlpCheckCrashFlag() {
+            const val = await _dlpStorageGet(CRASH_FLAG_KEY);
+            if (val) {
+                const crashTs = new Date(val);
+                const age     = Date.now() - crashTs.getTime();
+                // Flag mais velha que 2s = sessão anterior fechou abruptamente
+                if (age > 2000) {
+                    console.warn(`[DLP] Detectado fechamento abrupto anterior em ${val}`);
+                    return { detected: true, ts: val };
+                }
+            }
+            return { detected: false };
+        }
+
+        // Atualiza o crash flag a cada 2s (heartbeat)
+        let _crashFlagInterval = null;
+        function _dlpStartHeartbeat() {
+            _dlpSetCrashFlag();
+            _crashFlagInterval = setInterval(_dlpSetCrashFlag, 2000);
+        }
+        function _dlpStopHeartbeat() {
+            clearInterval(_crashFlagInterval);
+            _dlpClearCrashFlag();
+        }
+
+        // ── Fila de Sincronização Persistente ────────────────────────────────
+        async function _syncQueueLoad() {
+            try {
+                const raw = await _dlpStorageGet(SYNC_QUEUE_KEY);
+                if (raw) _syncQueue = JSON.parse(raw);
+                else     _syncQueue = [];
+            } catch(e) { _syncQueue = []; }
+        }
+
+        async function _syncQueuePersist() {
+            try {
+                await _dlpStorageSet(SYNC_QUEUE_KEY, JSON.stringify(_syncQueue));
+            } catch(e) {}
+        }
+
+        function _syncQueueAdd(op, payload) {
+            const item = {
+                id:      Date.now() + '_' + Math.random().toString(36).slice(2),
+                op,
+                payload: JSON.parse(JSON.stringify(payload)),
+                ts:      new Date().toISOString(),
+                retries: 0
+            };
+            // Remove duplicatas do mesmo tipo para não acumular saves redundantes
+            if (op === 'save') _syncQueue = _syncQueue.filter(i => i.op !== 'save');
+            _syncQueue.push(item);
+            _syncQueuePersist();
+            _syncQueueScheduleFlush();
+        }
+
+        function _syncQueueScheduleFlush() {
+            clearTimeout(_syncQueueTimer);
+            _syncQueueTimer = setTimeout(_syncQueueFlush, QUEUE_FLUSH_MS);
+        }
+
+        async function _syncQueueFlush() {
+            if (_syncQueue.length === 0) return;
+            if (!navigator.onLine || !currentUser) return; // guarda para quando voltar
+
+            const item = _syncQueue[0];
+            if (!item) return;
+
+            try {
+                if (item.op === 'save') {
+                    const payload = {
+                        studyDb:   JSON.stringify(item.payload),
+                        updatedAt: item.payload.updatedAt || new Date().toISOString()
+                    };
+                    if (fbDb && currentUser) {
+                        await fbDb.collection('users').doc(currentUser.uid).set(payload);
+                    }
+                }
+                // Sucesso: remove da fila
+                _syncQueue.shift();
+                await _syncQueuePersist();
+                // Continua processando
+                if (_syncQueue.length > 0) _syncQueueScheduleFlush();
+            } catch(e) {
+                item.retries = (item.retries || 0) + 1;
+                console.warn(`[DLP] Sync queue item falhou (tentativa ${item.retries}):`, e.message);
+                await _syncQueuePersist();
+                if (item.retries >= MAX_QUEUE_RETRIES) {
+                    console.error('[DLP] Item removido da fila após max retries:', item);
+                    _syncQueue.shift();
+                    await _syncQueuePersist();
+                } else {
+                    // Back-off exponencial
+                    const delay = Math.min(QUEUE_RETRY_BASE_MS * Math.pow(2, item.retries), 60000);
+                    setTimeout(_syncQueueFlush, delay);
+                }
+            }
+        }
+
+        // Drena a fila quando reconectar
+        window.addEventListener('online', () => {
+            if (_syncQueue.length > 0 && currentUser) {
+                showToast('🔁 Sincronizando operações pendentes...', 'info', 2500);
+                setTimeout(_syncQueueFlush, 1500);
+            }
+        });
+
+        // ── Salvar ANTES do fechamento da aba/janela ──────────────────────────
+        window.addEventListener('beforeunload', (e) => {
+            // 1. Para o heartbeat (fechamento normal)
+            _dlpStopHeartbeat();
+            // 2. Força salvamento síncrono via localStorage (último recurso)
+            try {
+                const snapshot = JSON.stringify(studyDb);
+                localStorage.setItem(STORAGE_KEY, snapshot);
+                localStorage.setItem(SHADOW_KEY, JSON.stringify({ ts: new Date().toISOString(), data: studyDb }));
+            } catch(ex) {}
+        });
+
+        // Também captura visibilitychange (tab em segundo plano / troca de app no mobile)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(studyDb));
+                    localStorage.setItem(SHADOW_KEY, JSON.stringify({ ts: new Date().toISOString(), data: studyDb }));
+                } catch(ex) {}
+                // Drena fila se houver pendências
+                if (_syncQueue.length > 0 && navigator.onLine && currentUser) {
+                    _syncQueueFlush();
+                }
+            }
+        });
+
+        // ── Inicialização do DLP ──────────────────────────────────────────────
+        async function _dlpInit() {
+            if (_dlpInitialized) return;
+            _dlpInitialized = true;
+
+            // Carrega a fila persistente
+            await _syncQueueLoad();
+
+            // Verifica crash anterior
+            const crash = await _dlpCheckCrashFlag();
+            if (crash.detected) {
+                console.warn('[DLP] Possível perda de dados anterior detectada. Verificando backups...');
+                // Valida integridade do dado atual
+                const currentRaw = await _dlpStorageGet(STORAGE_KEY);
+                let currentOk = false;
+                if (currentRaw) {
+                    try {
+                        const p = JSON.parse(currentRaw);
+                        currentOk = !!(p && Array.isArray(p.syllabus));
+                    } catch(e) {}
+                }
+                if (!currentOk) {
+                    const recovered = await _dlpRecoverFromBackup();
+                    if (recovered) {
+                        studyDb = recovered;
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                        showToast('⚠️ Dados recuperados de backup após fechamento inesperado!', 'warn', 6000);
+                    }
+                } else {
+                    // Dado ok — faz backup preventivo
+                    await _dlpBackup(studyDb);
+                }
+            }
+
+            // Inicia heartbeat
+            _dlpStartHeartbeat();
+
+            // Faz backup inicial
+            await _dlpBackup(studyDb);
+
+            // Agenda backups periódicos
+            _dlpScheduleBackup();
+
+            // Se há itens na fila e está online, tenta processar
+            if (_syncQueue.length > 0) {
+                showToast(`⏳ ${_syncQueue.length} operação(ões) pendente(s) sendo reenviadas...`, 'info', 3000);
+                setTimeout(_syncQueueFlush, 2000);
+            }
+
+            console.info('[DLP] Sistema de proteção contra perda de dados inicializado.');
+        }
+
+        // ── Patch em saveDatabase para integrar o DLP ─────────────────────────
+        // Sobrescreve a função original para adicionar as camadas de proteção
+        const _origSaveDatabase = saveDatabase;
+        saveDatabase = async function() {
+            // 1. Write-Ahead Log (shadow) ANTES de qualquer escrita
+            await _dlpShadowWrite(studyDb);
+
+            // 2. Salva normalmente (localStorage/window.storage)
+            const ok = await _origSaveDatabase();
+
+            // 3. Shadow pode ser removido (escrita confirmada)
+            await _dlpShadowClear();
+
+            // 4. Adiciona à fila persistente para sync na nuvem
+            if (currentUser) _syncQueueAdd('save', studyDb);
+
+            // 5. Reagenda backup rotativo
+            _dlpScheduleBackup();
+
+            return ok;
+        };
+
+        // ── Expor funções de diagnóstico no console ───────────────────────────
+        window._dlpStatus = async function() {
+            const qLen   = _syncQueue.length;
+            const crash  = await _dlpCheckCrashFlag();
+            const slots  = [];
+            for (let i = 0; i < BACKUP_SLOTS; i++) {
+                try {
+                    const raw = await _dlpStorageGet(BACKUP_KEY_PREFIX + i);
+                    if (raw) { const p = JSON.parse(raw); slots.push({ slot: i, ts: p.ts }); }
+                } catch(e) {}
+            }
+            console.table({ 'Fila pendente': qLen, 'Crash flag ativo': crash.detected, 'Último crash': crash.ts || 'N/A' });
+            console.log('[DLP] Backups disponíveis:', slots);
+            return { queueLength: qLen, crash, backupSlots: slots };
+        };
+        window._dlpForceBackup = () => _dlpBackup(studyDb);
+        window._dlpRecover     = _dlpRecoverFromBackup;
+
+        // Inicializa o DLP automaticamente após o boot
+        setTimeout(_dlpInit, 500);
+
+        // ── FIM: Proteção contra perda de dados ──────────────────────────────
+
         // === NAVEGAÇÃO ===
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
@@ -3034,9 +3408,9 @@
                 _updateTabTitle();
                 _startTitleLoop();
             } else {
-                // Aba foi para background — para todos os intervals de display
-                // O tempo continua sendo calculado via timestamp ao voltar
-                if (_titleInterval) { clearInterval(_titleInterval); _titleInterval = null; }
+                // Aba foi para background — suspende apenas os displays internos
+                // _titleInterval permanece ativo: usa Date.now() para cálculo preciso,
+                // então o tempo na aba continua atualizando mesmo com throttle do navegador
                 clearInterval(timerInterval);
                 clearInterval(pauseInterval);
             }
