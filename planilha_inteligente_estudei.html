@@ -7570,6 +7570,34 @@ function renderHistoryTab() {
         }
 
         // ── EVOLUÇÃO NOS ESTUDOS (% de acerto por tempo × disciplina × geral) ──
+        // Gera a sequência completa de baldes entre o primeiro e o último com dados,
+        // incluindo os períodos sem nenhuma sessão registrada (para o eixo refletir o tempo real)
+        function _fillBuckets(firstKey, lastKey, granularity) {
+            const keys = [];
+            if (granularity === 'week') {
+                let d = new Date(firstKey + 'T12:00:00');
+                const end = new Date(lastKey + 'T12:00:00');
+                while (d <= end) {
+                    keys.push(d.toISOString().slice(0, 10));
+                    d.setDate(d.getDate() + 7);
+                }
+            } else if (granularity === 'year') {
+                let y = parseInt(firstKey, 10);
+                const endY = parseInt(lastKey, 10);
+                while (y <= endY) { keys.push(String(y)); y++; }
+            } else { // month
+                const [fy, fm] = firstKey.split('-').map(Number);
+                const [ly, lm] = lastKey.split('-').map(Number);
+                let y = fy, m = fm;
+                while (y < ly || (y === ly && m <= lm)) {
+                    keys.push(`${y}-${String(m).padStart(2, '0')}`);
+                    m++;
+                    if (m > 12) { m = 1; y++; }
+                }
+            }
+            return keys;
+        }
+
         function calcStudyEvolutionSeries(granularity) {
             const hist = studyDb.history.filter(h => (h.qTotal || 0) > 0);
             if (!hist.length) return null;
@@ -7604,7 +7632,10 @@ function renderHistoryTab() {
             const sorted = [...hist].sort((a, b) => new Date(a.date) - new Date(b.date));
             const bucketSet = new Set();
             sorted.forEach(h => bucketSet.add(bucketKey(h.date)));
-            const bucketsOrder = [...bucketSet].sort();
+            const dataKeysSorted = [...bucketSet].sort();
+            const bucketsOrder = dataKeysSorted.length
+                ? _fillBuckets(dataKeysSorted[0], dataKeysSorted[dataKeysSorted.length - 1], granularity)
+                : [];
 
             const subjects = [...new Set(sorted.map(h => h.subject))];
             const data = {};
@@ -7671,7 +7702,7 @@ function renderHistoryTab() {
                     borderWidth: 2,
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    spanGaps: true,
+                    spanGaps: false,
                     tension: 0.3
                 }));
             } else {
@@ -7684,7 +7715,7 @@ function renderHistoryTab() {
                     borderWidth: 2.5,
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    spanGaps: true,
+                    spanGaps: false,
                     tension: 0.3
                 }];
             }
@@ -7698,7 +7729,7 @@ function renderHistoryTab() {
                 borderDash: [6, 3],
                 pointRadius: 2,
                 pointHoverRadius: 5,
-                spanGaps: true,
+                spanGaps: false,
                 tension: 0.3,
                 order: 0
             });
