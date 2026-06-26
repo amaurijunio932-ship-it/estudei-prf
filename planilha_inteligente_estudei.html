@@ -2134,6 +2134,9 @@
         let studyChart = null;
         let studyTypeChart = null;
         let currentChartPeriod = 'weekly';
+        let evolutionChart = null;
+        let evoGranularity = 'month';
+        let evoSubjectFilter = 'all';
         let timerInterval = null, pauseInterval = null;
         let totalSeconds = 0, pauseSeconds = 0;
         let isTimerRunning = false, isTimerPaused = false;
@@ -4295,6 +4298,13 @@
                 }
             }
             return 'disc-color-' + _subjectColorIndex[subjectName];
+        }
+
+        // Mesma paleta das classes .disc-color-N (CSS), em hex, para uso no Chart.js
+        const DISC_COLOR_HEX = ['#ef4444','#f97316','#eab308','#10b981','#3b82f6','#a855f7','#ec4899','#06b6d4','#84cc16','#f43f5e','#8b5cf6','#14b8a6'];
+        function getDisciplineColorHex(subjectName) {
+            getDisciplineColorClass(subjectName); // garante índice em cache
+            return DISC_COLOR_HEX[_subjectColorIndex[subjectName] % 12];
         }
 
         function setTreeFilter(mode) { treeFilterMode = mode; filterSummariesTree(); }
@@ -7559,6 +7569,180 @@ function renderHistoryTab() {
             return             { label:'Começando',        color:'#6b7280', icon:'📚' };
         }
 
+        // ── EVOLUÇÃO NOS ESTUDOS (% de acerto por tempo × disciplina × geral) ──
+        function calcStudyEvolutionSeries(granularity) {
+            const hist = studyDb.history.filter(h => (h.qTotal || 0) > 0);
+            if (!hist.length) return null;
+
+            function bucketKey(dateStr) {
+                const d = new Date(dateStr + 'T12:00:00');
+                if (granularity === 'week') {
+                    const dow = d.getDay(); // 0=dom
+                    const diff = dow === 0 ? -6 : 1 - dow;
+                    const monday = new Date(d);
+                    monday.setDate(d.getDate() + diff);
+                    return monday.toISOString().slice(0, 10);
+                }
+                if (granularity === 'year') {
+                    return `${d.getFullYear()}`;
+                }
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
+            function bucketLabel(key) {
+                if (granularity === 'week') {
+                    const [, m, dd] = key.split('-');
+                    return `${dd}/${m}`;
+                }
+                if (granularity === 'year') {
+                    return key;
+                }
+                const [y, m] = key.split('-');
+                const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                return `${meses[parseInt(m, 10) - 1]}/${y.slice(2)}`;
+            }
+
+            const sorted = [...hist].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const bucketSet = new Set();
+            sorted.forEach(h => bucketSet.add(bucketKey(h.date)));
+            const bucketsOrder = [...bucketSet].sort();
+
+            const subjects = [...new Set(sorted.map(h => h.subject))];
+            const data = {};
+            subjects.forEach(s => data[s] = {});
+            const overallData = {};
+
+            sorted.forEach(h => {
+                const k = bucketKey(h.date);
+                if (!data[h.subject][k]) data[h.subject][k] = { c: 0, t: 0 };
+                data[h.subject][k].c += h.qCorrect || 0;
+                data[h.subject][k].t += h.qTotal || 0;
+                if (!overallData[k]) overallData[k] = { c: 0, t: 0 };
+                overallData[k].c += h.qCorrect || 0;
+                overallData[k].t += h.qTotal || 0;
+            });
+
+            const labels = bucketsOrder.map(bucketLabel);
+            const series = {};
+            const volumeBySubject = {};
+            subjects.forEach(s => {
+                series[s] = bucketsOrder.map(k => data[s][k] ? Math.round((data[s][k].c / data[s][k].t) * 100) : null);
+                volumeBySubject[s] = Object.values(data[s]).reduce((a, b) => a + b.t, 0);
+            });
+            const overall = bucketsOrder.map(k => overallData[k] ? Math.round((overallData[k].c / overallData[k].t) * 100) : null);
+
+            return { labels, subjects, series, overall, volumeBySubject };
+        }
+
+        function renderEvolutionChart() {
+            const canvas = document.getElementById('evolution-chart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const result = calcStudyEvolutionSeries(evoGranularity);
+            const wrapEl  = document.getElementById('evolution-chart-wrap');
+            const emptyEl = document.getElementById('evolution-chart-empty');
+
+            if (!result || !result.labels.length) {
+                if (evolutionChart) { evolutionChart.destroy(); evolutionChart = null; }
+                if (wrapEl)  wrapEl.style.display  = 'none';
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            if (wrapEl)  wrapEl.style.display  = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            const subjectsByVolume = [...result.subjects].sort((a, b) => result.volumeBySubject[b] - result.volumeBySubject[a]);
+
+            const sel = document.getElementById('evo-subject-select');
+            if (sel) {
+                const prevVal = evoSubjectFilter;
+                sel.innerHTML = '<option value="all">Todas as disciplinas</option>' +
+                    subjectsByVolume.map(s => `<option value="${s.replace(/"/g, '&quot;')}">${s}</option>`).join('');
+                evoSubjectFilter = (prevVal === 'all' || subjectsByVolume.includes(prevVal)) ? prevVal : 'all';
+                sel.value = evoSubjectFilter;
+            }
+
+            let datasets = [];
+            if (evoSubjectFilter === 'all') {
+                datasets = subjectsByVolume.map(s => ({
+                    label: s.length > 24 ? s.slice(0, 24) + '…' : s,
+                    data: result.series[s],
+                    borderColor: getDisciplineColorHex(s),
+                    backgroundColor: getDisciplineColorHex(s),
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    spanGaps: true,
+                    tension: 0.3
+                }));
+            } else {
+                const s = evoSubjectFilter;
+                datasets = [{
+                    label: s,
+                    data: result.series[s] || [],
+                    borderColor: getDisciplineColorHex(s),
+                    backgroundColor: getDisciplineColorHex(s),
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    spanGaps: true,
+                    tension: 0.3
+                }];
+            }
+
+            datasets.push({
+                label: 'Geral',
+                data: result.overall,
+                borderColor: '#FFD400',
+                backgroundColor: '#FFD400',
+                borderWidth: 3,
+                borderDash: [6, 3],
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                spanGaps: true,
+                tension: 0.3,
+                order: 0
+            });
+
+            if (evolutionChart) evolutionChart.destroy();
+            Chart.defaults.color = '#94a3b8';
+            evolutionChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { labels: result.labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, font: { size: 10 }, padding: 10 } },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y === null ? '—' : ctx.parsed.y + '%'}` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { min: 0, max: 100, grid: { color: '#1d355c' }, ticks: { stepSize: 20, callback: v => v + '%' } }
+                    }
+                }
+            });
+        }
+
+        function setEvoGranularity(g) {
+            evoGranularity = g;
+            ['week', 'month', 'year'].forEach(p => {
+                const btn = document.getElementById(`btn-evo-${p}`);
+                if (btn) btn.className = p === g
+                    ? "px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow"
+                    : "px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition";
+            });
+            renderEvolutionChart();
+        }
+
+        function setEvoSubjectFilter(value) {
+            evoSubjectFilter = value;
+            renderEvolutionChart();
+        }
+        window.renderEvolutionChart = renderEvolutionChart;
+        window.setEvoGranularity    = setEvoGranularity;
+        window.setEvoSubjectFilter  = setEvoSubjectFilter;
+
         // ── PAINEL DE INTELIGÊNCIA ───────────────────────────────────────────
         function updateIntelligencePanel() {
             const panel = document.getElementById('intelligence-panel');
@@ -7610,17 +7794,6 @@ function renderHistoryTab() {
                 </div>`;
             }).join('');
 
-            const riskyHTML = riskyTopics.slice(0,4).map(r => {
-                const rc = r.risk>=85?'#ef4444':r.risk>=70?'#f97316':'#fbbf24';
-                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:9px;background:rgba(239,68,68,0.07);margin-bottom:4px;border-left:3px solid ${rc};">
-                    <div>
-                        <div style="font-size:12px;font-weight:700;color:#e2e8f0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.topic}</div>
-                        <div style="font-size:10px;color:#6b7280;">${r.subject}</div>
-                    </div>
-                    <span style="font-size:12px;font-weight:900;color:${rc};">${r.risk}%</span>
-                </div>`;
-            }).join('') || `<p style="font-size:12px;color:#10b981;font-weight:700;padding:8px;">✅ Nenhum conteúdo em risco!</p>`;
-
             panel.innerHTML = `
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
               <div style="background:linear-gradient(135deg,#0f1d38,#1a2a4a);border:1px solid rgba(251,191,36,0.3);border-radius:20px;padding:20px;">
@@ -7662,14 +7835,34 @@ function renderHistoryTab() {
                   <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>&lt;45% Fraco</span>
                 </div>
               </div>
-              <div style="background:#15294a;border:1px solid rgba(239,68,68,0.2);border-radius:20px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-                  <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
-                  <span style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Risco de Esquecimento</span>
-                  <span style="font-size:9px;color:#6b7280;margin-left:auto;">Ebbinghaus</span>
+              <div style="grid-column:1/-1;background:#15294a;border:1px solid rgba(59,130,246,0.25);border-radius:20px;padding:20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i>
+                    <div>
+                      <div style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Evolução nos Estudos</div>
+                      <div style="font-size:10px;color:#6b7280;">% de acerto nas questões — por disciplina e geral, ao longo do tempo</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <select id="evo-subject-select" onchange="setEvoSubjectFilter(this.value)" style="background:#0d1e36;color:#e2e8f0;border:1px solid #1d355c;border-radius:8px;font-size:11px;font-weight:700;padding:5px 8px;max-width:220px;">
+                      <option value="all">Todas as disciplinas</option>
+                    </select>
+                    <div style="display:flex;gap:4px;background:#0d1e36;border-radius:8px;padding:3px;">
+                      <button type="button" id="btn-evo-week" onclick="setEvoGranularity('week')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Semana</button>
+                      <button type="button" id="btn-evo-month" onclick="setEvoGranularity('month')" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Mês</button>
+                      <button type="button" id="btn-evo-year" onclick="setEvoGranularity('year')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
+                    </div>
+                  </div>
                 </div>
-                ${riskyHTML}
-                ${riskyTopics.length>4?`<p style="font-size:10px;color:#6b7280;margin-top:6px;">+${riskyTopics.length-4} conteúdos em risco — ver Revisões.</p>`:''}
+                <div id="evolution-chart-wrap" style="position:relative;height:340px;">
+                  <canvas id="evolution-chart"></canvas>
+                </div>
+                <p id="evolution-chart-empty" style="display:none;font-size:12px;color:#6b7280;text-align:center;padding:30px 0;">Registe sessões com questões respondidas para ver a evolução do seu desempenho.</p>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+                  <span style="width:18px;height:0;border-top:3px dashed #FFD400;display:inline-block;"></span>
+                  <span style="font-size:10px;color:#6b7280;">Linha amarela tracejada = média Geral (todas as disciplinas)</span>
+                </div>
               </div>
             </div>
             <div style="background:linear-gradient(90deg,rgba(59,130,246,0.12),rgba(30,58,138,0.06));border:1px solid rgba(59,130,246,0.25);border-left:4px solid #3b82f6;border-radius:16px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
@@ -7688,6 +7881,8 @@ function renderHistoryTab() {
                 ${neglected.slice(0,6).map(n=>`<span style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;">${n.subject} <span style="color:#d97706;">${n.days}d</span></span>`).join('')}
               </div>
             </div>`:''}`;
+
+            renderEvolutionChart();
         }
 
         // ── OVERRIDE CORRETO de renderAllTabs (função declarada após a original) ──
