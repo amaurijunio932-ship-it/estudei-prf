@@ -2503,6 +2503,81 @@
             _cloudPushTimer = setTimeout(() => _pushToCloud(), CLOUD_PUSH_DEBOUNCE_MS);
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        // ── ARMAZENAMENTO EM NUVEM "CHUNKED" ────────────────────────────────────
+        // O Firestore recusa campos de texto acima de ~1.048.487 bytes. Como o
+        // studyDb cresce indefinidamente (histórico, resumos, revisões), aqui
+        // dividimos o JSON em pedaços menores guardados numa subcoleção, então
+        // não existe mais limite prático de tamanho. Mantém compatibilidade com
+        // contas antigas que ainda têm o campo único "studyDb" no doc principal.
+        // ══════════════════════════════════════════════════════════════════════
+        const CLOUD_CHUNK_MAX_BYTES = 900000; // margem segura abaixo do limite do Firestore
+
+        function _splitStringByBytes(str, maxBytes) {
+            const encoder = new TextEncoder();
+            const chunks = [];
+            let current = '';
+            let currentBytes = 0;
+            for (const ch of str) {
+                const chBytes = encoder.encode(ch).length;
+                if (currentBytes + chBytes > maxBytes && current) {
+                    chunks.push(current);
+                    current = '';
+                    currentBytes = 0;
+                }
+                current += ch;
+                currentBytes += chBytes;
+            }
+            chunks.push(current); // sempre pelo menos 1 chunk, mesmo vazio
+            return chunks;
+        }
+
+        // Salva o studyDb inteiro na nuvem, dividido em pedaços de tamanho seguro
+        async function _writeStudyDbToCloud(uid, dbObj) {
+            const jsonStr = JSON.stringify(dbObj);
+            const chunks  = _splitStringByBytes(jsonStr, CLOUD_CHUNK_MAX_BYTES);
+            const userRef = fbDb.collection('users').doc(uid);
+
+            // Descobre quantos chunks existiam antes, pra apagar sobras se os dados encolheram
+            let oldChunkCount = 0;
+            try {
+                const prev = await userRef.get();
+                if (prev.exists) oldChunkCount = prev.data().chunkCount || 0;
+            } catch(e) { /* segue mesmo assim */ }
+
+            const batch = fbDb.batch();
+            batch.set(userRef, { updatedAt: dbObj.updatedAt, chunkCount: chunks.length, chunked: true, studyDb: firebase.firestore.FieldValue.delete() });
+            chunks.forEach((c, i) => {
+                batch.set(userRef.collection('studyDbChunks').doc('chunk_' + i), { data: c });
+            });
+            for (let i = chunks.length; i < oldChunkCount; i++) {
+                batch.delete(userRef.collection('studyDbChunks').doc('chunk_' + i));
+            }
+            await batch.commit();
+        }
+
+        // Lê o studyDb da nuvem — funciona tanto no formato novo (chunked) quanto
+        // no formato antigo (campo único "studyDb"), para não quebrar contas já existentes
+        async function _readStudyDbFromCloud(uid) {
+            const userRef = fbDb.collection('users').doc(uid);
+            const userDoc = await userRef.get();
+            if (!userDoc.exists) return null;
+            const data = userDoc.data();
+
+            if (data.studyDb) {
+                // Formato antigo (compatibilidade)
+                return { json: data.studyDb, updatedAt: data.updatedAt || '1970-01-01T00:00:00.000Z' };
+            }
+
+            const chunkCount = data.chunkCount || 0;
+            if (!chunkCount) return null;
+            const snaps = await Promise.all(
+                Array.from({ length: chunkCount }, (_, i) => userRef.collection('studyDbChunks').doc('chunk_' + i).get())
+            );
+            const json = snaps.map(s => (s.exists ? s.data().data : '')).join('');
+            return { json, updatedAt: data.updatedAt || '1970-01-01T00:00:00.000Z' };
+        }
+
         // Envia dados para o Firestore imediatamente (chamado após o debounce)
         async function _pushToCloud() {
             if (!currentUser || !navigator.onLine) {
@@ -2523,12 +2598,8 @@
                 if (iconEl) iconEl.classList.add('sync-spinning');
                 if (statusEl) { statusEl.innerText = 'Enviando para nuvem…'; statusEl.style.color = '#60a5fa'; }
 
-                // Garante que o updatedAt está atualizado (pode ter sido chamado logo após saveDatabase)
-                const payload = {
-                    studyDb:   JSON.stringify(studyDb),
-                    updatedAt: studyDb.updatedAt   // ISO com milissegundos
-                };
-                await fbDb.collection('users').doc(currentUser.uid).set(payload);
+                // Envia em pedaços (chunks) para nunca esbarrar no limite de 1MB do Firestore
+                await _writeStudyDbToCloud(currentUser.uid, studyDb);
                 await _setLastSyncAt(studyDb.updatedAt);
 
                 _markPendingSync(false);
@@ -2777,12 +2848,10 @@
 
             try {
                 if (item.op === 'save') {
-                    const payload = {
-                        studyDb:   JSON.stringify(item.payload),
-                        updatedAt: item.payload.updatedAt || new Date().toISOString()
-                    };
                     if (fbDb && currentUser) {
-                        await fbDb.collection('users').doc(currentUser.uid).set(payload);
+                        const dbObj = item.payload;
+                        if (!dbObj.updatedAt) dbObj.updatedAt = new Date().toISOString();
+                        await _writeStudyDbToCloud(currentUser.uid, dbObj);
                     }
                 }
                 // Sucesso: remove da fila
@@ -5490,8 +5559,9 @@ function renderHistoryTab() {
                 currentUser = { email: cred.user.email, uid: cred.user.uid };
                 await storageSet('estudei_prf_current_user', email);
                 try { localStorage.setItem('estudei_prf_saved_email', email); } catch(e) {}
-                // Enviar dados locais para Firestore
-                await fbDb.collection('users').doc(cred.user.uid).set({ studyDb: JSON.stringify(studyDb), updatedAt: new Date().toISOString() });
+                // Enviar dados locais para Firestore (em pedaços, sem limite de tamanho)
+                studyDb.updatedAt = new Date().toISOString();
+                await _writeStudyDbToCloud(cred.user.uid, studyDb);
                 onUserLoggedIn(email);
                 showAlert("✅ Conta criada com sucesso! Os seus dados foram guardados na nuvem.");
             } catch(e) {
@@ -5520,10 +5590,10 @@ function renderHistoryTab() {
                 await storageSet('estudei_prf_current_user', email);
                 try { localStorage.setItem('estudei_prf_saved_email', email); } catch(e) {}
                 // Carregar dados da nuvem
-                const doc = await fbDb.collection('users').doc(cred.user.uid).get();
-                if (doc.exists && doc.data().studyDb) {
+                const cloudData = await _readStudyDbFromCloud(cred.user.uid);
+                if (cloudData && cloudData.json) {
                     try {
-                        const parsed = JSON.parse(doc.data().studyDb);
+                        const parsed = JSON.parse(cloudData.json);
                         if (parsed && parsed.syllabus) {
                             if (!parsed.summaries)  parsed.summaries  = [];
                             if (!parsed.history)    parsed.history    = [];
@@ -5589,9 +5659,9 @@ function renderHistoryTab() {
         async function loadFromCloud() {
             if (!currentUser) { showAlert("Inicie sessão primeiro."); return; }
             try {
-                const doc = await fbDb.collection('users').doc(currentUser.uid).get();
-                if (!doc.exists || !doc.data().studyDb) { showAlert("Sem dados na nuvem para esta conta."); return; }
-                const parsed = JSON.parse(doc.data().studyDb);
+                const cloudData = await _readStudyDbFromCloud(currentUser.uid);
+                if (!cloudData || !cloudData.json) { showAlert("Sem dados na nuvem para esta conta."); return; }
+                const parsed = JSON.parse(cloudData.json);
                 if (!parsed.syllabus) { showAlert("Dados inválidos."); return; }
                 if (!parsed.summaries)  parsed.summaries  = [];
                 if (!parsed.history)    parsed.history    = [];
@@ -5628,17 +5698,18 @@ function renderHistoryTab() {
             if (labelEl) labelEl.textContent = 'Sincronizando...';
 
             try {
-                const cloudDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+                const cloudMetaDoc = await fbDb.collection('users').doc(currentUser.uid).get();
                 const lastSyncAt    = await _getLastSyncAt();
                 const localUpdatedAt = studyDb.updatedAt || '1970-01-01T00:00:00.000Z';
-                const cloudUpdatedAt = (cloudDoc.exists && cloudDoc.data().updatedAt) ? cloudDoc.data().updatedAt : '1970-01-01T00:00:00.000Z';
+                const cloudExists    = cloudMetaDoc.exists && (cloudMetaDoc.data().studyDb || cloudMetaDoc.data().chunkCount);
+                const cloudUpdatedAt = (cloudMetaDoc.exists && cloudMetaDoc.data().updatedAt) ? cloudMetaDoc.data().updatedAt : '1970-01-01T00:00:00.000Z';
 
                 const localChangedSinceSync = new Date(localUpdatedAt) > new Date(lastSyncAt);
                 const cloudChangedSinceSync = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
                 const conflict = localChangedSinceSync && cloudChangedSinceSync;
 
                 let action = 'upload'; // default
-                if (!cloudDoc.exists || !cloudDoc.data().studyDb) {
+                if (!cloudExists) {
                     action = 'upload'; // nada na nuvem → envia local
                 } else if (conflict) {
                     action = 'merge';  // ambos mudaram → merge inteligente
@@ -5650,7 +5721,8 @@ function renderHistoryTab() {
 
                 if (action === 'merge') {
                     // ── MERGE: combina local + nuvem sem perda de dados ──
-                    const cloudParsed = JSON.parse(cloudDoc.data().studyDb);
+                    const cloudData   = await _readStudyDbFromCloud(currentUser.uid);
+                    const cloudParsed = JSON.parse(cloudData.json);
                     if (!cloudParsed.summaries) cloudParsed.summaries = [];
                     if (!cloudParsed.history)   cloudParsed.history   = [];
                     if (!cloudParsed.revisions) cloudParsed.revisions = [];
@@ -5661,10 +5733,7 @@ function renderHistoryTab() {
 
                     studyDb = merged;
                     // Envia resultado do merge para nuvem
-                    await fbDb.collection('users').doc(currentUser.uid).set({
-                        studyDb: JSON.stringify(studyDb),
-                        updatedAt: studyDb.updatedAt
-                    });
+                    await _writeStudyDbToCloud(currentUser.uid, studyDb);
                     await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                     await _setLastSyncAt();
                     renderAllTabs();
@@ -5685,7 +5754,8 @@ function renderHistoryTab() {
 
                 } else if (action === 'download') {
                     // ── DOWNLOAD: nuvem mais recente, local não mudou ──
-                    const parsed = JSON.parse(cloudDoc.data().studyDb);
+                    const cloudData = await _readStudyDbFromCloud(currentUser.uid);
+                    const parsed = JSON.parse(cloudData.json);
                     if (parsed && parsed.syllabus) {
                         if (!parsed.summaries) parsed.summaries = [];
                         if (!parsed.history)   parsed.history   = [];
@@ -5700,10 +5770,7 @@ function renderHistoryTab() {
                 } else {
                     // ── UPLOAD: local mais recente ──
                     studyDb.updatedAt = new Date().toISOString();
-                    await fbDb.collection('users').doc(currentUser.uid).set({
-                        studyDb: JSON.stringify(studyDb),
-                        updatedAt: studyDb.updatedAt
-                    });
+                    await _writeStudyDbToCloud(currentUser.uid, studyDb);
                     await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                     await _setLastSyncAt();
                     if (!silent) showAlert("✅ Sincronizado! Dados enviados para a nuvem.");
@@ -5774,7 +5841,7 @@ function renderHistoryTab() {
             try {
                 _crossDeviceUnsubscribe = fbDb.collection('users').doc(uid)
                     .onSnapshot(async (doc) => {
-                        if (!doc.exists || !doc.data().studyDb) return;
+                        if (!doc.exists || !(doc.data().studyDb || doc.data().chunkCount)) return;
 
                         const cloudUpdatedAt = doc.data().updatedAt || '1970-01-01T00:00:00.000Z';
                         const localUpdatedAt = studyDb.updatedAt   || '1970-01-01T00:00:00.000Z';
@@ -5787,7 +5854,9 @@ function renderHistoryTab() {
                         if (diffMs < 2000) return;
 
                         try {
-                            const cloudParsed = JSON.parse(doc.data().studyDb);
+                            const cloudData   = await _readStudyDbFromCloud(uid);
+                            if (!cloudData || !cloudData.json) return;
+                            const cloudParsed = JSON.parse(cloudData.json);
                             if (!cloudParsed || !cloudParsed.syllabus) return;
 
                             if (!cloudParsed.summaries)  cloudParsed.summaries  = [];
@@ -8159,7 +8228,8 @@ function renderHistoryTab() {
             _sboStatus('Comparando versões e atualizando dados locais...');
             await _sboDelay(300);
 
-            if (cloudDoc && cloudDoc.exists && cloudDoc.data().studyDb) {
+            const cloudHasData = cloudDoc && cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
+            if (cloudHasData) {
                 const lastSyncAt     = await _getLastSyncAt();
                 const localUpdatedAt = studyDb.updatedAt           || '1970-01-01T00:00:00.000Z';
                 const cloudUpdatedAt = cloudDoc.data().updatedAt   || '1970-01-01T00:00:00.000Z';
@@ -8169,7 +8239,8 @@ function renderHistoryTab() {
                 const conflict     = localChanged && cloudChanged;
 
                 try {
-                    const cloudParsed = JSON.parse(cloudDoc.data().studyDb);
+                    const cloudData    = await _readStudyDbFromCloud(fbUser.uid);
+                    const cloudParsed  = JSON.parse(cloudData.json);
                     if (!cloudParsed.summaries) cloudParsed.summaries = [];
                     if (!cloudParsed.history)   cloudParsed.history   = [];
                     if (!cloudParsed.revisions) cloudParsed.revisions = [];
@@ -8180,10 +8251,7 @@ function renderHistoryTab() {
                         const diff   = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
                         studyDb = _mergeStudyDbs(studyDb, cloudParsed);
                         // Envia resultado do merge para nuvem
-                        await fbDb.collection('users').doc(fbUser.uid).set({
-                            studyDb: JSON.stringify(studyDb),
-                            updatedAt: studyDb.updatedAt
-                        });
+                        await _writeStudyDbToCloud(fbUser.uid, studyDb);
                         await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                         await _setLastSyncAt();
                         const parts = [];
@@ -8204,10 +8272,7 @@ function renderHistoryTab() {
                     } else {
                         // ── SÓ LOCAL MUDOU (ou iguais): envia ──────────────────────────
                         studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                        await fbDb.collection('users').doc(fbUser.uid).set({
-                            studyDb: JSON.stringify(studyDb),
-                            updatedAt: studyDb.updatedAt
-                        });
+                        await _writeStudyDbToCloud(fbUser.uid, studyDb);
                         await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                         await _setLastSyncAt();
                         _sboSetStep(4, 'done', 'local → ☁ ✓', 80);
@@ -8223,10 +8288,7 @@ function renderHistoryTab() {
                 // Sem dados na nuvem → envia os locais (primeira vez / conta nova)
                 try {
                     studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                    await fbDb.collection('users').doc(fbUser.uid).set({
-                        studyDb: JSON.stringify(studyDb),
-                        updatedAt: studyDb.updatedAt
-                    });
+                    await _writeStudyDbToCloud(fbUser.uid, studyDb);
                     await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                     await _setLastSyncAt();
                     _sboSetStep(4, 'done', 'dados enviados ✓', 80);
