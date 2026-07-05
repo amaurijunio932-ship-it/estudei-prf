@@ -695,8 +695,8 @@
 
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
                     <div>
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Questões Resolvidas</span>
-                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-total-questions">0</h3>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Aproveitamento Geral</span>
+                        <h3 class="text-2xl font-black mt-1" id="stat-total-questions">0%</h3>
                         <p class="text-xs text-emerald-400 mt-1" id="stat-accuracy-fraction">0 corretas de 0</p>
                     </div>
                     <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-circle-question"></i></div>
@@ -3014,8 +3014,12 @@
             });
 
             // Metricas Top
-            document.getElementById('stat-total-questions').innerText = totalQuestions;
-            document.getElementById('stat-accuracy-fraction').innerText = `${correctQuestions} corretas de ${totalQuestions}`;
+            const accuracyPct = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
+            const errorCount = totalQuestions - correctQuestions;
+            const accuracyEl = document.getElementById('stat-total-questions');
+            accuracyEl.innerText = `${accuracyPct}%`;
+            accuracyEl.className = 'text-2xl font-black mt-1 ' + (accuracyPct >= 70 ? 'text-emerald-400' : accuracyPct >= 50 ? 'text-yellow-400' : 'text-red-400');
+            document.getElementById('stat-accuracy-fraction').innerText = totalQuestions > 0 ? `${correctQuestions} acertos • ${errorCount} erros (${totalQuestions} questões)` : 'Sem questões registradas';
 
             let syllabusProgress = totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : "0.0";
             document.getElementById('stat-syllabus-progress').innerText = `${syllabusProgress}%`;
@@ -4021,7 +4025,38 @@
             if (secondsLeft <= 0) {
                 clearInterval(pomodoroInterval);
                 pomodoroRunning = false;
+                playAlarmSound();
                 _pomoAdvancePhase();
+            }
+        }
+
+        // ── DESPERTADOR DO POMODORO ───────────────────────────────────────
+        // Toca uma sequência de bipes usando Web Audio API (não depende de arquivos externos)
+        let _alarmAudioCtx = null;
+        function playAlarmSound() {
+            try {
+                if (!_alarmAudioCtx) {
+                    _alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = _alarmAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const beepTimes = [0, 0.35, 0.7, 1.05, 1.4];
+                beepTimes.forEach((t) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0, ctx.currentTime + t);
+                    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.3);
+                });
+            } catch (e) {
+                console.error('[Estudei] Falha ao tocar alarme:', e);
             }
         }
 
@@ -4057,6 +4092,11 @@
         function startPomodoro() {
             if (pomodoroRunning) return;
             pomodoroRunning = true;
+            // Prepara/desbloqueia o áudio do despertador aproveitando o gesto do usuário (clique)
+            try {
+                if (!_alarmAudioCtx) _alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (_alarmAudioCtx.state === 'suspended') _alarmAudioCtx.resume();
+            } catch (e) {}
             // Calcula o timestamp de fim baseado nos segundos restantes atuais
             pomodoroEndTs = Date.now() + pomodoroSecondsLeft * 1000;
             pomodoroFrozenSeconds = null;
