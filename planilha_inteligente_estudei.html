@@ -13,6 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght=300;400;500;700;900&family=Segoe+UI&display=swap" rel="stylesheet">
     <!-- ChartJS para Métricas Avançadas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr: calendário bonito para seleção de datas -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/pt.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -498,6 +502,29 @@
             background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(30,58,138,0.95)) !important;
             border: 1px solid rgba(96,165,250,0.4) !important;
         }
+
+        /* ── CALENDÁRIO FLATPICKR (tema Estudei PRF) ── */
+        .flatpickr-calendar {
+            background: #0f1b3d !important;
+            border: 1px solid #1e40af !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+            border-radius: 14px !important;
+            overflow: hidden;
+        }
+        .flatpickr-months, .flatpickr-current-month, .flatpickr-weekdays { background: #0f1b3d !important; }
+        .flatpickr-month { color: #fff !important; fill: #FFD400 !important; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months,
+        .flatpickr-current-month input.cur-year { color: #fff !important; font-weight: 700; }
+        .flatpickr-weekday { color: #93c5fd !important; font-weight: 700; }
+        .flatpickr-day { color: #e5e7eb !important; border-radius: 8px !important; }
+        .flatpickr-day.today { border-color: #FFD400 !important; }
+        .flatpickr-day:hover { background: #1e3a8a !important; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: #FFD400 !important; border-color: #FFD400 !important; color: #0f1b3d !important; font-weight: 900;
+        }
+        .flatpickr-day.flatpickr-disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #475569 !important; }
+        .flatpickr-prev-month, .flatpickr-next-month { color: #FFD400 !important; fill: #FFD400 !important; }
+        .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: #ffe873 !important; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-12">
@@ -585,10 +612,6 @@
                 </button>
                 <button onclick="switchTab('resumos')" id="tab-resumos" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
                     <i class="fa-solid fa-book-bookmark mr-1"></i> Meus Resumos
-                </button>
-                <button onclick="switchTab('revisoes')" id="tab-revisoes" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
-                    <i class="fa-solid fa-calendar-check mr-1"></i> Revisões
-                    <span id="revision-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xxs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
                 </button>
                 <button onclick="switchTab('historico')" id="tab-historico" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
                     <i class="fa-solid fa-history mr-1"></i> Histórico
@@ -681,15 +704,6 @@
 
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
                     <div>
-                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Revisões para Hoje</span>
-                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-pending-revisions">0</h3>
-                        <p class="text-xs text-amber-400 mt-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Spaced Repetition</p>
-                    </div>
-                    <div class="text-amber-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-circle-exclamation"></i></div>
-                </div>
-
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Ciclo de Estudos</span>
                         <h3 class="text-2xl font-black mt-1 text-white" id="stat-cycle-status">0% Completo</h3>
                         <p class="text-xs text-blue-300 mt-1" id="stat-cycle-next-sub">Seguinte: Carregando...</p>
@@ -771,22 +785,8 @@
                     <div class="h-44 relative flex items-center justify-center">
                         <canvas id="studyTypeChart"></canvas>
                     </div>
-                    <div class="flex justify-around text-xxs mt-4 border-t border-blue-950 pt-3">
-                        <div class="text-center">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400 mr-1"></span>
-                            <span class="text-gray-400 block font-bold">Teoria</span>
-                            <span id="legend-theory-mins" class="font-bold text-white">0 min</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1"></span>
-                            <span class="text-gray-400 block font-bold">Questões</span>
-                            <span id="legend-questions-mins" class="font-bold text-white">0 min</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400 mr-1"></span>
-                            <span class="text-gray-400 block font-bold">Revisões</span>
-                            <span id="legend-revisions-mins" class="font-bold text-white">0 min</span>
-                        </div>
+                    <div id="study-type-legend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xxs mt-4 border-t border-blue-950 pt-3">
+                        <!-- Preenchido dinamicamente via JS -->
                     </div>
                 </div>
             </div>
@@ -1034,7 +1034,10 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-0">
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Data da Sessão</label>
-                                    <input type="text" id="form-session-date" maxlength="10" placeholder="DD/MM/AAAA" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" oninput="maskDateInput(this)">
+                                    <div class="relative">
+                                        <input type="text" id="form-session-date" maxlength="10" placeholder="DD/MM/AAAA" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400" oninput="maskDateInput(this)">
+                                        <i class="fa-solid fa-calendar-days absolute right-4 top-1/2 -translate-y-1/2 text-yellow-400 pointer-events-none"></i>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1347,57 +1350,6 @@
                         </div>
 
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 6. TAB REVISÕES -->
-        <section id="pane-revisoes" class="tab-pane hidden space-y-6">
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="text-xl md:text-2xl font-black text-white"><i class="fa-solid fa-calendar-check text-prf-yellow mr-2"></i>A sua Agenda de Revisões</h2>
-                    <p class="text-sm text-gray-400 font-medium">Não permita que a curva do esquecimento leve embora o seu aprendizado.</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="cleanUpExpiredRevisions()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition border border-slate-700 text-sm">
-                        <i class="fa-solid fa-broom mr-1"></i> Limpar Concluídas
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-red-500 shadow-md">
-                    <span class="text-xs text-red-400 font-black uppercase tracking-wider block">⚠️ Atrasadas</span>
-                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-overdue">0</h4>
-                </div>
-                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-yellow-400 shadow-md">
-                    <span class="text-xs text-yellow-400 font-black uppercase tracking-wider block">⚡ Para Hoje</span>
-                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-today">0</h4>
-                </div>
-                <div class="bg-blue-950 p-5 rounded-2xl border-l-4 border-emerald-500 shadow-md">
-                    <span class="text-xs text-emerald-400 font-black uppercase tracking-wider block">📅 Futuras</span>
-                    <h4 class="text-3xl font-black text-white mt-1" id="rev-stats-future">0</h4>
-                </div>
-            </div>
-
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
-                <h3 class="text-lg font-black text-white mb-4">Agenda de Revisão Periódica</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="text-xs uppercase bg-blue-950 text-gray-400">
-                            <tr>
-                                <th scope="col" class="px-4 py-3">Prazo</th>
-                                <th scope="col" class="px-4 py-3">Disciplina</th>
-                                <th scope="col" class="px-4 py-3">Tópico</th>
-                                <th scope="col" class="px-4 py-3">Data</th>
-                                <th scope="col" class="px-4 py-3 text-center">Status</th>
-                                <th scope="col" class="px-4 py-3 text-right">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="revisions-table-body" class="divide-y divide-blue-950">
-                            <!-- Preenchido dinamicamente -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </section>
@@ -3023,14 +2975,13 @@
 
         function checkUrlHash() {
             const hash = window.location.hash.substring(1);
-            if (['dashboard', 'edital', 'ciclo', 'cronometro', 'revisoes', 'historico', 'resumos'].includes(hash)) switchTab(hash);
+            if (['dashboard', 'edital', 'ciclo', 'cronometro', 'historico', 'resumos'].includes(hash)) switchTab(hash);
         }
 
         function renderAllTabs() {
             updateDashboardMetrics();
             renderSyllabusTab();
             renderStudyCycleTab();
-            renderRevisionsTab();
             renderHistoryTab();
             populateFormDropdowns();
             renderSummariesTree();
@@ -3040,6 +2991,7 @@
             // Garante que a data já aparece preenchida ao carregar
             const _df = document.getElementById('form-session-date');
             if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
+            syncSessionDatePicker();
         }
 
         // === 1. DASHBOARD COMPONENT ===
@@ -3068,14 +3020,6 @@
             let syllabusProgress = totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : "0.0";
             document.getElementById('stat-syllabus-progress').innerText = `${syllabusProgress}%`;
             document.getElementById('stat-syllabus-progress-bar').style.width = `${syllabusProgress}%`;
-
-            const today = todayBrazil();
-            let pendingRevCount = (studyDb.revisions || []).filter(r => !r.done && r.dueDate <= today).length;
-            document.getElementById('stat-pending-revisions').innerText = pendingRevCount;
-            
-            const badge = document.getElementById('revision-badge');
-            if (pendingRevCount > 0) { badge.innerText = pendingRevCount; badge.classList.remove('hidden'); } 
-            else { badge.classList.add('hidden'); }
 
             let cycleDone = studyDb.studyCycle.filter(s => s.status === "Concluído").length;
             let cycleCompletion = studyDb.studyCycle.length > 0 ? Math.round((cycleDone / studyDb.studyCycle.length) * 100) : 0;
@@ -4233,6 +4177,30 @@
             el.value = v;
         }
 
+        // Mantém o calendário Flatpickr sincronizado sempre que a data é definida por código
+        function syncSessionDatePicker() {
+            const el = document.getElementById('form-session-date');
+            if (el && window._fpSessionDate && el.value) {
+                try { window._fpSessionDate.setDate(el.value, false, "d/m/Y"); } catch(e) {}
+            }
+        }
+
+        function initSessionDatePicker() {
+            const el = document.getElementById('form-session-date');
+            if (!el || typeof flatpickr === 'undefined' || window._fpSessionDate) return;
+            window._fpSessionDate = flatpickr(el, {
+                locale: 'pt',
+                dateFormat: 'd/m/Y',
+                altInput: false,
+                allowInput: true,
+                disableMobile: true,
+                defaultDate: el.value || new Date(),
+                onChange: function(selectedDates, dateStr) {
+                    el.value = dateStr;
+                }
+            });
+        }
+
         function brToISO(br) {
             // "DD/MM/YYYY" → "YYYY-MM-DD"
             const p = br.split('/');
@@ -4289,12 +4257,14 @@
                 subject, topic, duration, type, qCorrect: qC, qTotal: qT, pages, notes
             });
 
-            scheduleAutomaticRevisions(subject, topic, sessionDate);
-
             const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
             if (cStep && cStep.subject === subject) {
                 cStep.status = "Concluído";
                 studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
+                if (studyDb.currentCycleStep === 0) {
+                    // Ciclo completo: reinicia o status de todas as matérias para começar de novo
+                    studyDb.studyCycle.forEach(s => s.status = "A Fazer");
+                }
             }
 
             saveDatabase(); renderAllTabs(); switchTab('dashboard');
@@ -4302,6 +4272,7 @@
             // Reset
             document.getElementById('study-session-form').reset();
             const _df = document.getElementById('form-session-date'); if (_df) _df.value = isoToBR(todayBrazil());
+            syncSessionDatePicker();
             clearInterval(timerInterval); clearInterval(pauseInterval);
             totalSeconds = 0; pauseSeconds = 0;
             timerBaseSeconds = 0; timerStartTs = null;
@@ -4798,85 +4769,6 @@ ${conteudo}
             document.body.appendChild(a); a.click();
             document.body.removeChild(a); URL.revokeObjectURL(url);
             showAlert('✅ Resumo exportado como HTML.\nAbra o arquivo no navegador e use Ctrl+P para salvar como PDF.');
-        }
-
-
-        // === 6. REVISÕES COMPONENT ===
-        function scheduleAutomaticRevisions(subject, topic, dateStr) {
-            const intervals = [{l: "24h", d: 1}, {l: "7d", d: 7}, {l: "15d", d: 15}, {l: "30d", d: 30}];
-            const baseDate = new Date(dateStr + "T12:00:00");
-            intervals.forEach(i => {
-                let d = new Date(baseDate); d.setDate(d.getDate() + i.d);
-                studyDb.revisions.push({ id: Date.now()+Math.random(), subject, topic, dueDate: d.toISOString().split('T')[0], label: i.l, done: false });
-            });
-        }
-
-        function renderRevisionsTab() {
-            const tbody = document.getElementById('revisions-table-body');
-            if (!tbody) return; tbody.innerHTML = '';
-            
-            const today = todayBrazil();
-            let sorted = studyDb.revisions.filter(r => !r.done).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
-
-            // Atualiza contadores de status
-            const overdue = sorted.filter(r => r.dueDate < today).length;
-            const todayCount = sorted.filter(r => r.dueDate === today).length;
-            const future = sorted.filter(r => r.dueDate > today).length;
-            const elOverdue = document.getElementById('rev-stats-overdue');
-            const elToday   = document.getElementById('rev-stats-today');
-            const elFuture  = document.getElementById('rev-stats-future');
-            if (elOverdue) elOverdue.innerText = overdue;
-            if (elToday)   elToday.innerText   = todayCount;
-            if (elFuture)  elFuture.innerText  = future;
-
-            if (sorted.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 font-bold">🎉 Nenhuma revisão pendente!</td></tr>`; return;
-            }
-
-            sorted.forEach(rev => {
-                let badgeClass = "bg-blue-900/50 text-blue-300"; let statusText = "Agendado";
-                if (rev.dueDate < today) { badgeClass = "bg-red-500/20 text-red-400 border border-red-500/30"; statusText = "ATRASADO"; } 
-                else if (rev.dueDate === today) { badgeClass = "bg-yellow-400/20 text-yellow-400 border border-yellow-400/30"; statusText = "HOJE"; }
-
-                const dParts = rev.dueDate.split('-');
-                tbody.innerHTML += `
-                    <tr class="hover:bg-blue-950/20">
-                        <td class="px-4 py-3 font-bold text-prf-yellow">${rev.label}</td>
-                        <td class="px-4 py-3 text-white">${rev.subject}</td>
-                        <td class="px-4 py-3 text-gray-300">${rev.topic}</td>
-                        <td class="px-4 py-3 text-gray-400 text-xs">${dParts[2]}/${dParts[1]}/${dParts[0]}</td>
-                        <td class="px-4 py-3 text-center"><span class="${badgeClass} text-xxs px-2.5 py-1 rounded-full">${statusText}</span></td>
-                        <td class="px-4 py-3 text-right flex items-center justify-end gap-1.5">
-                            <button onclick="concludeRevision('${rev.id}')" class="text-xs bg-emerald-500 text-slate-900 font-bold px-3 py-1 rounded">✓ Feito</button>
-                            <button onclick="skipRevisionAnki('${rev.id}')" class="text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1 rounded" title="Já fiz no Anki - dispensar sem registrar">Anki</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function concludeRevision(id) {
-            const rev = studyDb.revisions.find(r => r.id.toString() === id.toString());
-            if (rev) {
-                rev.done = true;
-                studyDb.history.push({ id: Date.now(), date: todayBrazil(), subject: rev.subject, topic: rev.topic + ` (Revisão ${rev.label})`, duration: 15, type: "Revisão", qCorrect: 0, qTotal: 0 });
-                saveDatabase(); renderAllTabs(); showAlert("Revisão marcada como concluída!");
-            }
-        }
-
-        function skipRevisionAnki(id) {
-            const rev = studyDb.revisions.find(r => r.id.toString() === id.toString());
-            if (rev) {
-                rev.done = true; // Dispensa sem registrar no histórico
-                saveDatabase(); renderAllTabs(); showAlert("Revisão dispensada. (Feita no Anki)");
-            }
-        }
-
-        function cleanUpExpiredRevisions() {
-            showConfirm("Limpar revisões concluídas?", () => {
-                studyDb.revisions = studyDb.revisions.filter(r => !r.done);
-                saveDatabase(); renderAllTabs();
-            });
         }
 
 
@@ -5461,11 +5353,20 @@ function renderHistoryTab() {
             };
             studyTypeChart.update();
 
-            // Atualiza legendas com HH:MM
-            const leg = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = minsToHHMM(val); };
-            leg('legend-theory-mins',    data[0]);
-            leg('legend-questions-mins', data[1]);
-            leg('legend-revisions-mins', data[2]);
+            // Atualiza legendas dinamicamente com HH:MM para todos os tipos com dados
+            const legendContainer = document.getElementById('study-type-legend');
+            if (legendContainer) {
+                const displayTypes = activeTypes.length ? activeTypes : types;
+                const displayData = activeData.length ? activeData : data;
+                const displayColors = activeColors.length ? activeColors : colors;
+                legendContainer.innerHTML = displayTypes.map((t, i) => `
+                    <div class="text-center min-w-[64px]">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full mr-1" style="background-color:${displayColors[i]}"></span>
+                        <span class="text-gray-400 block font-bold">${t}</span>
+                        <span class="font-bold text-white">${minsToHHMM(displayData[i])}</span>
+                    </div>
+                `).join('');
+            }
         }
 
 
@@ -5916,14 +5817,13 @@ function renderHistoryTab() {
         window.syncDurationFromHMS = syncDurationFromHMS;
         window.checkTimerOverride = checkTimerOverride;
         window.updateFormTopics = updateFormTopics; window.calculateAccuracyPreview = calculateAccuracyPreview; window.saveStudySession = saveStudySession;
-        window.quickStudyTopic = quickStudyTopic; window.concludeRevision = concludeRevision; window.cleanUpExpiredRevisions = cleanUpExpiredRevisions;
+        window.quickStudyTopic = quickStudyTopic;
         window.deleteHistorySession = deleteHistorySession; window.exportStudyHistory = exportStudyHistory; window.setChartPeriod = setChartPeriod;
         window.openEditHistoryModal = openEditHistoryModal; window.closeEditHistoryModal = closeEditHistoryModal; window.saveEditHistory = saveEditHistory;
         // Funções usadas via onclick mas que estavam faltando no escopo global
         window.closeAlert = closeAlert; window.handleConfirm = handleConfirm;
         window.openSyncCenterModal = openSyncCenterModal; window.closeSyncCenterModal = closeSyncCenterModal;
         window.cycleMotivationalQuote = cycleMotivationalQuote;
-        window.skipRevisionAnki = skipRevisionAnki;
         window.clearSubjectRecords = clearSubjectRecords;
         window.renderHistoryTab = renderHistoryTab;
         window.indentIn = indentIn; window.indentOut = indentOut; window.insertToggle = insertToggle;
@@ -5961,7 +5861,7 @@ function renderHistoryTab() {
 
 
         // ── 2. KEYBOARD SHORTCUTS ───────────────────────────────────────────
-        const _tabKeys = ['dashboard','edital','ciclo','cronometro','resumos','revisoes','historico'];
+        const _tabKeys = ['dashboard','edital','ciclo','cronometro','resumos','historico'];
         document.addEventListener('keydown', function _globalShortcuts(e) {
             // Skip if inside a text input / textarea / contenteditable (except our special ones)
             const tag = e.target.tagName;
@@ -6122,6 +6022,7 @@ function renderHistoryTab() {
                     document.getElementById('study-session-form').reset();
                     const _df = document.getElementById('form-session-date');
                     if (_df) _df.value = isoToBR(todayBrazil());
+                    syncSessionDatePicker();
                     fillDurationFieldsFromSeconds(totalSeconds);
                     showToast('Formulário limpo.', 'info', 2000);
                 }
@@ -7918,8 +7819,20 @@ function renderHistoryTab() {
                     <div style="font-size:15px;font-weight:900;color:${efficiency>=80?'#10b981':efficiency>=60?'#fbbf24':'#ef4444'};">${efficiency!==null?efficiency+'%':'--'}</div>
                   </div>
                   <div style="background:rgba(59,130,246,0.1);border-radius:10px;padding:8px;text-align:center;">
-                    <div style="font-size:10px;color:#6b7280;font-weight:700;">REVISÕES</div>
-                    <div style="font-size:15px;font-weight:900;color:#a855f7;">${studyDb.revisions.filter(r=>r.done).length}</div>
+                    <div style="font-size:10px;color:#6b7280;font-weight:700;">SEQUÊNCIA</div>
+                    <div style="font-size:15px;font-weight:900;color:#a855f7;">${(() => {
+                        const studyDates = new Set(studyDb.history.map(s => s.date));
+                        const today0 = todayBrazil();
+                        let d = new Date(today0 + 'T12:00:00');
+                        if (!studyDates.has(today0)) d.setDate(d.getDate() - 1);
+                        let streak = 0;
+                        for (let i = 0; i < 365; i++) {
+                            const ds = d.toISOString().slice(0, 10);
+                            if (!studyDates.has(ds)) break;
+                            streak++; d.setDate(d.getDate() - 1);
+                        }
+                        return streak;
+                    })()}d</div>
                   </div>
                 </div>
               </div>
@@ -7991,7 +7904,6 @@ function renderHistoryTab() {
             try { updateDashboardMetrics();  } catch(e) { console.error('dash',e); }
             try { renderSyllabusTab();       } catch(e) { console.error('syllabus',e); }
             try { renderStudyCycleTab();     } catch(e) { console.error('cycle',e); }
-            try { renderRevisionsTab();      } catch(e) { console.error('rev',e); }
             try { renderHistoryTab();        } catch(e) { console.error('hist',e); }
             try { populateFormDropdowns();   } catch(e) { console.error('form',e); }
             try { renderSummariesTree();     } catch(e) { console.error('tree',e); }
@@ -8001,6 +7913,7 @@ function renderHistoryTab() {
             try { updateIntelligencePanel(); } catch(e) { console.error('intel',e); }
             const _df = document.getElementById('form-session-date');
             if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
+            syncSessionDatePicker();
         }
 
         // ── OVERRIDE saveStudySession: usa SM2 em vez de intervalos fixos ────
@@ -8040,12 +7953,14 @@ function renderHistoryTab() {
                 qCorrect: qC, qTotal: qT, pages, notes
             });
 
-            _sm2Schedule(subject, topic, sessionDate, accuracy);
-
             const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
             if (cStep && cStep.subject === subject) {
                 cStep.status = 'Concluído';
                 studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
+                if (studyDb.currentCycleStep === 0) {
+                    // Ciclo completo: reinicia o status de todas as matérias para começar de novo
+                    studyDb.studyCycle.forEach(s => s.status = 'A Fazer');
+                }
             }
 
             saveDatabase();
@@ -8055,13 +7970,14 @@ function renderHistoryTab() {
             document.getElementById('study-session-form').reset();
             const _df2 = document.getElementById('form-session-date');
             if (_df2) _df2.value = isoToBR(todayBrazil());
+            syncSessionDatePicker();
             clearInterval(timerInterval); clearInterval(pauseInterval);
             totalSeconds = 0; pauseSeconds = 0;
             timerBaseSeconds = 0; timerStartTs = null;
             pauseBaseSeconds = 0; pauseStartTs = null;
             isTimerRunning = false; isTimerPaused = false;
             updateTimerDisplays();
-            showToast('✅ Sessão salva! Revisões SM2 agendadas.', 'success');
+            showToast('✅ Sessão salva!', 'success');
         }
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -8341,6 +8257,7 @@ function renderHistoryTab() {
             // Renderiza toda a interface
             try { renderAllTabs(); } catch(e) { console.error('[Estudei] renderAllTabs:', e); }
             try { initCharts(); initStudyTypeChart(); } catch(e) { console.error('[Estudei] charts:', e); }
+            try { initSessionDatePicker(); } catch(e) { console.error('[Estudei] datepicker:', e); }
             checkUrlHash();
             cycleMotivationalQuote();
 
