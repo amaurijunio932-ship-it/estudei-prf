@@ -4121,7 +4121,24 @@
             _pomoSaveState();
         }
 
+        function _pomoCurrentRemainingSeconds() {
+            if (pomodoroRunning && pomodoroEndTs) {
+                return Math.max(0, Math.round((pomodoroEndTs - Date.now()) / 1000));
+            }
+            return pomodoroSecondsLeft;
+        }
+
         function resetPomodoro() {
+            // Antes de zerar, soma ao tempo total qualquer tempo de FOCO já estudado
+            // nesse ciclo, mesmo que ele não tenha sido concluído até o fim.
+            if (pomodoroPhase === 'focus') {
+                const remaining = _pomoCurrentRemainingSeconds();
+                const elapsed = Math.max(0, pomodoroTotalSeconds - remaining);
+                if (elapsed > 0) {
+                    timerBaseSeconds += elapsed;
+                    totalSeconds = timerBaseSeconds;
+                }
+            }
             clearInterval(pomodoroInterval); pomodoroRunning = false;
             pomodoroPhase = 'focus';
             pomodoroSecondsLeft = pomodoroFocusMin * 60;
@@ -4130,6 +4147,7 @@
             document.getElementById('btn-pomo-start').classList.remove('hidden');
             document.getElementById('btn-pomo-pause').classList.add('hidden');
             updatePomodoroDisplay();
+            updateTimerDisplays();
             try { localStorage.removeItem(POMO_STATE_KEY); } catch(e) {}
         }
 
