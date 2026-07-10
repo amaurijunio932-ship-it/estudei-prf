@@ -57,11 +57,17 @@
 
         /* Estilo do Canvas do Editor de Resumos */
         .editor-canvas {
-            min-height: 700px;
+            min-height: 100%;
             outline: none;
             font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
             line-height: 1.6;
             font-size: 1rem;
+            scroll-behavior: smooth;
+            /* Espaço extra no rodapé para o texto nunca ficar escondido atrás
+               da legenda flutuante / botão de painel, e para a rolagem sempre
+               conseguir chegar até a última linha real do conteúdo. */
+            padding-bottom: 9rem !important;
+            scroll-padding-bottom: 9rem;
         }
 
         /* Correção para o reset do CSS do Tailwind que some com os marcadores de listas */
@@ -77,6 +83,59 @@
         .editor-paper-dark { background-color: #0d1622; color: #dde3eb; }
         .editor-paper-light { background-color: #f5f0e6; color: #1c1c2e; }
         .editor-paper-light th, .editor-paper-light td { border: 1px solid #c4bfb3; color: #1c1c2e; }
+
+        /* ===== BARRA DE ROLAGEM MODERNA ===== */
+        /* Aplicada ao canvas de resumos, ao modo tela cheia e à árvore da biblioteca.
+           Fina, com "thumb" flutuante em gradiente e brilho no hover — e, o mais
+           importante, sempre reflete o alcance real do conteúdo (ver correções de
+           flexbox abaixo), então a rolagem chega de fato até o final. */
+        .modern-scrollbar,
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(96, 165, 250, 0.55) transparent;
+            scrollbar-gutter: stable;
+        }
+        .modern-scrollbar::-webkit-scrollbar,
+        .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .modern-scrollbar::-webkit-scrollbar-track,
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .modern-scrollbar::-webkit-scrollbar-thumb,
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(96,165,250,0.65), rgba(59,130,246,0.55));
+            border-radius: 99px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            min-height: 40px;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .modern-scrollbar::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #FFD400, #f5b700);
+            background-clip: padding-box;
+            box-shadow: 0 0 10px rgba(255,212,0,0.4);
+        }
+        .editor-paper-light.modern-scrollbar { scrollbar-color: rgba(59,130,246,0.45) transparent; }
+
+        /* Indicadores sutis de "há mais conteúdo" acima/abaixo do canvas,
+           ativados via JS conforme a posição de rolagem (ver bindEditorScrollShadow). */
+        .editor-scroll-wrap { position: relative; }
+        .editor-scroll-wrap::before,
+        .editor-scroll-wrap::after {
+            content: ""; position: absolute; left: 0; right: 0; height: 28px;
+            pointer-events: none; z-index: 15; opacity: 0; transition: opacity 0.25s ease;
+        }
+        .editor-scroll-wrap::before {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(13,22,34,0.85), transparent);
+        }
+        .editor-scroll-wrap::after {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(13,22,34,0.85), transparent);
+        }
+        .editor-scroll-wrap.ws-light::before { background: linear-gradient(to bottom, rgba(245,240,230,0.9), transparent); }
+        .editor-scroll-wrap.ws-light::after { background: linear-gradient(to top, rgba(245,240,230,0.9), transparent); }
+        .editor-scroll-wrap.show-top-fade::before { opacity: 1; }
+        .editor-scroll-wrap.show-bottom-fade::after { opacity: 1; }
 
         /* COLOR PALETTE POPUP */
         .color-palette-popup {
@@ -394,8 +453,8 @@
         /* Estilos de Impressão para Exportação PDF */
         @media print {
             body * { visibility: hidden; }
-            #summary-print-container, #summary-print-container * { visibility: visible; }
-            #summary-print-container { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff;}
+            #active-summary-workspace, #active-summary-workspace * { visibility: visible; }
+            #active-summary-workspace { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff;}
             .study-hl { border: 1px solid #000; } 
         }
 
@@ -1237,10 +1296,10 @@
                 </div>
             </div>
 
-            <div class="flex flex-col lg:flex-row flex-grow border border-t-0 border-blue-900 rounded-b-2xl overflow-hidden bg-card-dark relative" style="min-height: 80vh;">
+            <div class="flex flex-col lg:flex-row flex-grow min-h-0 border border-t-0 border-blue-900 rounded-b-2xl overflow-hidden bg-card-dark relative" style="min-height: 420px;">
                 
                 <!-- PAINEL LATERAL: BIBLIOTECA -->
-                <div class="w-full lg:w-72 flex-shrink-0 bg-blue-950/30 border-r border-blue-900 flex flex-col h-80 lg:h-auto z-10">
+                <div class="w-full lg:w-72 flex-shrink-0 bg-blue-950/30 border-r border-blue-900 flex flex-col h-80 lg:h-auto lg:min-h-0 z-10">
                     <div class="p-3 border-b border-blue-900 space-y-3 bg-blue-950/60">
                         <div class="flex justify-between items-center">
                             <h3 class="text-xs font-black text-white uppercase tracking-wider"><i class="fa-solid fa-layer-group text-prf-yellow mr-1.5"></i> Biblioteca</h3>
@@ -1266,7 +1325,7 @@
                 </div>
 
                 <!-- PAINEL CENTRAL: EDITOR -->
-                <div class="flex-grow flex flex-col relative overflow-hidden bg-card-dark">
+                <div class="flex-grow flex flex-col relative overflow-hidden min-h-0 bg-card-dark">
                     
                     <div id="no-summary-selected-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-gray-400 bg-card-dark z-0">
                         <div class="w-24 h-24 bg-blue-950 rounded-full flex items-center justify-center mb-4 border-4 border-blue-900 shadow-inner">
@@ -1279,7 +1338,7 @@
                         </button>
                     </div>
 
-                    <div id="active-summary-workspace" class="hidden flex-col h-full z-10 w-full" id="summary-print-container">
+                    <div id="active-summary-workspace" class="hidden flex-col h-full min-h-0 z-10 w-full">
                         
                         <div class="px-6 pt-5 pb-3 border-b border-blue-900/50 bg-gradient-to-b from-blue-950/30 to-transparent">
                             <div class="flex items-start justify-between gap-4">
@@ -1289,7 +1348,7 @@
                                         <i class="fa-solid fa-chevron-right text-gray-600 text-[10px]"></i>
                                         <span id="active-summary-topic" class="text-gray-400">Assunto Específico</span>
                                     </div>
-                                    <input type="text" id="active-summary-title" oninput="saveActiveSummary()" class="w-full bg-transparent border-none text-2xl md:text-3xl font-black text-white focus:outline-none placeholder-gray-600 p-0 m-0" placeholder="Título do Resumo H1...">
+                                    <input type="text" id="active-summary-title" oninput="scheduleSaveActiveSummary()" class="w-full bg-transparent border-none text-2xl md:text-3xl font-black text-white focus:outline-none placeholder-gray-600 p-0 m-0" placeholder="Título do Resumo H1...">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <button onclick="toggleFavoriteSummary()" id="btn-favorite-summary" class="w-10 h-10 rounded-full bg-input-dark border border-blue-800 hover:bg-blue-800 text-gray-400 transition flex items-center justify-center text-lg" title="Marcar como Favorito">
@@ -1313,23 +1372,24 @@
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-tags text-gray-600"></i>
-                                    <input type="text" id="active-summary-tags" oninput="saveActiveSummary()" class="bg-input-dark border border-blue-800 rounded px-2 py-0.5 text-xs text-blue-300 focus:outline-none focus:border-blue-500 placeholder-gray-600 w-48" placeholder="Ex: #revisao #importante">
+                                    <input type="text" id="active-summary-tags" oninput="scheduleSaveActiveSummary()" class="bg-input-dark border border-blue-800 rounded px-2 py-0.5 text-xs text-blue-300 focus:outline-none focus:border-blue-500 placeholder-gray-600 w-48" placeholder="Ex: #revisao #importante">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Canvas do Editor -->
-                        <div class="relative flex-grow flex flex-col overflow-hidden">
+                        <div class="relative flex-grow flex flex-col overflow-hidden min-h-0 editor-scroll-wrap" id="summary-editor-scroll-wrap">
                             <!-- Botão toggle do painel flutuante -->
                             <button id="btn-float-panel-toggle" onclick="toggleFloatEditorPanel()" title="Painel de Formatação Flutuante">
                                 <i class="fa-solid fa-palette"></i>
                             </button>
-                            <div id="summary-editor-canvas" class="flex-grow editor-canvas editor-paper-dark p-6 md:p-10 overflow-y-auto" contenteditable="true" 
-                                 oninput="saveActiveSummary()"
+                            <div id="summary-editor-canvas" class="flex-grow min-h-0 editor-canvas editor-paper-dark modern-scrollbar p-6 md:p-10 overflow-y-auto" contenteditable="true" 
+                                 oninput="scheduleSaveActiveSummary(); _updateEditorScrollFades()"
                                  onmouseup="_activeEditorId='summary-editor-canvas'; saveSelection()"
                                  onkeyup="saveSelection()"
                                  onfocus="saveSelection()"
-                                 onblur="saveSelection()">
+                                 onblur="saveSelection()"
+                                 onscroll="_updateEditorScrollFades()">
                             </div>
                         </div>
 
@@ -1875,7 +1935,7 @@
         </div>
 
         <!-- Document area -->
-        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto"
+        <div id="fs-doc-area" class="fs-dark flex-1 overflow-y-auto modern-scrollbar"
              style="padding-top:56px; padding-bottom:48px;"
              onmousemove="handleFsMouseMove(event)">
             <div class="pointer-events-none fixed inset-0 z-0" style="background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(250,204,21,0.03) 0%,transparent 50%);"></div>
@@ -2844,6 +2904,8 @@
 
         // ── Salvar ANTES do fechamento da aba/janela ──────────────────────────
         window.addEventListener('beforeunload', (e) => {
+            // 0. Garante que a última edição do resumo (ainda no debounce) entre no snapshot
+            try { if (typeof _flushActiveSummarySave === 'function') _flushActiveSummarySave(); } catch(ex) {}
             // 1. Para o heartbeat (fechamento normal)
             _dlpStopHeartbeat();
             // 2. Força salvamento síncrono via localStorage (último recurso)
@@ -2857,6 +2919,7 @@
         // Também captura visibilitychange (tab em segundo plano / troca de app no mobile)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
+                try { if (typeof _flushActiveSummarySave === 'function') _flushActiveSummarySave(); } catch(ex) {}
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(studyDb));
                     localStorage.setItem(SHADOW_KEY, JSON.stringify({ ts: new Date().toISOString(), data: studyDb }));
@@ -2977,6 +3040,7 @@
             if (activeBtn) activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 bg-yellow-400 text-slate-900 shadow relative";
             
             renderAllTabs();
+            if (tabId === 'resumos') requestAnimationFrame(_updateEditorScrollFades);
         }
 
         function checkUrlHash() {
@@ -4546,6 +4610,7 @@
         }
 
         function selectActiveSummary(id) {
+            _flushActiveSummarySave(); // garante que o resumo anterior não perca a última edição
             activeSummaryId = id; savedRange = null;
             const summary = studyDb.summaries.find(s => s.id === id);
             if (summary) {
@@ -4576,7 +4641,8 @@
                 if (delBtnEl) delBtnEl.style.display = '';
 
                 document.getElementById('summary-editor-canvas').innerHTML = summary.content || '';
-                renderSummariesTree(); 
+                renderSummariesTree();
+                requestAnimationFrame(_updateEditorScrollFades);
             }
         }
 
@@ -4585,6 +4651,37 @@
             const summary = studyDb.summaries.find(s => s.id === activeSummaryId);
             if (summary) { summary.isFavorite = !summary.isFavorite; saveDatabase(); selectActiveSummary(activeSummaryId); }
         }
+
+        // ── CORREÇÃO (lentidão ao digitar em Meus Resumos) ──────────────────
+        // Antes, saveActiveSummary() rodava a cada tecla digitada (oninput),
+        // e cada chamada serializava e regravava o banco de dados INTEIRO
+        // (studyDb) várias vezes (save local + shadow write + backup + fila de
+        // sync) — em bancos grandes isso acumulava e travava a digitação até
+        // aparecer "Salvo". Agora a digitação apenas agenda o salvamento
+        // pesado para rodar 600ms depois que você parar de digitar; o
+        // indicador visual "Salvando…" continua aparecendo na hora.
+        let _activeSummarySaveTimer = null;
+
+        function scheduleSaveActiveSummary() {
+            if (typeof scheduleAutosave === 'function') scheduleAutosave(); // feedback visual instantâneo
+            clearTimeout(_activeSummarySaveTimer);
+            _activeSummarySaveTimer = setTimeout(() => {
+                _activeSummarySaveTimer = null;
+                saveActiveSummary();
+            }, 600);
+        }
+
+        // Garante que nenhuma edição pendente se perca ao trocar de resumo,
+        // fechar a aba ou a página ir para segundo plano.
+        function _flushActiveSummarySave() {
+            if (_activeSummarySaveTimer) {
+                clearTimeout(_activeSummarySaveTimer);
+                _activeSummarySaveTimer = null;
+                saveActiveSummary();
+            }
+        }
+        window.scheduleSaveActiveSummary = scheduleSaveActiveSummary;
+        window._flushActiveSummarySave    = _flushActiveSummarySave;
 
         function saveActiveSummary() {
             if (!activeSummaryId) return;
@@ -4771,14 +4868,31 @@
             }
         }
 
+        // Atualiza os indicadores visuais (fade no topo/rodapé) que mostram se
+        // há mais conteúdo para rolar no editor de resumos. Também serve como
+        // salvaguarda: se por algum motivo o layout mudar (janela redimensionada,
+        // imagem carregada, etc.), o alcance real da rolagem é recalculado.
+        function _updateEditorScrollFades() {
+            const el = document.getElementById('summary-editor-canvas');
+            const wrap = document.getElementById('summary-editor-scroll-wrap');
+            if (!el || !wrap) return;
+            const maxScroll = el.scrollHeight - el.clientHeight;
+            const hasOverflow = maxScroll > 4;
+            wrap.classList.toggle('show-top-fade', hasOverflow && el.scrollTop > 4);
+            wrap.classList.toggle('show-bottom-fade', hasOverflow && el.scrollTop < maxScroll - 4);
+        }
+        window.addEventListener('resize', () => requestAnimationFrame(_updateEditorScrollFades));
+
         function toggleEditorPaperTheme() {
             isEditorPaperLight = !isEditorPaperLight;
             const canvas = document.getElementById('summary-editor-canvas');
             const icon = document.getElementById('paper-theme-icon');
             const appRoot = document.getElementById('app-root') || document.body;
             const editorPanel = document.getElementById('editor-panel') || canvas.closest('.flex-1') || canvas.parentElement;
+            const scrollWrap = document.getElementById('summary-editor-scroll-wrap');
             if (isEditorPaperLight) {
                 canvas.classList.add('editor-paper-light'); canvas.classList.remove('editor-paper-dark');
+                if (scrollWrap) scrollWrap.classList.add('ws-light');
                 icon.className = "fa-solid fa-moon text-blue-400";
                 // Tema dia: fundo branco/cinza claro
                 document.body.style.background = '#f1f5f9';
@@ -4788,6 +4902,7 @@
                 document.querySelectorAll('h1,h2,h3,h4,strong,b').forEach(el => { if (!el.style.color) el.style.color = '#1e3a5f'; });
             } else {
                 canvas.classList.add('editor-paper-dark'); canvas.classList.remove('editor-paper-light');
+                if (scrollWrap) scrollWrap.classList.remove('ws-light');
                 icon.className = "fa-solid fa-sun text-yellow-400";
                 // Volta ao tema noturno
                 document.body.style.background = '';
