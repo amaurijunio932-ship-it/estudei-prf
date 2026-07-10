@@ -2305,14 +2305,9 @@
         };
 
         // === INICIALIZAÇÃO ===
-        window.onload = async function() {
-            try { await loadDatabase(); } catch(e) { console.error(e); }
-            try { renderAllTabs(); } catch(e) { console.error(e); }
-            try { initCharts(); initStudyTypeChart(); } catch(e) { console.error(e); }
-            checkUrlHash();
-            cycleMotivationalQuote();
-            try { restoreSessionIfLoggedIn(); } catch(e) {}
-        };
+        // (A inicialização real acontece em window.onload mais abaixo, que
+        // carrega os dados locais imediatamente e sincroniza com a nuvem em
+        // segundo plano — ver _backgroundCloudSync.)
 
         function generateRandomSyncCode() {
             return `PRF-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
@@ -2554,6 +2549,11 @@
                 // Envia em pedaços (chunks) para nunca esbarrar no limite de 1MB do Firestore
                 await _writeStudyDbToCloud(currentUser.uid, studyDb);
                 await _setLastSyncAt(studyDb.updatedAt);
+                // CORREÇÃO: marca este timestamp como "já aplicado" para que o
+                // listener de tempo real não confunda nosso próprio envio com uma
+                // alteração vinda de outro dispositivo (evitava re-leituras e
+                // notificações "☁ atualizado de outro dispositivo" falsas).
+                _lastAppliedCloudTs = studyDb.updatedAt;
 
                 _markPendingSync(false);
 
@@ -2801,10 +2801,16 @@
 
             try {
                 if (item.op === 'save') {
+                    // CORREÇÃO (envios duplicados): esta fila escrevia direto no
+                    // Firestore, em paralelo com o _pushToCloud() do auto-save.
+                    // Isso causava DOIS envios por alteração (desperdício de
+                    // rede/custo) e podia até gravar uma versão mais ANTIGA por
+                    // cima de uma mais nova se a ordem das respostas de rede se
+                    // invertesse. Agora a fila apenas aciona o único caminho
+                    // coordenado de envio (_pushToCloud), que já cuida de
+                    // deduplicação, status visual e do timestamp de sync.
                     if (fbDb && currentUser) {
-                        const dbObj = item.payload;
-                        if (!dbObj.updatedAt) dbObj.updatedAt = new Date().toISOString();
-                        await _writeStudyDbToCloud(currentUser.uid, dbObj);
+                        await _pushToCloud();
                     }
                 }
                 // Sucesso: remove da fila
@@ -5471,6 +5477,11 @@ function renderHistoryTab() {
             fbApp = firebase.initializeApp(firebaseConfig);
             fbAuth = firebase.auth();
             fbDb   = firebase.firestore();
+            // CORREÇÃO: fixa explicitamente a persistência do login em LOCAL
+            // (IndexedDB), garantindo que a sessão sobrevive a fechar/reabrir
+            // a página e a trocar de aba/app no PC, tablet e celular.
+            fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .catch(e => console.warn("setPersistence falhou:", e.message));
         } catch(e) { console.warn("Firebase init:", e.message); }
 
         // === AUTENTICAÇÃO E SINCRONIZAÇÃO (Firebase) ===
@@ -5773,19 +5784,9 @@ function renderHistoryTab() {
             generateTextSyncCode();
         }
 
-        function restoreSessionIfLoggedIn() {
-            if (!fbAuth) return;
-            fbAuth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    currentUser = { email: user.email, uid: user.uid };
-                    try { onUserLoggedIn(user.email); } catch(e) {}
-                    // Inicia listener de tempo real para sync entre dispositivos
-                    _startCrossDeviceListener(user.uid);
-                } else {
-                    _stopCrossDeviceListener();
-                }
-            });
-        }
+        // (restoreSessionIfLoggedIn foi removida: era código morto, nunca
+        // chamado — a restauração de sessão real acontece em
+        // _backgroundCloudSync, ver mais abaixo.)
 
         // ── LISTENER EM TEMPO REAL (Sincronização entre dispositivos) ──────────
         // Detecta alterações feitas em outro dispositivo e atualiza automaticamente.
@@ -5809,7 +5810,7 @@ function renderHistoryTab() {
                         // Ignora se já aplicamos este timestamp (foi nosso próprio push)
                         if (_lastAppliedCloudTs === cloudUpdatedAt) return;
 
-                        // Só atualiza se a nuvem tiver dados MAIS RECENTES (com margem de 2s)
+                        // Só age se a nuvem tiver dados MAIS RECENTES (com margem de 2s)
                         const diffMs = new Date(cloudUpdatedAt) - new Date(localUpdatedAt);
                         if (diffMs < 2000) return;
 
@@ -5823,21 +5824,48 @@ function renderHistoryTab() {
                             if (!cloudParsed.history)    cloudParsed.history    = [];
                             if (!cloudParsed.revisions)  cloudParsed.revisions  = [];
 
+                            // CORREÇÃO (perda de dados): a versão antiga sempre
+                            // sobrescrevia studyDb às cegas com o que veio da nuvem.
+                            // Se este dispositivo tivesse alterações locais ainda não
+                            // enviadas (ex: editando offline, ou push ainda no debounce),
+                            // elas eram perdidas silenciosamente. Agora, se o local
+                            // também mudou desde o último sync, fazemos MERGE em vez de
+                            // sobrescrever — igual ao que já acontece no boot e no botão
+                            // "Sincronizar Agora".
+                            const lastSyncAt   = await _getLastSyncAt();
+                            const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
+
                             _lastAppliedCloudTs = cloudUpdatedAt;
-                            studyDb = cloudParsed;
+
+                            let resultDb, toastMsg;
+                            if (localChanged) {
+                                const diff = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
+                                resultDb = _mergeStudyDbs(studyDb, cloudParsed);
+                                await _writeStudyDbToCloud(uid, resultDb); // publica o merge para a nuvem
+                                const parts = [];
+                                if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                                if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                                if (diff.revDiff  > 0) parts.push(`+${diff.revDiff} revisão(ões)`);
+                                toastMsg = `🔀 Alterações de outro dispositivo combinadas com as suas${parts.length ? ' (' + parts.join(', ') + ')' : ''}.`;
+                            } else {
+                                resultDb = cloudParsed;
+                                const cloudTime = new Date(cloudUpdatedAt).toLocaleTimeString('pt-BR', {
+                                    hour:'2-digit', minute:'2-digit', second:'2-digit'
+                                });
+                                toastMsg = `☁ Dados atualizados de outro dispositivo (${cloudTime})`;
+                            }
+
+                            studyDb = resultDb;
                             await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                            await _setLastSyncAt(cloudUpdatedAt);
+                            await _setLastSyncAt(studyDb.updatedAt || cloudUpdatedAt);
                             renderAllTabs();
+                            showToast(toastMsg, 'info', 4500);
 
-                            const cloudTime = new Date(cloudUpdatedAt).toLocaleTimeString('pt-BR', {
-                                hour:'2-digit', minute:'2-digit', second:'2-digit'
-                            });
-                            showToast(`☁ Dados atualizados de outro dispositivo (${cloudTime})`, 'info', 4000);
-
+                            const now = new Date();
                             const statusEl = document.getElementById('sync-status-text');
                             const timeEl   = document.getElementById('last-sync-time');
-                            if (statusEl) { statusEl.innerText = 'Sincronizado ✓ (outro dispositivo)'; statusEl.style.color = '#10b981'; }
-                            if (timeEl)   timeEl.innerText = cloudTime;
+                            if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
+                            if (timeEl)   timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
 
                         } catch(e) {
                             console.warn('[CrossDevice] Erro ao aplicar dados da nuvem:', e);
@@ -8122,202 +8150,131 @@ function renderHistoryTab() {
          * Executa a sequência completa de sincronização ao abrir.
          * Controla o overlay passo a passo e bloqueia a UI até concluir.
          */
-        async function _sboRunBootSync() {
+        /**
+         * CORREÇÃO DE PERFORMANCE:
+         * A antiga versão bloqueava a tela inteira (overlay) até terminar toda
+         * a conversa com o Firebase, incluindo esperas artificiais fixas.
+         * Em redes móveis mais lentas isso causava a sensação de "travamento"
+         * relatada pelo usuário: a planilha ficava presa até aparecer a
+         * mensagem "sincronizado com a nuvem".
+         *
+         * Agora a interface é liberada IMEDIATAMENTE com os dados locais.
+         * A sincronização com a nuvem roda em segundo plano, apenas
+         * atualizando o indicador de status (nunca bloqueia a tela).
+         */
+        let _bootSyncDone = false;
 
-            // ── ETAPA 1 : Verificar conexão com a internet ──────────────────────
-            _sboSetStep(1, 'active', 'verificando...', 5);
-            _sboStatus('Verificando conexão com a internet...');
-            await _sboDelay(380);
+        async function _backgroundCloudSync() {
+            if (!fbAuth || !fbDb) return;
+            if (_bootSyncDone) return;
 
-            const isOnline = navigator.onLine;
+            // Não trava a UI esperando: apenas escuta o estado de auth.
+            // Sem timeout curto — se a rede demorar, a sincronização ainda
+            // acontece quando o Firebase responder, sem forçar um "faça login"
+            // falso enquanto isso.
+            fbAuth.onAuthStateChanged(async (fbUser) => {
+                if (_bootSyncDone) return; // roda a sincronização inicial 1x só
+                _bootSyncDone = true;
 
-            if (!isOnline) {
-                _sboSetStep(1, 'skip', 'offline',  20);
-                _sboSetStep(2, 'skip', 'pulado',   40);
-                _sboSetStep(3, 'skip', 'pulado',   60);
-                _sboSetStep(4, 'skip', 'local',    80);
-                _sboSetStep(5, 'active', 'aguarde...');
-                _sboStatus('Sem internet — carregando dados locais...');
-                await _sboDelay(700);
-                _sboSetStep(5, 'done', 'pronto ✓', 100);
-                _sboStatus('Planilha carregada com dados locais.');
-                return; // sai sem sync na nuvem
-            }
+                if (!navigator.onLine) return; // modo local, sem nuvem por enquanto
 
-            _sboSetStep(1, 'done', 'online ✓', 20);
+                if (!fbUser) {
+                    // Não autenticado neste dispositivo — permanece em modo local.
+                    return;
+                }
 
-            // ── ETAPA 2 : Conectar ao banco de dados remoto ─────────────────────
-            _sboSetStep(2, 'active', 'conectando...', 25);
-            _sboStatus('Conectando ao banco de dados remoto (Firebase)...');
+                currentUser = { email: fbUser.email, uid: fbUser.uid };
+                try { onUserLoggedIn(fbUser.email); } catch(e) {}
+                _startCrossDeviceListener(fbUser.uid);
 
-            // Carrega dados locais primeiro (necessário para comparação)
-            try { await loadDatabase(); } catch(e) { console.error('[SBO] loadDatabase:', e); }
-            try { validateAndRepairDb(); } catch(e) {}
-
-            // Aguarda Firebase Auth restaurar a sessão (timeout 6s)
-            const fbUser = await _sboWaitForAuth(6000);
-
-            if (!fbUser) {
-                // Não autenticado — modo local
-                _sboSetStep(2, 'skip', 'sem login',  40);
-                _sboSetStep(3, 'skip', 'pulado',     60);
-                _sboSetStep(4, 'skip', 'dados locais', 80);
-                _sboSetStep(5, 'active', 'aguarde...');
-                _sboStatus('Não autenticado — usando dados locais. Faça login para sincronizar.');
-                await _sboDelay(700);
-                _sboSetStep(5, 'done', 'pronto ✓', 100);
-                _sboStatus('Planilha carregada. Faça login para sincronizar entre dispositivos.');
-                return;
-            }
-
-            // Usuário autenticado
-            currentUser = { email: fbUser.email, uid: fbUser.uid };
-            try { onUserLoggedIn(fbUser.email); } catch(e) {}
-            _sboSetStep(2, 'done', 'conectado ✓', 40);
-
-            // ── ETAPA 3 : Buscar versão mais recente dos dados ──────────────────
-            _sboSetStep(3, 'active', 'buscando...', 45);
-            _sboStatus('Buscando a versão mais recente dos dados na nuvem...');
-            await _sboDelay(200);
-
-            let cloudDoc = null;
-            try {
-                cloudDoc = await fbDb.collection('users').doc(fbUser.uid).get();
-                _sboSetStep(3, 'done', 'concluído ✓', 60);
-            } catch(e) {
-                console.error('[SBO] Firestore get:', e);
-                _sboSetStep(3, 'error', 'erro!', 60);
-                _sboStatus('Erro ao acessar a nuvem — mantendo dados locais.');
-                await _sboDelay(900);
-                _sboSetStep(4, 'skip', 'usando local', 80);
-                _sboSetStep(5, 'active', 'aguarde...');
-                await _sboDelay(400);
-                _sboSetStep(5, 'done', 'pronto ✓', 100);
-                _sboStatus('Planilha carregada com dados locais (erro de rede).');
-                return;
-            }
-
-            // ── ETAPA 4 : Atualizar automaticamente dados locais ────────────────
-            _sboSetStep(4, 'active', 'atualizando...', 65);
-            _sboStatus('Comparando versões e atualizando dados locais...');
-            await _sboDelay(300);
-
-            const cloudHasData = cloudDoc && cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
-            if (cloudHasData) {
-                const lastSyncAt     = await _getLastSyncAt();
-                const localUpdatedAt = studyDb.updatedAt           || '1970-01-01T00:00:00.000Z';
-                const cloudUpdatedAt = cloudDoc.data().updatedAt   || '1970-01-01T00:00:00.000Z';
-
-                const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
-                const cloudChanged = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
-                const conflict     = localChanged && cloudChanged;
-
+                const statusEl = document.getElementById('sync-status-text');
+                const iconEl   = document.getElementById('btn-sync-icon');
                 try {
-                    const cloudData    = await _readStudyDbFromCloud(fbUser.uid);
-                    const cloudParsed  = JSON.parse(cloudData.json);
-                    if (!cloudParsed.summaries) cloudParsed.summaries = [];
-                    if (!cloudParsed.history)   cloudParsed.history   = [];
-                    if (!cloudParsed.revisions) cloudParsed.revisions = [];
+                    if (iconEl)   iconEl.classList.add('sync-spinning');
+                    if (statusEl) { statusEl.innerText = 'Sincronizando…'; statusEl.style.color = '#60a5fa'; }
 
-                    if (conflict) {
-                        // ── CONFLITO: merge inteligente sem perda de dados ──────────────
-                        _sboStatus('Conflito detectado! Fundindo dados de 2 dispositivos...');
-                        const diff   = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
-                        studyDb = _mergeStudyDbs(studyDb, cloudParsed);
-                        // Envia resultado do merge para nuvem
-                        await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                        await _setLastSyncAt();
-                        const parts = [];
-                        if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
-                        if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
-                        const detail = parts.length ? ` (${parts.join(', ')})` : '';
-                        _sboSetStep(4, 'done', `merge ✓${detail}`, 80);
-                        _sboStatus(`Dados offline + nuvem fundidos${detail}. Nenhum dado perdido!`);
+                    const cloudDoc = await fbDb.collection('users').doc(fbUser.uid).get();
+                    const cloudHasData = cloudDoc && cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
 
-                    } else if (cloudChanged && !localChanged) {
-                        // ── SÓ NUVEM MUDOU: baixa ──────────────────────────────────────
-                        studyDb = cloudParsed;
-                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                        await _setLastSyncAt();
-                        _sboSetStep(4, 'done', '☁ → local ✓', 80);
-                        _sboStatus('Dados atualizados com a versão mais recente da nuvem!');
+                    if (cloudHasData) {
+                        const lastSyncAt     = await _getLastSyncAt();
+                        const localUpdatedAt = studyDb.updatedAt         || '1970-01-01T00:00:00.000Z';
+                        const cloudUpdatedAt = cloudDoc.data().updatedAt || '1970-01-01T00:00:00.000Z';
 
+                        const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
+                        const cloudChanged = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
+                        const conflict     = localChanged && cloudChanged;
+
+                        const cloudData   = await _readStudyDbFromCloud(fbUser.uid);
+                        const cloudParsed = JSON.parse(cloudData.json);
+                        if (!cloudParsed.summaries) cloudParsed.summaries = [];
+                        if (!cloudParsed.history)   cloudParsed.history   = [];
+                        if (!cloudParsed.revisions) cloudParsed.revisions = [];
+
+                        if (conflict) {
+                            const diff = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
+                            studyDb = _mergeStudyDbs(studyDb, cloudParsed);
+                            await _writeStudyDbToCloud(fbUser.uid, studyDb);
+                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                            await _setLastSyncAt();
+                            renderAllTabs();
+                            const parts = [];
+                            if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                            if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                            showToast(`🔄 Dados de outro dispositivo combinados${parts.length ? ' (' + parts.join(', ') + ')' : ''}.`, 'info');
+                        } else if (cloudChanged && !localChanged) {
+                            studyDb = cloudParsed;
+                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                            await _setLastSyncAt();
+                            renderAllTabs();
+                            showToast('☁ Dados atualizados a partir da nuvem.', 'info');
+                        } else {
+                            studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
+                            await _writeStudyDbToCloud(fbUser.uid, studyDb);
+                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                            await _setLastSyncAt();
+                        }
                     } else {
-                        // ── SÓ LOCAL MUDOU (ou iguais): envia ──────────────────────────
                         studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
                         await _writeStudyDbToCloud(fbUser.uid, studyDb);
                         await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                         await _setLastSyncAt();
-                        _sboSetStep(4, 'done', 'local → ☁ ✓', 80);
-                        _sboStatus('Dados locais enviados para a nuvem.');
                     }
+
+                    const now = new Date();
+                    if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
+                    const timeEl = document.getElementById('last-sync-time');
+                    if (timeEl) timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+                    const fullEl = document.getElementById('last-sync-full');
+                    if (fullEl) fullEl.innerText = now.toLocaleString('pt-BR', {
+                        day:'2-digit', month:'2-digit', year:'numeric',
+                        hour:'2-digit', minute:'2-digit', second:'2-digit'
+                    }) + '.' + String(now.getMilliseconds()).padStart(3,'0');
                 } catch(e) {
-                    console.error('[SBO] Etapa 4 erro:', e);
-                    _sboSetStep(4, 'error', 'erro parse', 80);
-                    _sboStatus('Erro ao processar dados — dados locais mantidos.');
+                    console.error('[Sync em segundo plano] erro:', e);
+                    if (statusEl) { statusEl.innerText = 'Salvo local (nuvem pendente)'; statusEl.style.color = '#f59e0b'; }
+                } finally {
+                    if (iconEl) iconEl.classList.remove('sync-spinning');
                 }
-
-            } else {
-                // Sem dados na nuvem → envia os locais (primeira vez / conta nova)
-                try {
-                    studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                    await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                    await _setLastSyncAt();
-                    _sboSetStep(4, 'done', 'dados enviados ✓', 80);
-                    _sboStatus('Dados locais enviados para a nuvem pela primeira vez.');
-                } catch(e) {
-                    console.error('[SBO] Upload inicial:', e);
-                    _sboSetStep(4, 'skip', 'upload falhou', 80);
-                    _sboStatus('Conta nova — dados locais usados.');
-                }
-            }
-
-            // Atualiza display de sync no modal
-            try {
-                const now = new Date();
-                const timeEl = document.getElementById('last-sync-time');
-                if (timeEl) timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-                const statusEl = document.getElementById('sync-status-text');
-                if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
-                const fullEl = document.getElementById('last-sync-full');
-                if (fullEl) fullEl.innerText = now.toLocaleString('pt-BR', {
-                    day:'2-digit', month:'2-digit', year:'numeric',
-                    hour:'2-digit', minute:'2-digit', second:'2-digit'
-                }) + '.' + String(now.getMilliseconds()).padStart(3,'0');
-            } catch(e) {}
-
-            // ── ETAPA 5 : Liberar utilização da planilha ────────────────────────
-            _sboSetStep(5, 'active', 'aguarde...', 90);
-            _sboStatus('Sincronização concluída! Preparando a planilha...');
-            await _sboDelay(500);
-            _sboSetStep(5, 'done', 'pronto ✓', 100);
-            _sboStatus('✓ Planilha sincronizada e pronta para uso!');
+            });
         }
 
-        // ── onload FINAL: com Sincronização Automática ao Abrir ───────────────
+        // ── onload FINAL: interface liberada de imediato, nuvem em segundo plano ──
         window.onload = async function() {
 
-            // Executa a sequência completa (overlay bloqueia a UI durante este tempo)
-            try {
-                await _sboRunBootSync();
-            } catch(e) {
-                console.error('[Estudei] Erro no boot sync:', e);
-                // Garante que o DB local está carregado mesmo em caso de erro
-                try { await loadDatabase(); } catch(e2) {}
-                try { validateAndRepairDb(); } catch(e2) {}
-                _sboSetStep(5, 'error', 'erro', 100);
-                _sboStatus('Erro durante sincronização. Usando dados locais.');
-                await _sboDelay(1500);
-            }
-
-            // Renderiza toda a interface
+            // 1. Carrega dados locais e libera a interface IMEDIATAMENTE — sem
+            //    esperar rede nem nuvem. Isto elimina o travamento reportado.
+            try { await loadDatabase(); } catch(e) { console.error(e); }
+            try { validateAndRepairDb(); } catch(e) {}
             try { renderAllTabs(); } catch(e) { console.error('[Estudei] renderAllTabs:', e); }
             try { initCharts(); initStudyTypeChart(); } catch(e) { console.error('[Estudei] charts:', e); }
             try { initSessionDatePicker(); } catch(e) { console.error('[Estudei] datepicker:', e); }
             checkUrlHash();
             cycleMotivationalQuote();
+
+            // Esconde o overlay de carregamento assim que os dados locais
+            // estiverem prontos — não espera mais a nuvem.
+            _sboHide();
 
             // ── RESTAURAR POMODORO APÓS RECARGA DE PÁGINA ──
             try { _pomoRestoreState(); } catch(e) { console.error('[Estudei] Restauração do Pomodoro:', e); }
@@ -8327,7 +8284,6 @@ function renderHistoryTab() {
                 _timerRestoreState();
                 if (totalSeconds > 0 || isTimerRunning || isTimerPaused) {
                     updateTimerDisplays();
-                    // Reativa os loops de display conforme o estado restaurado
                     if (isTimerRunning) {
                         document.getElementById('btn-timer-start').classList.add('hidden');
                         document.getElementById('btn-timer-pause').classList.remove('hidden');
@@ -8348,9 +8304,9 @@ function renderHistoryTab() {
                 }
             } catch(e) { console.error('[Estudei] Restauração do cronômetro:', e); }
 
-            // Oculta o overlay (a interface já está pronta)
-            await _sboDelay(700);
-            _sboHide();
+            // 2. Sincronização com a nuvem: acontece em SEGUNDO PLANO, sem
+            //    travar nada. O usuário já está usando a planilha normalmente.
+            try { _backgroundCloudSync(); } catch(e) { console.error('[Estudei] Erro ao iniciar sync em segundo plano:', e); }
 
             // Intervalo de reparação automática do banco
             setInterval(() => { try { validateAndRepairDb(); } catch(e) {} }, 10 * 60 * 1000);
