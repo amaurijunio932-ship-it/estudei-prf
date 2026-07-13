@@ -3806,6 +3806,54 @@
             studyDb.currentCycleStep = idx; saveDatabase(); renderStudyCycleTab(); startNextCycleSubject();
         }
 
+        // Marca como concluída a etapa do ciclo correspondente à matéria estudada,
+        // mesmo que ela não seja exatamente a etapa apontada por currentCycleStep
+        // (ex: estudo feito fora de ordem, via Cronômetro Tático, ou após sync entre dispositivos).
+        // Procura primeiro a partir do passo atual (fila pendente), depois em qualquer lugar do ciclo.
+        function advanceCycleForSubject(subject) {
+            const cycle = studyDb.studyCycle;
+            if (!Array.isArray(cycle) || cycle.length === 0) return;
+
+            let idx = -1;
+
+            // 1) Coincide exatamente com o passo atual
+            if (cycle[studyDb.currentCycleStep] && cycle[studyDb.currentCycleStep].subject === subject) {
+                idx = studyDb.currentCycleStep;
+            }
+
+            // 2) Próxima ocorrência pendente da matéria, a partir do passo atual
+            if (idx === -1) {
+                for (let i = 0; i < cycle.length; i++) {
+                    const pos = (studyDb.currentCycleStep + i) % cycle.length;
+                    if (cycle[pos].subject === subject && cycle[pos].status !== "Concluído") {
+                        idx = pos;
+                        break;
+                    }
+                }
+            }
+
+            // Matéria não faz parte do ciclo configurado — nada a avançar
+            if (idx === -1) return;
+
+            cycle[idx].status = "Concluído";
+
+            // Avança o ponteiro para o próximo passo ainda pendente (circular)
+            let next = (idx + 1) % cycle.length;
+            let scanned = 0;
+            while (cycle[next].status === "Concluído" && scanned < cycle.length) {
+                next = (next + 1) % cycle.length;
+                scanned++;
+            }
+
+            if (scanned >= cycle.length) {
+                // Todas as etapas concluídas: reinicia o ciclo
+                cycle.forEach(s => s.status = "A Fazer");
+                studyDb.currentCycleStep = 0;
+            } else {
+                studyDb.currentCycleStep = next;
+            }
+        }
+
         function startNextCycleSubject() {
             const step = studyDb.studyCycle[studyDb.currentCycleStep];
             if (!step) { showAlert("Ciclo finalizado!"); return; }
@@ -4465,15 +4513,7 @@
                 subject, topic, duration, type, qCorrect: qC, qTotal: qT, pages, notes
             });
 
-            const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
-            if (cStep && cStep.subject === subject) {
-                cStep.status = "Concluído";
-                studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
-                if (studyDb.currentCycleStep === 0) {
-                    // Ciclo completo: reinicia o status de todas as matérias para começar de novo
-                    studyDb.studyCycle.forEach(s => s.status = "A Fazer");
-                }
-            }
+            advanceCycleForSubject(subject);
 
             saveDatabase(); renderAllTabs(); switchTab('dashboard');
             
@@ -8412,15 +8452,7 @@ function renderHistoryTab() {
                 qCorrect: qC, qTotal: qT, pages, notes
             });
 
-            const cStep = studyDb.studyCycle[studyDb.currentCycleStep];
-            if (cStep && cStep.subject === subject) {
-                cStep.status = 'Concluído';
-                studyDb.currentCycleStep = (studyDb.currentCycleStep + 1) % studyDb.studyCycle.length;
-                if (studyDb.currentCycleStep === 0) {
-                    // Ciclo completo: reinicia o status de todas as matérias para começar de novo
-                    studyDb.studyCycle.forEach(s => s.status = 'A Fazer');
-                }
-            }
+            advanceCycleForSubject(subject);
 
             saveDatabase();
             renderAllTabs();
