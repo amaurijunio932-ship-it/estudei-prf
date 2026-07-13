@@ -830,6 +830,11 @@
                             <button onclick="setChartPeriod('yearly')" id="btn-period-yearly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
                         </div>
                     </div>
+                    <div id="evo-chart-nav" class="flex items-center justify-center gap-3" style="visibility:hidden;">
+                        <button onclick="navEvoChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                        <span id="evo-chart-period-label" class="text-sm font-black text-white min-w-[140px] text-center">--</span>
+                        <button onclick="navEvoChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    </div>
                     <div class="h-64 relative">
                         <canvas id="weeklyStudyChart"></canvas>
                     </div>
@@ -1590,7 +1595,7 @@
             <!-- Duração -->
             <div class="space-y-1">
                 <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
-                    <i class="fa-solid fa-clock mr-1 text-yellow-400"></i> Duração (horas e minutos)
+                    <i class="fa-solid fa-clock mr-1 text-yellow-400"></i> Duração (horas, minutos e segundos)
                 </label>
                 <div class="flex gap-3">
                     <div class="flex-1">
@@ -1605,6 +1610,13 @@
                             <input type="number" id="edit-history-minutes" min="0" max="59" placeholder="0"
                                 class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none text-center font-bold">
                             <span class="pr-3 text-gray-500 text-xs font-bold">min</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center bg-input-dark border border-blue-800 rounded-xl overflow-hidden focus-within:border-yellow-400 transition">
+                            <input type="number" id="edit-history-seconds" min="0" max="59" placeholder="0"
+                                class="w-full bg-transparent px-4 py-2.5 text-white text-sm focus:outline-none text-center font-bold">
+                            <span class="pr-3 text-gray-500 text-xs font-bold">seg</span>
                         </div>
                     </div>
                 </div>
@@ -4487,6 +4499,10 @@
             // Always sync from HH:MM:SS fields first (which are kept in sync with the timer)
             syncDurationFromHMS();
             const duration = parseInt(document.getElementById('form-duration').value) || 0;
+            const durH = parseInt(document.getElementById('form-dur-h').value) || 0;
+            const durM = parseInt(document.getElementById('form-dur-m').value) || 0;
+            const durS = parseInt(document.getElementById('form-dur-s').value) || 0;
+            const durationSec = durH * 3600 + durM * 60 + durS;
             const type = document.getElementById('form-study-type').value;
             const qC = parseInt(document.getElementById('form-questions-correct').value) || 0;
             const qT = parseInt(document.getElementById('form-questions-total').value) || 0;
@@ -4510,7 +4526,7 @@
 
             studyDb.history.push({
                 id: Date.now(), date: sessionDate,
-                subject, topic, duration, type, qCorrect: qC, qTotal: qT, pages, notes
+                subject, topic, duration, durationSec, type, qCorrect: qC, qTotal: qT, pages, notes
             });
 
             advanceCycleForSubject(subject);
@@ -5073,8 +5089,17 @@ ${conteudo}
 
         // === 7. HISTÓRICO COMPONENT ===
         
-        function formatDurationHMS(totalMinutes) {
-            const totalSeconds = Math.round((Number(totalMinutes) || 0) * 60);
+        function formatDurationHMS(session) {
+            // Aceita tanto o objeto da sessão (preferencial, usa segundos exatos)
+            // quanto um número de minutos (compatibilidade com chamadas antigas).
+            let totalSeconds;
+            if (session && typeof session === 'object') {
+                totalSeconds = (session.durationSec !== undefined && session.durationSec !== null)
+                    ? Math.round(Number(session.durationSec) || 0)
+                    : Math.round((Number(session.duration) || 0) * 60);
+            } else {
+                totalSeconds = Math.round((Number(session) || 0) * 60);
+            }
             const h = Math.floor(totalSeconds / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
             const s = totalSeconds % 60;
@@ -5184,7 +5209,7 @@ function renderHistoryTab() {
                             <td class="px-4 py-3 text-gray-600 text-xs" style="padding-left:20px;">—</td>
                             <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
                             <td class="px-4 py-3 text-gray-300 text-xs">${s.topic}</td>
-                            <td class="px-4 py-3 text-center text-prf-yellow">${formatDurationHMS(s.duration)}</td>
+                            <td class="px-4 py-3 text-center text-prf-yellow">${formatDurationHMS(s)}</td>
                             <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
                             <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
                             <td class="px-4 py-3 text-center text-xs">${pagesCell}</td>
@@ -5221,10 +5246,15 @@ function renderHistoryTab() {
             // Pre-build topic options for this subject
             _editBuildTopicOptions(session.subject || '');
 
-            // Convert minutes → hours and minutes
-            const totalMin = Math.round((Number(session.duration) || 0));
-            document.getElementById('edit-history-hours').value = Math.floor(totalMin / 60);
-            document.getElementById('edit-history-minutes').value = totalMin % 60;
+            // Convert to hours, minutes and seconds.
+            // Sessões que já têm durationSec (segundos exatos) usam esse valor;
+            // registos antigos, que nunca gravaram segundos, caem no fallback em minutos (segundos = 0).
+            const totalSecs = (session.durationSec !== undefined && session.durationSec !== null)
+                ? Math.round(Number(session.durationSec) || 0)
+                : Math.round((Number(session.duration) || 0) * 60);
+            document.getElementById('edit-history-hours').value = Math.floor(totalSecs / 3600);
+            document.getElementById('edit-history-minutes').value = Math.floor((totalSecs % 3600) / 60);
+            document.getElementById('edit-history-seconds').value = totalSecs % 60;
 
             // Fill tipo
             const typeEl = document.getElementById('edit-history-type');
@@ -5430,6 +5460,7 @@ function renderHistoryTab() {
             const newDate = (dateEl && dateEl.value && dateEl.value.length === 10) ? brToISO(dateEl.value) : (studyDb.history.find(s => s.id === id)?.date || todayBrazil());
             const hours = parseInt(document.getElementById('edit-history-hours').value) || 0;
             const minutes = parseInt(document.getElementById('edit-history-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('edit-history-seconds').value) || 0;
             const type = document.getElementById('edit-history-type')?.value || 'Teoria';
             const newQTotal = parseInt(document.getElementById('edit-history-qtotal')?.value) || 0;
             const newQCorrect = parseInt(document.getElementById('edit-history-qcorrect')?.value) || 0;
@@ -5437,13 +5468,14 @@ function renderHistoryTab() {
 
             if (!subject) { showAlert('Por favor, preencha a disciplina.'); return; }
             if (dateEl && dateEl.value && dateEl.value.length !== 10) { showAlert('Por favor, preencha a data completa (DD/MM/AAAA).'); return; }
-            if (hours === 0 && minutes === 0) { showAlert('A duração não pode ser zero.'); return; }
+            if (hours === 0 && minutes === 0 && seconds === 0) { showAlert('A duração não pode ser zero.'); return; }
             if ((type === 'Questões' || type === 'Simulado') && newQCorrect > newQTotal && newQTotal > 0) {
                 showAlert('As questões corretas não podem ser maiores que o total.');
                 return;
             }
 
-            const totalMinutes = hours * 60 + minutes;
+            const totalSecondsExact = hours * 3600 + minutes * 60 + seconds;
+            const totalMinutes = Math.round(totalSecondsExact / 60);
             const idx = studyDb.history.findIndex(s => s.id === id);
             if (idx === -1) { showAlert('Registo não encontrado.'); return; }
 
@@ -5482,11 +5514,12 @@ function renderHistoryTab() {
             }
 
             // Update history entry
-            studyDb.history[idx].date     = newDate;
-            studyDb.history[idx].subject  = subject;
-            studyDb.history[idx].topic    = topic;
-            studyDb.history[idx].duration = totalMinutes;
-            studyDb.history[idx].type     = type;
+            studyDb.history[idx].date        = newDate;
+            studyDb.history[idx].subject     = subject;
+            studyDb.history[idx].topic       = topic;
+            studyDb.history[idx].duration    = totalMinutes;
+            studyDb.history[idx].durationSec = totalSecondsExact;
+            studyDb.history[idx].type        = type;
             studyDb.history[idx].qTotal   = appliedQTotal;
             studyDb.history[idx].qCorrect = appliedQCorrect;
             studyDb.history[idx].notes    = notes;
@@ -5499,10 +5532,22 @@ function renderHistoryTab() {
 
         function exportStudyHistory() {
             if(studyDb.history.length === 0) return showAlert("Sem dados.");
-            let csv = "Data,Disciplina,Topico,Duracao_Min,Tipo,Questoes_Total,Questoes_Corretas,Paginas,Observacoes\n";
-            studyDb.history.forEach(s => csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${s.type},${s.qTotal||0},${s.qCorrect||0},${s.pages||0},"${(s.notes||'').replace(/"/g,"'")}"\n`);
+            let csv = "Data,Disciplina,Topico,Duracao_Min,Duracao_Seg,Tipo,Questoes_Total,Questoes_Corretas,Paginas,Observacoes\n";
+            studyDb.history.forEach(s => {
+                const durSec = (s.durationSec !== undefined && s.durationSec !== null) ? s.durationSec : (s.duration||0)*60;
+                csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${durSec},${s.type},${s.qTotal||0},${s.qCorrect||0},${s.pages||0},"${(s.notes||'').replace(/"/g,"'")}"\n`;
+            });
             const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `historico_prf.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        // Retorna um tom de amarelo/dourado mais escuro quanto maior o valor
+        // em relação ao máximo do período exibido — mantém sempre o matiz amarelo.
+        function _evoBarColor(value, maxValue) {
+            if (!maxValue || maxValue <= 0 || !value) return 'hsl(45, 95%, 78%)';
+            const ratio = Math.max(0, Math.min(1, value / maxValue));
+            const lightness = 78 - ratio * 42; // 78% (claro) → 36% (escuro), sempre no matiz dourado
+            return `hsl(45, 95%, ${lightness}%)`;
         }
 
         // === 8. CHART JS ===
@@ -5550,8 +5595,11 @@ function renderHistoryTab() {
             }
         }
 
+        window._evoOffset = window._evoOffset || 0;
+
         function setChartPeriod(period) {
             currentChartPeriod = period;
+            window._evoOffset = 0;
             ['daily', 'weekly', 'monthly', 'yearly'].forEach(p => {
                 const btn = document.getElementById(`btn-period-${p}`);
                 if(btn) btn.className = p === period ? "px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow" : "px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition";
@@ -5559,11 +5607,20 @@ function renderHistoryTab() {
             updateChartData();
         }
 
+        function navEvoChart(dir) {
+            if (currentChartPeriod === 'daily') return;
+            window._evoOffset = (window._evoOffset || 0) + dir;
+            updateChartData();
+        }
+        window.navEvoChart = navEvoChart;
+
         function updateChartData() {
             if (!studyChart) return;
             const todayStr = todayBrazil();
             const todayDate = new Date(todayStr + "T12:00:00");
             const year = todayDate.getFullYear();
+            const evoOffset = window._evoOffset || 0;
+            let evoLabel = '';
 
             function minsToLabel(mins) {
                 const h = Math.floor(mins/60), m = mins%60;
@@ -5576,38 +5633,45 @@ function renderHistoryTab() {
                                              .reduce((sum, s) => sum + (s.duration||0), 0);
                 studyChart.data.labels = ['Hoje'];
                 studyChart.data.datasets[0].data = [total];
+                evoLabel = 'Hoje';
             }
             else if (currentChartPeriod === 'weekly') {
                 // Uma barra por dia da semana (Seg→Dom), total de minutos por dia
                 const days = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
                 let weekData = [0,0,0,0,0,0,0];
-                const start = new Date(todayDate);
                 const dow = todayDate.getDay(); // 0=dom
-                start.setDate(todayDate.getDate() - (dow === 0 ? 6 : dow - 1));
+                const start = new Date(todayDate);
+                start.setDate(todayDate.getDate() - (dow === 0 ? 6 : dow - 1) + evoOffset * 7);
                 start.setHours(0,0,0,0);
+                const end = new Date(start);
+                end.setDate(start.getDate() + 6);
                 studyDb.history.forEach(s => {
                     const d = new Date(s.date + "T12:00:00");
-                    if (d >= start) {
+                    if (d >= start && d <= end) {
                         const idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
                         weekData[idx] += (s.duration || 0);
                     }
                 });
                 studyChart.data.labels = days;
                 studyChart.data.datasets[0].data = weekData;
+                evoLabel = `${String(start.getDate()).padStart(2,'0')}/${String(start.getMonth()+1).padStart(2,'0')} a ${String(end.getDate()).padStart(2,'0')}/${String(end.getMonth()+1).padStart(2,'0')}`;
             }
             else if (currentChartPeriod === 'monthly') {
-                // Uma barra por mês do ano atual
+                // Uma barra por mês do ano selecionado
+                const targetYear = year + evoOffset;
                 let monthData = Array(12).fill(0);
                 studyDb.history.forEach(s => {
                     const d = new Date(s.date + "T12:00:00");
-                    if (d.getFullYear() === year) monthData[d.getMonth()] += (s.duration||0);
+                    if (d.getFullYear() === targetYear) monthData[d.getMonth()] += (s.duration||0);
                 });
                 studyChart.data.labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
                 studyChart.data.datasets[0].data = monthData;
+                evoLabel = `${targetYear}`;
             }
             else if (currentChartPeriod === 'yearly') {
-                // Uma barra por ano (últimos 5 anos)
-                const years = [year-4, year-3, year-2, year-1, year];
+                // Uma barra por ano (janela de 5 anos, navegável)
+                const baseYear = year + evoOffset * 5;
+                const years = [baseYear-4, baseYear-3, baseYear-2, baseYear-1, baseYear];
                 let yearData = [0,0,0,0,0];
                 studyDb.history.forEach(s => {
                     const y = new Date(s.date + "T12:00:00").getFullYear();
@@ -5616,7 +5680,14 @@ function renderHistoryTab() {
                 });
                 studyChart.data.labels = years.map(String);
                 studyChart.data.datasets[0].data = yearData;
+                evoLabel = `${years[0]} - ${years[4]}`;
             }
+
+            // Tonalidade das barras: quanto mais tempo estudado naquele dia/mês/ano
+            // (em relação ao maior valor do período exibido), mais escuro o dourado.
+            const dataArr = studyChart.data.datasets[0].data;
+            const maxVal = Math.max(0, ...dataArr);
+            studyChart.data.datasets[0].backgroundColor = dataArr.map(v => _evoBarColor(v, maxVal));
 
             // Atualiza tooltip para mostrar horas formatadas
             studyChart.options.plugins.tooltip.callbacks.label = ctx => {
@@ -5627,6 +5698,12 @@ function renderHistoryTab() {
 
             studyChart.update();
             if(studyTypeChart) updateStudyTypeChartData();
+
+            // Navegação (setas) — visível apenas para semana/mês/ano
+            const evoNavEl = document.getElementById('evo-chart-nav');
+            if (evoNavEl) evoNavEl.style.visibility = (currentChartPeriod === 'daily') ? 'hidden' : 'visible';
+            const evoLabelEl = document.getElementById('evo-chart-period-label');
+            if (evoLabelEl) evoLabelEl.innerText = evoLabel || '--';
         }
 
         function initStudyTypeChart() {
@@ -8427,6 +8504,12 @@ function renderHistoryTab() {
 
             syncDurationFromHMS();
             const duration = parseInt(document.getElementById('form-duration').value) || 0;
+            // Segundos exatos da sessão (a partir dos campos HH/MM/SS, sejam eles
+            // preenchidos manualmente ou vindos do cronômetro).
+            const durH = parseInt(document.getElementById('form-dur-h').value) || 0;
+            const durM = parseInt(document.getElementById('form-dur-m').value) || 0;
+            const durS = parseInt(document.getElementById('form-dur-s').value) || 0;
+            const durationSec = durH * 3600 + durM * 60 + durS;
 
             const sData = studyDb.syllabus.find(s => s.subject === subject);
             if (sData) {
@@ -8448,7 +8531,7 @@ function renderHistoryTab() {
 
             studyDb.history.push({
                 id: Date.now(), date: sessionDate,
-                subject, topic, duration, type,
+                subject, topic, duration, durationSec, type,
                 qCorrect: qC, qTotal: qT, pages, notes
             });
 
