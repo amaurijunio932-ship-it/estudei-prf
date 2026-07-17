@@ -740,16 +740,32 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex flex-col">
+                    <div class="flex items-center justify-between">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
-                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-syllabus-progress">0.0%</h3>
-                        <div class="w-full bg-blue-950 rounded-full h-1.5 mt-2">
-                            <div class="bg-yellow-400 h-1.5 rounded-full transition-all duration-500" id="stat-syllabus-progress-bar" style="width: 0%"></div>
-                        </div>
+                        <div class="text-yellow-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                     </div>
-                    <div class="text-yellow-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="flex justify-center -mt-1 -mb-3">
+                        <svg viewBox="0 0 200 120" class="w-full max-w-[170px]">
+                            <!-- Trilha de fundo -->
+                            <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#0d1e36" stroke-width="16" stroke-linecap="round"/>
+                            <!-- Marcadores -->
+                            <g stroke="#1d355c" stroke-width="2">
+                                <line x1="20" y1="100" x2="26" y2="100"/>
+                                <line x1="41.7" y1="43.4" x2="46.9" y2="46.3"/>
+                                <line x1="100" y1="20" x2="100" y2="26"/>
+                                <line x1="158.3" y1="43.4" x2="153.1" y2="46.3"/>
+                                <line x1="180" y1="100" x2="174" y2="100"/>
+                            </g>
+                            <!-- Arco de progresso -->
+                            <path id="stat-syllabus-progress-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FFD400" stroke-width="16" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="251.33" style="transition: stroke-dashoffset 0.6s ease, stroke 0.6s ease;"/>
+                            <!-- Ponteiro -->
+                            <line id="stat-syllabus-progress-needle" x1="100" y1="100" x2="100" y2="30" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round" style="transform-origin: 100px 100px; transform: rotate(-90deg); transition: transform 0.6s ease;"/>
+                            <circle cx="100" cy="100" r="6" fill="#e2e8f0"/>
+                            <text id="stat-syllabus-progress" x="100" y="98" text-anchor="middle" font-size="26" font-weight="900" fill="#ffffff">0.0%</text>
+                        </svg>
+                    </div>
                 </div>
 
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
@@ -788,6 +804,16 @@
                         <p class="text-xs text-gray-400 mt-1" id="stat-streak-label">dias seguidos</p>
                     </div>
                     <div class="text-orange-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                </div>
+
+                <!-- NOVO: Salário PRF -->
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Salário PRF</span>
+                        <h3 class="text-2xl font-black mt-1 text-emerald-400">R$ 12.253<span class="text-lg text-gray-400">,84</span></h3>
+                        <p class="text-xs text-gray-400 mt-1">Remuneração inicial da carreira</p>
+                    </div>
+                    <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-sack-dollar"></i></div>
                 </div>
             </div>
 
@@ -1015,10 +1041,71 @@
                 </div>
             </div>
 
+            <!-- KPIs do Ciclo -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-lg">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1"><i class="fa-solid fa-chart-simple text-prf-yellow"></i> Progresso</span>
+                    <p class="text-2xl font-black text-white mt-1" id="cycle-kpi-progress-pct">0%</p>
+                    <div class="w-full bg-blue-950 rounded-full h-1.5 mt-2 overflow-hidden">
+                        <div id="cycle-kpi-progress-bar" class="h-1.5 rounded-full bg-yellow-400 transition-all duration-500" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-lg">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1"><i class="fa-regular fa-clock text-prf-yellow"></i> Tempo Planejado</span>
+                    <p class="text-2xl font-black text-white mt-1" id="cycle-kpi-total-time">0h 00m</p>
+                    <p class="text-xs text-gray-500 mt-2" id="cycle-kpi-subjects-count">0 matérias</p>
+                </div>
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-lg">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1"><i class="fa-solid fa-list-check text-prf-yellow"></i> Etapas Concluídas</span>
+                    <p class="text-2xl font-black text-white mt-1" id="cycle-kpi-steps">0 / 0</p>
+                    <p class="text-xs text-gray-500 mt-2" id="cycle-kpi-remaining">Restam 0 etapas</p>
+                </div>
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-lg">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1"><i class="fa-solid fa-book-open text-prf-yellow"></i> Matéria Atual</span>
+                    <p class="text-lg font-black text-white mt-1 truncate" id="cycle-kpi-current-subject">—</p>
+                    <p class="text-xs text-gray-500 mt-2" id="cycle-kpi-current-duration"></p>
+                </div>
+            </div>
+
             <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
                 <h3 class="text-lg font-black text-white mb-4">Avanço do Ciclo Atual</h3>
-                <div class="flex flex-wrap items-center gap-3" id="cycle-steps-visual-container">
+                <div class="flex items-center gap-0 overflow-x-auto pb-2" id="cycle-steps-visual-container">
                     <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Gráficos do Ciclo -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                    <h3 class="text-lg font-black text-white mb-1"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Distribuição do Ciclo</h3>
+                    <p class="text-xs text-gray-500 mb-4">Tempo planejado por matéria em uma volta completa do ciclo</p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4">
+                        <div class="relative w-40 h-40 flex-shrink-0">
+                            <canvas id="cycleDistributionChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-lg font-black text-white" id="cycle-dist-total">0h</span>
+                                <span class="text-xxs text-gray-500 uppercase font-bold">por volta</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow w-full space-y-1.5 max-h-40 overflow-y-auto pr-1" id="cycle-dist-legend">
+                            <!-- Preenchido dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-scale-balanced text-prf-yellow mr-2"></i>Planejado vs. Estudado</h3>
+                        <div class="flex gap-1 bg-blue-950 p-1 rounded-lg">
+                            <button onclick="setCyclePvaPeriod('semana')" id="btn-cyclepva-semana" class="px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow transition">Semana</button>
+                            <button onclick="setCyclePvaPeriod('mes')" id="btn-cyclepva-mes" class="px-2.5 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
+                            <button onclick="setCyclePvaPeriod('total')" id="btn-cyclepva-total" class="px-2.5 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Total</button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">Compara o tempo planejado no ciclo com o tempo efetivamente registado</p>
+                    <div class="h-52">
+                        <canvas id="cyclePvaChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -1222,6 +1309,15 @@
                     <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                         <h3 class="text-lg font-black text-white"><i class="fa-solid fa-award text-prf-yellow mr-2"></i>Dica do Dia</h3>
                         <div class="text-sm text-gray-300 leading-relaxed" id="daily-tip-text"></div>
+                    </div>
+
+                    <!-- Caixa de Anotações -->
+                    <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-black text-white"><i class="fa-solid fa-note-sticky text-prf-yellow mr-2"></i>Anotações Rápidas</h3>
+                            <span class="text-xxs text-gray-500 font-medium" id="scratchpad-save-indicator">salvo automaticamente</span>
+                        </div>
+                        <textarea id="local-scratchpad" oninput="saveScratchpad()" rows="6" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-yellow-400 resize-y placeholder-gray-500" placeholder="Anote aqui o que quiser lembrar: dúvidas, pegadinhas, artigos de lei, o que fizer sentido..."></textarea>
                     </div>
 
                     <!-- Sessões Recentes -->
@@ -3130,7 +3226,7 @@
 
         // === 1. DASHBOARD COMPONENT ===
         function updateDashboardMetrics() {
-            let totalMinutes = studyDb.history.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
+            let totalMinutes = _sumDurationMinutes(studyDb.history);
             
             let totalQuestions = 0;
             let correctQuestions = 0;
@@ -3156,8 +3252,20 @@
             document.getElementById('stat-accuracy-fraction').innerText = totalQuestions > 0 ? `${correctQuestions} acertos • ${errorCount} erros (${totalQuestions} questões)` : 'Sem questões registradas';
 
             let syllabusProgress = totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : "0.0";
-            document.getElementById('stat-syllabus-progress').innerText = `${syllabusProgress}%`;
-            document.getElementById('stat-syllabus-progress-bar').style.width = `${syllabusProgress}%`;
+            const gaugeArc = document.getElementById('stat-syllabus-progress-arc');
+            const gaugeNeedle = document.getElementById('stat-syllabus-progress-needle');
+            const gaugeText = document.getElementById('stat-syllabus-progress');
+            const gaugePct = Math.max(0, Math.min(100, parseFloat(syllabusProgress)));
+            if (gaugeText) gaugeText.textContent = `${syllabusProgress}%`;
+            if (gaugeArc) {
+                const arcLength = 251.33;
+                gaugeArc.style.strokeDashoffset = arcLength * (1 - gaugePct / 100);
+                gaugeArc.style.stroke = gaugePct >= 66 ? '#10b981' : gaugePct >= 33 ? '#FFD400' : '#ef4444';
+            }
+            if (gaugeNeedle) {
+                const angle = -90 + (gaugePct / 100) * 180;
+                gaugeNeedle.style.transform = `rotate(${angle}deg)`;
+            }
 
             let cycleDone = studyDb.studyCycle.filter(s => s.status === "Concluído").length;
             let cycleCompletion = studyDb.studyCycle.length > 0 ? Math.round((cycleDone / studyDb.studyCycle.length) * 100) : 0;
@@ -3207,7 +3315,7 @@
                         else color = "text-red-400";
                     }
 
-                    let mins = studyDb.history.filter(s => s.subject === sub.subject).reduce((acc, curr) => acc + parseInt(curr.duration || 0), 0);
+                    let mins = _sumDurationMinutes(studyDb.history.filter(s => s.subject === sub.subject));
 
                     performanceGrid.innerHTML += `
                         <div class="bg-blue-950 p-4 rounded-xl border border-blue-900 shadow-sm flex flex-col justify-between">
@@ -3235,7 +3343,7 @@
             const thEl = document.getElementById('stat-total-hours');
             if (thEl) { const h=Math.floor(totalMinutes/60),m=totalMinutes%60; thEl.innerText=`${h}h ${String(m).padStart(2,'0')}m`; }
             const todayStr2 = todayBrazil();
-            const todayMin2 = studyDb.history.filter(s=>s.date===todayStr2).reduce((a,s)=>a+parseInt(s.duration||0),0);
+            const todayMin2 = _sumDurationMinutes(studyDb.history.filter(s=>s.date===todayStr2));
             const todayEl = document.getElementById('stat-today-hours');
             if (todayEl) { const th=Math.floor(todayMin2/60),tm=todayMin2%60; todayEl.innerText=`Hoje: ${th>0?th+'h ':''}`+tm+'min'; }
 
@@ -3290,8 +3398,15 @@
             })();
         }
 
+        let _scratchpadSaveTimeout = null;
         function saveScratchpad() {
-            storageSet('estudei_prf_scratchpad', document.getElementById('local-scratchpad').value);
+            const indicator = document.getElementById('scratchpad-save-indicator');
+            if (indicator) { indicator.innerText = 'salvando...'; indicator.className = 'text-xxs text-yellow-400 font-medium'; }
+            clearTimeout(_scratchpadSaveTimeout);
+            _scratchpadSaveTimeout = setTimeout(() => {
+                storageSet('estudei_prf_scratchpad', document.getElementById('local-scratchpad').value);
+                if (indicator) { indicator.innerText = 'salvo automaticamente ✓'; indicator.className = 'text-xxs text-emerald-400 font-medium'; }
+            }, 500);
         }
 
         // === 2. EDITAL VERTICALIZADO COMPONENT ===
@@ -3779,22 +3894,36 @@
 
             stepsDiv.innerHTML = ''; tbody.innerHTML = '';
 
-            studyDb.studyCycle.forEach((item, idx) => {
+            const cycle = studyDb.studyCycle || [];
+            const totalSteps = cycle.length;
+            const doneSteps = cycle.filter(c => c.status === "Concluído").length;
+            const pct = totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0;
+
+            cycle.forEach((item, idx) => {
                 let isCurrent = (studyDb.currentCycleStep === idx);
-                
-                // Visual Steps
-                let stepClass = isCurrent ? "bg-yellow-400 text-slate-900 font-bold scale-105" : 
-                               (item.status === "Concluído" ? "bg-emerald-500/20 text-emerald-300" : "bg-blue-950 text-gray-300");
+                let isDone = item.status === "Concluído";
+
+                // Visual Steps — timeline com nó + linha conectora
+                let nodeClass = isCurrent ? "bg-yellow-400 border-yellow-300 text-slate-900 scale-110 shadow-lg shadow-yellow-400/30" :
+                                isDone ? "bg-emerald-500 border-emerald-400 text-white" :
+                                "bg-blue-950 border-blue-800 text-gray-400";
+                let lineClass = (isDone || isCurrent) ? "bg-emerald-500" : "bg-blue-900";
+                let iconHtml = isDone ? '<i class="fa-solid fa-check text-xs"></i>' : (idx + 1);
                 stepsDiv.innerHTML += `
-                    <div class="px-3 py-2 rounded-xl text-xs flex items-center gap-2 border border-blue-800 ${stepClass}">
-                        <span class="font-mono">${idx + 1}</span> <span>${item.subject} (${item.duration}m)</span>
+                    <div class="flex items-center flex-shrink-0">
+                        <div class="flex flex-col items-center gap-1.5 w-20 cursor-pointer group" onclick="startSpecificCycleStep(${idx})" title="${item.subject} — ${item.duration}min">
+                            <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-black text-xs transition-all duration-300 ${nodeClass} ${isCurrent ? 'animate-pulse' : ''}">${iconHtml}</div>
+                            <span class="text-xxs font-bold text-center leading-tight truncate w-full ${isCurrent ? 'text-yellow-400' : 'text-gray-400'} group-hover:text-white transition">${item.subject}</span>
+                            <span class="text-xxs text-gray-600">${item.duration}m</span>
+                        </div>
+                        ${idx < totalSteps - 1 ? `<div class="h-0.5 w-6 flex-shrink-0 rounded ${lineClass}"></div>` : ''}
                     </div>
                 `;
 
                 // Table
                 let rowBgClass = isCurrent ? "bg-yellow-400/10 border-l-4 border-yellow-400" : "";
                 let badge = isCurrent ? `<span class="bg-yellow-400 text-slate-900 px-2 rounded text-xs font-black animate-pulse">AGORA</span>` :
-                            (item.status === "Concluído" ? `<span class="bg-emerald-500/20 text-emerald-400 px-2 rounded text-xs">Feito</span>` : `<span class="bg-slate-800 text-slate-400 px-2 rounded text-xs">Fila</span>`);
+                            (isDone ? `<span class="bg-emerald-500/20 text-emerald-400 px-2 rounded text-xs">Feito</span>` : `<span class="bg-slate-800 text-slate-400 px-2 rounded text-xs">Fila</span>`);
 
                 tbody.innerHTML += `
                     <tr class="${rowBgClass} hover:bg-blue-950/20">
@@ -3806,7 +3935,201 @@
                     </tr>
                 `;
             });
+
+            // KPIs
+            const totalMinutes = cycle.reduce((acc, c) => acc + (Number(c.duration) || 0), 0);
+            const uniqueSubjects = new Set(cycle.map(c => c.subject)).size;
+            const currentStep = cycle[studyDb.currentCycleStep];
+
+            const pctEl = document.getElementById('cycle-kpi-progress-pct');
+            if (pctEl) pctEl.innerText = `${pct}%`;
+            const barEl = document.getElementById('cycle-kpi-progress-bar');
+            if (barEl) barEl.style.width = `${pct}%`;
+
+            const totalTimeEl = document.getElementById('cycle-kpi-total-time');
+            if (totalTimeEl) totalTimeEl.innerText = _fmtDurHM(totalMinutes);
+            const subjCountEl = document.getElementById('cycle-kpi-subjects-count');
+            if (subjCountEl) subjCountEl.innerText = `${uniqueSubjects} matéria${uniqueSubjects !== 1 ? 's' : ''} · ${totalSteps} etapa${totalSteps !== 1 ? 's' : ''}`;
+
+            const stepsEl = document.getElementById('cycle-kpi-steps');
+            if (stepsEl) stepsEl.innerText = `${doneSteps} / ${totalSteps}`;
+            const remainEl = document.getElementById('cycle-kpi-remaining');
+            if (remainEl) remainEl.innerText = totalSteps > 0 ? `Restam ${totalSteps - doneSteps} etapa${(totalSteps - doneSteps) !== 1 ? 's' : ''}` : 'Ciclo vazio';
+
+            const curSubEl = document.getElementById('cycle-kpi-current-subject');
+            if (curSubEl) curSubEl.innerText = currentStep ? currentStep.subject : '—';
+            const curDurEl = document.getElementById('cycle-kpi-current-duration');
+            if (curDurEl) curDurEl.innerText = currentStep ? `${currentStep.duration} min planejados` : 'Ciclo concluído';
+
+            try { renderCycleDistributionChart(); } catch(e) { console.error('cycleDist', e); }
+            try { renderCyclePvaChart(); } catch(e) { console.error('cyclePva', e); }
         }
+
+        // Retorna cor estável para uma matéria, atribuindo uma nova cor da paleta
+        // caso a matéria ainda não tenha histórico registado (ex: recém-adicionada ao ciclo).
+        function _colorForSubject(subject) {
+            const map = _getSubjectColorMap();
+            if (map[subject]) return map[subject];
+            const palette = _subjectChartPalette();
+            const usedCount = Object.keys(window._subjectColorMap || {}).length;
+            const color = palette[usedCount % palette.length];
+            window._subjectColorMap[subject] = color;
+            return color;
+        }
+
+        // Gráfico de rosca: distribuição do tempo planejado por matéria no ciclo atual
+        function renderCycleDistributionChart() {
+            const canvas = document.getElementById('cycleDistributionChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const totals = {};
+            (studyDb.studyCycle || []).forEach(item => {
+                totals[item.subject] = (totals[item.subject] || 0) + (Number(item.duration) || 0);
+            });
+            const subjects = Object.keys(totals).filter(s => totals[s] > 0).sort((a,b) => totals[b]-totals[a]);
+            const dataVals = subjects.map(s => totals[s]);
+            const colors = subjects.map(s => _colorForSubject(s));
+            const grandTotal = dataVals.reduce((a,b) => a+b, 0);
+
+            const totalEl = document.getElementById('cycle-dist-total');
+            if (totalEl) totalEl.innerText = _fmtDurHM(grandTotal);
+
+            const legendEl = document.getElementById('cycle-dist-legend');
+            if (legendEl) {
+                if (subjects.length === 0) {
+                    legendEl.innerHTML = `<p class="text-xs text-gray-500 text-center py-6">Configure o ciclo para ver a distribuição.</p>`;
+                } else {
+                    legendEl.innerHTML = subjects.map((s, i) => {
+                        const pct = grandTotal > 0 ? ((dataVals[i]/grandTotal)*100).toFixed(1) : '0.0';
+                        return `<div class="flex items-center justify-between gap-2 py-1.5 border-b border-blue-950/60 last:border-0">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${colors[i]}"></span>
+                                <span class="text-xs font-bold text-gray-200 truncate">${s}</span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <span class="text-xs font-black text-white">${_fmtDurHM(dataVals[i])}</span>
+                                <span class="text-xxs text-gray-500 font-bold">(${pct}%)</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            if (cycleDistributionChart) { cycleDistributionChart.destroy(); cycleDistributionChart = null; }
+            cycleDistributionChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: subjects,
+                    datasets: [{ data: dataVals, backgroundColor: colors, borderWidth: 2, borderColor: '#111c36', hoverOffset: 6 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const val = ctx.parsed;
+                                    const pct = grandTotal > 0 ? ((val/grandTotal)*100).toFixed(1) : '0.0';
+                                    return ` ${ctx.label}: ${_fmtDurHM(val)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        window.renderCycleDistributionChart = renderCycleDistributionChart;
+
+        function setCyclePvaPeriod(period) {
+            window._cyclePvaPeriod = period;
+            ['semana','mes','total'].forEach(p => {
+                const btn = document.getElementById('btn-cyclepva-' + p);
+                if (!btn) return;
+                btn.className = (p === period)
+                    ? 'px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow transition'
+                    : 'px-2.5 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition';
+            });
+            renderCyclePvaChart();
+        }
+        window.setCyclePvaPeriod = setCyclePvaPeriod;
+
+        // Gráfico de barras: tempo planejado no ciclo vs. tempo realmente estudado no período
+        function renderCyclePvaChart() {
+            const canvas = document.getElementById('cyclePvaChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const period = window._cyclePvaPeriod || 'semana';
+            const n = new Date();
+            const tzNow = new Date(n.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+            let startISO = null, endISO = null;
+            if (period === 'semana') {
+                const dow = (tzNow.getDay() + 6) % 7;
+                const monday = new Date(tzNow); monday.setDate(tzNow.getDate() - dow);
+                const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+                startISO = toISO(monday); endISO = toISO(sunday);
+            } else if (period === 'mes') {
+                const first = new Date(tzNow.getFullYear(), tzNow.getMonth(), 1);
+                const last = new Date(tzNow.getFullYear(), tzNow.getMonth() + 1, 0);
+                startISO = toISO(first); endISO = toISO(last);
+            }
+
+            const planned = {};
+            (studyDb.studyCycle || []).forEach(item => {
+                planned[item.subject] = (planned[item.subject] || 0) + (Number(item.duration) || 0);
+            });
+
+            const filteredHistory = !startISO ? studyDb.history :
+                studyDb.history.filter(s => s.date >= startISO && s.date <= endISO);
+            const actual = {};
+            filteredHistory.forEach(s => { actual[s.subject] = (actual[s.subject] || 0) + (_sessionSeconds(s) / 60); });
+
+            // Considera apenas matérias presentes no ciclo, para manter o gráfico focado no planejamento
+            const subjects = Object.keys(planned).sort((a,b) => planned[b]-planned[a]);
+            const plannedVals = subjects.map(s => Math.round(planned[s]));
+            const actualVals = subjects.map(s => Math.round(actual[s] || 0));
+
+            if (cyclePvaChart) { cyclePvaChart.destroy(); cyclePvaChart = null; }
+
+            if (subjects.length === 0) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            cyclePvaChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [
+                        { label: 'Planejado', data: plannedVals, backgroundColor: '#3b82f6', borderRadius: 4, maxBarThickness: 18 },
+                        { label: 'Estudado', data: actualVals, backgroundColor: '#FFD400', borderRadius: 4, maxBarThickness: 18 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: subjects.length > 4 ? 'y' : 'x',
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.08)' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.08)' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' }, boxWidth: 12 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ` ${ctx.dataset.label}: ${_fmtDurHM(ctx.parsed[subjects.length > 4 ? 'x' : 'y'])}`; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        window.renderCyclePvaChart = renderCyclePvaChart;
 
         function resetCycleProgress() {
             studyDb.studyCycle.forEach(c => c.status = "A Fazer");
@@ -4483,6 +4806,21 @@
         }
 
         // Retorna a data atual no fuso de Brasília (UTC-3) no formato YYYY-MM-DD
+        // Retorna a duração exata de uma sessão em segundos.
+        // Usa durationSec quando disponível (sessões novas); sessões antigas,
+        // que nunca gravaram segundos, caem no fallback em minutos (*60).
+        function _sessionSeconds(s) {
+            if (s.durationSec !== undefined && s.durationSec !== null) return Number(s.durationSec) || 0;
+            return (Number(s.duration) || 0) * 60;
+        }
+        // Soma a duração exata (em segundos) de uma lista de sessões e só
+        // arredonda para minutos UMA vez no final — evita o erro de
+        // arredondamento acumulado que ocorria ao somar minutos já arredondados.
+        function _sumDurationMinutes(sessions) {
+            const totalSec = sessions.reduce((acc, s) => acc + _sessionSeconds(s), 0);
+            return Math.round(totalSec / 60);
+        }
+
         function todayBrazil() {
             const now = new Date();
             const brt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
@@ -4574,6 +4912,15 @@
             const formSubSelect = document.getElementById('form-subject');
             const resSubSelect = document.getElementById('modal-summary-subject');
 
+            // Preserva a seleção atual (disciplina + tópico) antes de reconstruir as
+            // opções. Sem isso, qualquer chamada a esta função em segundo plano
+            // (auto-sync a cada 3min, listener entre dispositivos, reconexão à
+            // internet) apaga a disciplina escolhida pelo utilizador — mesmo com
+            // um cronômetro em andamento — e o <select> volta para "Selecione...".
+            const prevSubjectVal = formSubSelect ? formSubSelect.value : '';
+            const topicSelect = document.getElementById('form-topic');
+            const prevTopicVal = topicSelect ? topicSelect.value : '';
+
             if (modalAddSubSelect) modalAddSubSelect.innerHTML = '<option value="">Selecione...</option><option value="NEW_SUBJECT">+ Criar Nova Disciplina...</option>';
             if (formSubSelect) formSubSelect.innerHTML = '<option value="">Selecione...</option>';
             if (resSubSelect) resSubSelect.innerHTML = '';
@@ -4585,6 +4932,16 @@
                 if (resSubSelect) resSubSelect.innerHTML += opt;
             });
             populateSummaryTopicsDropdown();
+
+            // Restaura a disciplina, repopula os tópicos correspondentes e
+            // restaura o tópico selecionado, se ainda existir no plano de estudos.
+            if (formSubSelect && prevSubjectVal && studyDb.syllabus.some(s => s.subject === prevSubjectVal)) {
+                formSubSelect.value = prevSubjectVal;
+                updateFormTopics();
+                if (topicSelect && prevTopicVal) {
+                    topicSelect.value = prevTopicVal;
+                }
+            }
         }
 
         // Mapa global disciplina→índice para cor estável
@@ -5156,7 +5513,7 @@ function renderHistoryTab() {
                 const isToday = date === (() => { const n = new Date(); const tz = new Date(n.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})); return `${tz.getFullYear()}-${String(tz.getMonth()+1).padStart(2,'0')}-${String(tz.getDate()).padStart(2,'0')}`; })();
                 const isYesterday = (() => { const n = new Date(); const tz = new Date(n.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})); tz.setDate(tz.getDate()-1); return `${tz.getFullYear()}-${String(tz.getMonth()+1).padStart(2,'0')}-${String(tz.getDate()).padStart(2,'0')}`; })() === date;
 
-                const totalMins = sessions.reduce((a,s) => a + (parseInt(s.duration)||0), 0);
+                const totalMins = _sumDurationMinutes(sessions);
                 const th = Math.floor(totalMins/60), tm = totalMins%60;
                 const totalStr = th > 0 ? `${th}h ${String(tm).padStart(2,'0')}min` : `${tm}min`;
                 const dayLabel = isToday ? '🟡 Hoje' : isYesterday ? '🔵 Ontem' : `${dayName}-feira`.replace('Sábado-feira','Sábado').replace('Domingo-feira','Domingo').replace('Segunda-feira','Segunda-feira').replace('Terça-feira','Terça-feira').replace('Quarta-feira','Quarta-feira').replace('Quinta-feira','Quinta-feira').replace('Sexta-feira','Sexta-feira');
@@ -5629,8 +5986,7 @@ function renderHistoryTab() {
 
             if (currentChartPeriod === 'daily') {
                 // UMA única barra: total do dia de hoje
-                const total = studyDb.history.filter(s => s.date === todayStr)
-                                             .reduce((sum, s) => sum + (s.duration||0), 0);
+                const total = _sumDurationMinutes(studyDb.history.filter(s => s.date === todayStr));
                 studyChart.data.labels = ['Hoje'];
                 studyChart.data.datasets[0].data = [total];
                 evoLabel = 'Hoje';
@@ -5638,7 +5994,7 @@ function renderHistoryTab() {
             else if (currentChartPeriod === 'weekly') {
                 // Uma barra por dia da semana (Seg→Dom), total de minutos por dia
                 const days = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-                let weekData = [0,0,0,0,0,0,0];
+                let weekSecs = [0,0,0,0,0,0,0];
                 const dow = todayDate.getDay(); // 0=dom
                 const start = new Date(todayDate);
                 start.setDate(todayDate.getDate() - (dow === 0 ? 6 : dow - 1) + evoOffset * 7);
@@ -5649,37 +6005,37 @@ function renderHistoryTab() {
                     const d = new Date(s.date + "T12:00:00");
                     if (d >= start && d <= end) {
                         const idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
-                        weekData[idx] += (s.duration || 0);
+                        weekSecs[idx] += _sessionSeconds(s);
                     }
                 });
                 studyChart.data.labels = days;
-                studyChart.data.datasets[0].data = weekData;
+                studyChart.data.datasets[0].data = weekSecs.map(sec => Math.round(sec / 60));
                 evoLabel = `${String(start.getDate()).padStart(2,'0')}/${String(start.getMonth()+1).padStart(2,'0')} a ${String(end.getDate()).padStart(2,'0')}/${String(end.getMonth()+1).padStart(2,'0')}`;
             }
             else if (currentChartPeriod === 'monthly') {
                 // Uma barra por mês do ano selecionado
                 const targetYear = year + evoOffset;
-                let monthData = Array(12).fill(0);
+                let monthSecs = Array(12).fill(0);
                 studyDb.history.forEach(s => {
                     const d = new Date(s.date + "T12:00:00");
-                    if (d.getFullYear() === targetYear) monthData[d.getMonth()] += (s.duration||0);
+                    if (d.getFullYear() === targetYear) monthSecs[d.getMonth()] += _sessionSeconds(s);
                 });
                 studyChart.data.labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-                studyChart.data.datasets[0].data = monthData;
+                studyChart.data.datasets[0].data = monthSecs.map(sec => Math.round(sec / 60));
                 evoLabel = `${targetYear}`;
             }
             else if (currentChartPeriod === 'yearly') {
                 // Uma barra por ano (janela de 5 anos, navegável)
                 const baseYear = year + evoOffset * 5;
                 const years = [baseYear-4, baseYear-3, baseYear-2, baseYear-1, baseYear];
-                let yearData = [0,0,0,0,0];
+                let yearSecs = [0,0,0,0,0];
                 studyDb.history.forEach(s => {
                     const y = new Date(s.date + "T12:00:00").getFullYear();
                     const idx = years.indexOf(y);
-                    if (idx !== -1) yearData[idx] += (s.duration||0);
+                    if (idx !== -1) yearSecs[idx] += _sessionSeconds(s);
                 });
                 studyChart.data.labels = years.map(String);
-                studyChart.data.datasets[0].data = yearData;
+                studyChart.data.datasets[0].data = yearSecs.map(sec => Math.round(sec / 60));
                 evoLabel = `${years[0]} - ${years[4]}`;
             }
 
@@ -5719,6 +6075,9 @@ function renderHistoryTab() {
         let subjectTimeChart = null;
         window._subjectChartPeriod = window._subjectChartPeriod || 'ano';
         window._subjectChartOffset = window._subjectChartOffset || 0;
+        let cycleDistributionChart = null;
+        let cyclePvaChart = null;
+        window._cyclePvaPeriod = window._cyclePvaPeriod || 'semana';
 
         function _subjectChartPalette() {
             return ['#FFD400','#3b82f6','#a855f7','#10b981','#f97316','#94a3b8','#22c55e','#ef4444','#06b6d4','#eab308','#8b5cf6','#f43f5e','#14b8a6','#f59e0b','#64748b'];
@@ -5729,7 +6088,7 @@ function renderHistoryTab() {
             if (!window._subjectColorMap) window._subjectColorMap = {};
             const palette = _subjectChartPalette();
             const totals = {};
-            studyDb.history.forEach(s => { totals[s.subject] = (totals[s.subject]||0) + (parseInt(s.duration)||0); });
+            studyDb.history.forEach(s => { totals[s.subject] = (totals[s.subject]||0) + _sessionSeconds(s)/60; });
             const subjectsSorted = Object.keys(totals).sort((a,b) => totals[b]-totals[a]);
             subjectsSorted.forEach((subj, i) => {
                 if (!window._subjectColorMap[subj]) window._subjectColorMap[subj] = palette[i % palette.length];
@@ -5816,10 +6175,10 @@ function renderHistoryTab() {
             }
 
             const totals = {};
-            filtered.forEach(s => { totals[s.subject] = (totals[s.subject]||0) + (parseInt(s.duration)||0); });
+            filtered.forEach(s => { totals[s.subject] = (totals[s.subject]||0) + _sessionSeconds(s); });
             const subjects = Object.keys(totals).filter(k => totals[k] > 0).sort((a,b) => totals[b]-totals[a]);
             const colorMap = _getSubjectColorMap();
-            const dataVals = subjects.map(s => totals[s]);
+            const dataVals = subjects.map(s => Math.round(totals[s] / 60));
             const colors = subjects.map(s => colorMap[s] || '#64748b');
             const grandTotal = dataVals.reduce((a,b) => a+b, 0);
 
@@ -5834,14 +6193,14 @@ function renderHistoryTab() {
                     legendEl.innerHTML = `<p class="text-xs text-gray-500 text-center py-6">Nenhum estudo registado neste período.</p>`;
                 } else {
                     legendEl.innerHTML = subjects.map((s, i) => {
-                        const pct = grandTotal > 0 ? ((totals[s]/grandTotal)*100).toFixed(1) : '0.0';
+                        const pct = grandTotal > 0 ? ((dataVals[i]/grandTotal)*100).toFixed(1) : '0.0';
                         return `<div class="flex items-center justify-between gap-2 py-2 border-b border-blue-950/60 last:border-0">
                             <div class="flex items-center gap-2 min-w-0">
                                 <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${colors[i]}"></span>
                                 <span class="text-xs font-bold text-gray-200 truncate">${s}</span>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                <span class="text-xs font-black text-white"><i class="fa-regular fa-clock text-prf-yellow mr-0.5"></i> ${_fmtDurHM(totals[s])}</span>
+                                <span class="text-xs font-black text-white"><i class="fa-regular fa-clock text-prf-yellow mr-0.5"></i> ${_fmtDurHM(dataVals[i])}</span>
                                 <span class="text-xxs text-gray-500 font-bold">(${pct}%)</span>
                             </div>
                         </div>`;
@@ -5889,10 +6248,12 @@ function renderHistoryTab() {
             const types = ['Teoria','Questões','Revisão','Mapa Mental','Flashcards','Resumo','Simulado','Videoaula','Áudio','Outros'];
             const colors = ['#FFD400','#10b981','#3b82f6','#f97316','#a855f7','#06b6d4','#ef4444','#ec4899','#84cc16','#94a3b8'];
             let data = new Array(types.length).fill(0);
+            const secByType = new Array(types.length).fill(0);
             studyDb.history.forEach(s => {
                 const idx = types.indexOf(s.type);
-                if (idx >= 0) data[idx] += s.duration;
+                if (idx >= 0) secByType[idx] += _sessionSeconds(s);
             });
+            data = secByType.map(sec => Math.round(sec / 60));
             // Filtrar apenas tipos com dados
             const activeTypes = types.filter((_,i) => data[i] > 0);
             const activeData  = data.filter(d => d > 0);
@@ -6517,9 +6878,7 @@ function renderHistoryTab() {
             const goalEl = document.getElementById('daily-goal-input');
             const goalMin = parseInt(goalEl?.value) || 120;
             const todayStr = todayBrazil();
-            const todayMin = studyDb.history
-                .filter(s => s.date === todayStr)
-                .reduce((acc, s) => acc + parseInt(s.duration || 0), 0);
+            const todayMin = _sumDurationMinutes(studyDb.history.filter(s => s.date === todayStr));
 
             const pct = Math.min(100, Math.round((todayMin / goalMin) * 100));
             const bar = document.getElementById('daily-goal-bar');
@@ -8061,7 +8420,7 @@ function renderHistoryTab() {
         function calcMasteryScore(subject) {
             const hist = studyDb.history.filter(h => h.subject === subject);
             if (!hist.length) return 0;
-            const mins = hist.reduce((a, h) => a + (Number(h.duration) || 0), 0);
+            const mins = _sumDurationMinutes(hist);
             const hoursScore = Math.min((mins / 60) / 20, 1) * 30;
             const sub = studyDb.syllabus.find(s => s.subject === subject);
             let tQ = 0, tC = 0;
@@ -8097,7 +8456,7 @@ function renderHistoryTab() {
                 streak++; d.setDate(d.getDate() - 1);
             }
             const streakPts = Math.min(streak * 10, 300);
-            const totalHours = studyDb.history.reduce((a, h) => a + (Number(h.duration)||0), 0) / 60;
+            const totalHours = _sumDurationMinutes(studyDb.history) / 60;
             const hoursPts = Math.min(totalHours, 300);
             let tQ = 0, tC = 0;
             studyDb.syllabus.forEach(sub => sub.topics.forEach(t => { tQ += t.qTotal||0; tC += t.qCorrect||0; }));
@@ -8452,23 +8811,7 @@ function renderHistoryTab() {
                   <span style="font-size:10px;color:#6b7280;">Linha amarela tracejada = média Geral (todas as disciplinas)</span>
                 </div>
               </div>
-            </div>
-            <div style="background:linear-gradient(90deg,rgba(59,130,246,0.12),rgba(30,58,138,0.06));border:1px solid rgba(59,130,246,0.25);border-left:4px solid #3b82f6;border-radius:16px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
-              <i class="fa-solid fa-robot" style="color:#60a5fa;margin-top:2px;flex-shrink:0;"></i>
-              <div>
-                <div style="font-size:10px;font-weight:900;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Recomendação Adaptativa</div>
-                <div style="font-size:13px;color:#cbd5e1;line-height:1.5;">${rec}</div>
-              </div>
-            </div>
-            ${neglected.length?`<div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:16px;padding:14px 18px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <i class="fa-solid fa-clock-rotate-left" style="color:#f59e0b;"></i>
-                <span style="font-size:11px;font-weight:900;color:#f59e0b;text-transform:uppercase;">Disciplinas Negligenciadas</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                ${neglected.slice(0,6).map(n=>`<span style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;">${n.subject} <span style="color:#d97706;">${n.days}d</span></span>`).join('')}
-              </div>
-            </div>`:''}`;
+            </div>`;
 
             renderEvolutionChart();
         }
