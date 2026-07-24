@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard PRF - Edital Verticalizado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .table-container { max-height: calc(100vh - 250px); overflow-y: auto; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .status-nao-iniciado { background-color: #ffffff; }
+        .status-em-andamento { background-color: #fef9c3; }
+        .status-concluido { background-color: #dcfce3; }
+        
+        th { position: sticky; top: 0; background-color: #1e293b; color: white; z-index: 10; cursor: pointer;}
+        th:hover { background-color: #334155; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col">
+
+    <nav class="bg-blue-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-shield-halved text-2xl text-yellow-400"></i>
+                    <span class="font-bold text-xl tracking-wider">PROJETO PRF</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-800 hover:bg-blue-700 transition">Dashboard</button>
+                    <button onclick="switchTab('planilha')" id="tab-planilha" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Edital Verticalizado</button>
+                    <div class="w-px h-6 bg-blue-700"></div>
+                    <div id="sync-logged-out" class="flex items-center gap-2">
+                        <button onclick="openLoginModal()" class="px-3 py-2 rounded-md text-sm font-medium bg-yellow-500 hover:bg-yellow-400 text-blue-950 transition flex items-center gap-2">
+                            <i class="fa-solid fa-cloud"></i> Ativar Sincronização
+                        </button>
+                    </div>
+                    <div id="sync-logged-in" class="hidden items-center gap-3">
+                        <button onclick="forceSyncNow()" id="btn-force-sync" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2" title="Forçar sincronização agora">
+                            <i id="sync-icon" class="fa-solid fa-cloud-arrow-up"></i>
+                            <span id="sync-status-text">Sincronizado</span>
+                        </button>
+                        <button onclick="doLogout()" class="text-xs text-blue-300 hover:text-white transition" title="Sair da conta">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MODAL DE LOGIN -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-cloud text-blue-600 mr-2"></i>Sincronização na Nuvem</h3>
+                <button onclick="closeLoginModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">Use o <strong>mesmo e-mail e senha</strong> da sua Planilha Inteligente Estudei para sincronizar este edital entre seus dispositivos.</p>
+            <div class="space-y-3">
+                <input type="email" id="login-email" placeholder="E-mail" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="login-password" placeholder="Senha" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div id="login-error" class="hidden text-xs text-red-600 bg-red-50 p-2 rounded"></div>
+                <button onclick="doLogin()" id="btn-do-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">Entrar e Sincronizar</button>
+                <button onclick="doSignup()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition">Criar conta nova</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden flex flex-col">
+        
+        <div id="view-dashboard" class="flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
+            <!-- Header Dashboard -->
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">Visão Geral dos Estudos</h1>
+                <div class="flex gap-2 flex-wrap justify-end">
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importBackup(event)">
+                    <button onclick="document.getElementById('import-file').click()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2" title="Importar progresso de outro dispositivo">
+                        <i class="fa-solid fa-upload"></i> Importar Backup
+                    </button>
+                    <button onclick="exportBackup()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2" title="Salvar progresso para usar em outro dispositivo">
+                        <i class="fa-solid fa-download"></i> Exportar Backup
+                    </button>
+                    <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> Excel
+                    </button>
+                    <button onclick="resetData()" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Resetar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progresso Geral Barra -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between mb-2">
+                    <span class="font-semibold text-gray-600 uppercase text-sm">Progresso Global do Edital</span>
+                    <span id="global-percentage-text" class="font-bold text-blue-600">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="global-progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Cards Resumo -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-blue-100 p-4 rounded-lg text-blue-600"><i class="fa-solid fa-book-open text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Tópicos Concluídos</p>
+                        <p id="card-topics" class="text-2xl font-bold text-gray-800">0 / 0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-clock text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Horas Estudadas</p>
+                        <p id="card-hours" class="text-2xl font-bold text-gray-800">0h</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-green-100 p-4 rounded-lg text-green-600"><i class="fa-solid fa-check-double text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Questões Resolvidas</p>
+                        <p id="card-questions" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-purple-100 p-4 rounded-lg text-purple-600"><i class="fa-solid fa-rotate-left text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Total de Revisões</p>
+                        <p id="card-revisions" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                    <h3 class="font-semibold text-gray-700 mb-4">Progresso por Disciplina (%)</h3>
+                    <div class="relative h-72">
+                        <canvas id="chart-progress"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-semibold text-gray-700 mb-4">Questões por Bloco</h3>
+                    <div class="relative h-64 flex justify-center">
+                        <canvas id="chart-questions"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-planilha" class="hidden flex-1 flex flex-col h-full">
+            <div class="flex justify-between items-end mb-4 gap-4 flex-wrap">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Edital Verticalizado</h1>
+                    <p class="text-sm text-gray-500">Atualize seu progresso diretamente nas linhas.</p>
+                </div>
+                <div class="flex gap-3 flex-1 sm:flex-none">
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="search-input" placeholder="Buscar assunto..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64" oninput="applyFilters()">
+                    </div>
+                    <select id="filter-disciplina" class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="applyFilters()">
+                        <option value="Todas">Todas as Disciplinas</option>
+                        <!-- Options generated via JS -->
+                    </select>
+                    <select id="filter-status" class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="applyFilters()">
+                        <option value="Todos">Todos os Status</option>
+                        <option value="Não iniciado">Não iniciado</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 flex-1 relative">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr>
+                            <th onclick="setSort('disciplina')" class="p-3 font-semibold border-b border-gray-300 w-48"><div class="flex items-center gap-1">Disciplina <i id="sort-disciplina" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('assunto')" class="p-3 font-semibold border-b border-gray-300"><div class="flex items-center gap-1">Assunto <i id="sort-assunto" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('subassunto')" class="p-3 font-semibold border-b border-gray-300"><div class="flex items-center gap-1">Subassunto <i id="sort-subassunto" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('status')" class="p-3 font-semibold border-b border-gray-300 w-40"><div class="flex items-center gap-1">Status <i id="sort-status" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('horas')" class="p-3 font-semibold border-b border-gray-300 text-center w-24" title="Horas Estudadas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-clock"></i> Hr <i id="sort-horas" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('revisoes')" class="p-3 font-semibold border-b border-gray-300 text-center w-24" title="Revisões Feitas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Rev <i id="sort-revisoes" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('questoes')" class="p-3 font-semibold border-b border-gray-300 text-center w-28" title="Questões Resolvidas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-check-double"></i> Qtd <i id="sort-questoes" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('percentual')" class="p-3 font-semibold border-b border-gray-300 text-center w-24"><div class="flex justify-center items-center gap-1">% <i id="sort-percentual" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th class="p-3 font-semibold border-b border-gray-300">Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-200">
+                        <!-- Rows rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Dados brutos extraídos fielmente do PDF do Edital Verticalizado da PRF
+        const rawEditalData = [
+            // BLOCO I
+            // Língua Portuguesa
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '1 Compreensão e interpretação de textos de gêneros variados', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '2 Reconhecimento de tipos e gêneros textuais', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '3 Domínio da ortografia oficial', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '4 Domínio dos mecanismos de coesão textual', sub: '4.1 Emprego de elementos de referenciação, substituição e repetição, conectores' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '4 Domínio dos mecanismos de coesão textual', sub: '4.2 Emprego de tempos e modos verbais' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.1 Emprego das classes de palavras' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.2 Relações de coordenação entre orações e entre termos' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.3 Relações de subordinação entre orações e entre termos' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.4 Emprego dos sinais de pontuação' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.5 Concordância verbal e nominal' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.6 Regência verbal e nominal' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.7 Emprego do sinal indicativo de crase' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '5 Domínio da estrutura morfossintática do período', sub: '5.8 Colocação dos pronomes átonos' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '6 Reescrita de frases e parágrafos do texto', sub: '6.1 Significação das palavras' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '6 Reescrita de frases e parágrafos do texto', sub: '6.2 Substituição de palavras ou de trechos de texto' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '6 Reescrita de frases e parágrafos do texto', sub: '6.3 Reorganização da estrutura de orações e de períodos' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '6 Reescrita de frases e parágrafos do texto', sub: '6.4 Reescrita de textos de diferentes gêneros e níveis de formalidade' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '7 Correspondência oficial', sub: '7.1 Aspectos gerais da redação oficial' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '7 Correspondência oficial', sub: '7.2 Finalidade dos expedientes oficiais' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '7 Correspondência oficial', sub: '7.3 Adequação da linguagem ao tipo de documento' },
+            { bloco: 'Bloco I', disc: 'Língua Portuguesa', ass: '7 Correspondência oficial', sub: '7.4 Adequação do formato do texto ao gênero' },
+            // RLM
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '1 Modelagem de situações-problema por meio de equações do 1º e 2º graus e sistemas lineares', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '2 Noção de função', sub: '2.1 Análise gráfica' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '2 Noção de função', sub: '2.2 Funções afim, quadrática, exponencial e logarítmica' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '2 Noção de função', sub: '2.3 Aplicações' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '3 Taxas de variação de grandezas', sub: '3.1 Razão e proporção com aplicações' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '3 Taxas de variação de grandezas', sub: '3.2 Regra de três simples e composta' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '4 Porcentagem', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '5 Regularidades e padrões em sequências', sub: '5.1 Sequências numéricas' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '5 Regularidades e padrões em sequências', sub: '5.2 Progressão aritmética e geométrica' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '6 Noções básicas de contagem, probabilidade e estatística', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '7 Descrição e análise de dados', sub: '7.1 Leitura e interpretação de tabelas e gráficos' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '7 Descrição e análise de dados', sub: '7.2 Cálculo de médias e análise de desvios' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '8 Noções básicas de teoria dos conjuntos', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '9 Análise e interpretação de diferentes representações de figuras planas', sub: '9.1 Utilização de escalas' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '9 Análise e interpretação de diferentes representações de figuras planas', sub: '9.2 Visualização de figuras espaciais' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '9 Análise e interpretação de diferentes representações de figuras planas', sub: '9.3 Representações bidimensionais' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '10 Métrica', sub: '10.1 Áreas e volumes' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '10 Métrica', sub: '10.2 Estimativas' },
+            { bloco: 'Bloco I', disc: 'Raciocínio Lógico-Matemático', ass: '10 Métrica', sub: '10.3 Aplicações' },
+            // Informática
+            { bloco: 'Bloco I', disc: 'Informática', ass: '1 Conceito de internet e intranet', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '2 Conceitos e modos de utilização de tecnologias, ferramentas', sub: '2.1 Ferramentas e aplicativos comerciais de navegação, e-mail, busca, etc.' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '2 Conceitos e modos de utilização de tecnologias, ferramentas', sub: '2.2 Noções de sistema operacional (ambiente Windows)' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '2 Conceitos e modos de utilização de tecnologias, ferramentas', sub: '2.3 Acesso a distância, transferência de arquivos, áudio, vídeo' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '3 Transformação digital', sub: '3.1 Internet das coisas (IoT)' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '3 Transformação digital', sub: '3.2 Big data' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '3 Transformação digital', sub: '3.3 Inteligência artificial' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '4 Conceitos de proteção e segurança', sub: '4.1 Noções de vírus, worms, phishing' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '4 Conceitos de proteção e segurança', sub: '4.2 Aplicativos para segurança (antivírus, firewall, VPN, etc.)' },
+            { bloco: 'Bloco I', disc: 'Informática', ass: '5 Computação na nuvem (cloud computing)', sub: '-' },
+            // Física
+            { bloco: 'Bloco I', disc: 'Física', ass: '1 Cinemática escalar, cinemática vetorial', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '2 Movimento circular', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '3 Leis de Newton e suas aplicações', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '4 Trabalho', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '5 Potência', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '6 Energia cinética, energia potencial, atrito', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '7 Conservação de energia e suas transformações', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '8 Quantidade de movimento e conservação da quantidade de movimento, impulso', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Física', ass: '9 Colisões', sub: '-' },
+            // Ética e Cidadania
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '1 Ética e moral', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '2 Ética, princípios e valores', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '3 Ética e função pública: integridade', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '4 Ética no setor público', sub: '4.1 Princípios da Administração Pública' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '4 Ética no setor público', sub: '4.2 Deveres dos servidores públicos' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '4 Ética no setor público', sub: '4.3 Política de governança da administração pública' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '4 Ética no setor público', sub: '4.4 Promoção da ética e de regras de conduta (Códigos de Ética)' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '5 Ética e democracia: exercício da cidadania', sub: '5.1 Promoção da transparência e acesso à informação' },
+            { bloco: 'Bloco I', disc: 'Ética e Cidadania', ass: '5 Ética e democracia: exercício da cidadania', sub: '5.2 Tratamento de conflitos de interesses e nepotismo' },
+            // Geopolítica
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '1 O Brasil político: nação e território', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '2 Organização do Estado Brasileiro', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '3 A divisão interregional do trabalho e da produção no Brasil', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '4 A estrutura urbana brasileira e as grandes metrópoles', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '5 Distribuição espacial da população no Brasil e movimentos migratórios', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '6 Integração entre indústria e estrutura urbana e setor agrícola', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '7 Rede de transporte no Brasil: modais e infraestruturas', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '8 A integração do Brasil ao processo de internacionalização da economia', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '9 Geografia e gestão ambiental', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Geopolítica', ass: '10 Macrodivisão natural do espaço brasileiro', sub: '-' },
+            // Língua Estrangeira
+            { bloco: 'Bloco I', disc: 'Língua Estrangeira', ass: '1 Compreensão de texto escrito (Inglês ou Espanhol)', sub: '-' },
+            { bloco: 'Bloco I', disc: 'Língua Estrangeira', ass: '2 Itens gramaticais relevantes (Inglês ou Espanhol)', sub: '-' },
+
+            // BLOCO II
+            // Legislação de Trânsito
+            { bloco: 'Bloco II', disc: 'Legislação de Trânsito', ass: '1 Lei nº 9.503/1997 (CTB) e suas alterações', sub: '-' },
+            { bloco: 'Bloco II', disc: 'Legislação de Trânsito', ass: '2 Lei nº 5.970/1973', sub: '-' },
+            { bloco: 'Bloco II', disc: 'Legislação de Trânsito', ass: '3 Resoluções do CONTRAN', sub: 'Resoluções listadas no edital (4/98 a 810/20)' },
+            // Direito Administrativo
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.1 Centralização, descentralização, concentração' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.2 Adm direta e indireta / 1.3 Autarquias, fundações...' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '2 Ato administrativo', sub: '2.1 Conceito, requisitos, atributos, classificação e espécies' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.1 Legislação (Lei 8.112/90) e disposições constitucionais' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.2 Disposições doutrinárias (Cargo, emprego e função)' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.3 Carreira de PRF (Leis 9.654/98, 12.855/13, etc.)' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '4 Poderes administrativos', sub: '4.1 Hierárquico, disciplinar, regulamentar, polícia. 4.2 Uso e abuso' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '5 Licitação', sub: '5.1 a 5.5 Princípios, contratação direta, modalidades, tipos e procedimento' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '6 Controle da Administração Pública', sub: '6.1 Administrativo, 6.2 Judicial, 6.3 Legislativo' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '7 Responsabilidade civil do Estado', sub: '7.1 a 7.3 Responsabilidade por ato, omissão, requisitos e excludentes' },
+            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '8 Regime jurídico-administrativo', sub: '8.1 Conceito / 8.2 Princípios expressos e implícitos' },
+            // Direito Constitucional
+            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '1 Poder constituinte', sub: 'Fundamentos, originário, derivado, reforma, revisão e emendas' },
+            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '2 Fundamentos constitucionais dos direitos e deveres', sub: 'Individuais, coletivos, sociais, nacionalidade, políticos, remédios' },
+            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '3 Poder Executivo', sub: 'Forma e sistema, chefia, atribuições, bens e competências da União' },
+            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '4 Defesa do Estado e instituições democráticas', sub: 'Forças Armadas, Segurança Pública e atribuições da PRF' },
+            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '5 Ordem social', sub: 'Seguridade, meio ambiente, família, índio, etc.' },
+
+            // BLOCO III
+            // Direito Penal
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '1 Princípios básicos', sub: '-' },
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '2 Aplicação da lei penal', sub: '2.2 No tempo (conflitos) / 2.3 No espaço (territorialidade)' },
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '3 Tipicidade', sub: 'Doloso/culposo, erro de tipo, consumado/tentado, impossível, punibilidade' },
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '4 Ilicitude', sub: 'Causas de exclusão e excesso punível' },
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '5 Culpabilidade', sub: 'Exclusão, imputabilidade e erro de proibição' },
+            { bloco: 'Bloco III', disc: 'Direito Penal', ass: '6 Crimes em espécie', sub: 'Contra pessoa, patrimônio, dignidade sexual, incolumidade, fé, Adm Pública' },
+            // Direito Processual Penal
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '1 Ação penal', sub: 'Conceito, características, espécies, condições' },
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '2 Termo Circunstanciado de Ocorrência (Lei 9.099)', sub: '2.1 Atos processuais' },
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '3 Prova', sub: 'Conceito, local de crime, ilícitas, meios, busca e apreensão' },
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '4 Prisão', sub: 'Formalidades, mandado, prisão em flagrante' },
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '5 Identificação Criminal', sub: '(Lei 12.037/2009)' },
+            { bloco: 'Bloco III', disc: 'Direito Processual Penal', ass: '6 Diligências Investigatórias', sub: '(art. 6º e 13 do CPP)' },
+            // Legislação Especial
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '1 Lei 5.553/68 e Lei 12.037/09', sub: 'Identificação' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '2 Lei 8.069/90', sub: 'ECA' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '3 Lei 8.072/90', sub: 'Crimes Hediondos' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '4 Decreto 1.655/95 e Decreto 9.662/19', sub: 'Competências PRF' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '5 Lei 9.099/95', sub: 'Juizados Especiais' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '6 Lei 9.455/97', sub: 'Tortura' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '7 Lei 9.605/98', sub: 'Crimes Ambientais (Cap. III e V)' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '8 Lei 10.826/03', sub: 'Estatuto do Desarmamento (Cap. IV)' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '9 Lei 11.343/06', sub: 'Lei de Drogas' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '10 Lei 12.850/13', sub: 'Organização Criminosa' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '11 Lei 13.675/18', sub: 'SUSP' },
+            { bloco: 'Bloco III', disc: 'Legislação Especial', ass: '12 Lei 13.869/19', sub: 'Abuso de Autoridade' },
+            // Direitos Humanos
+            { bloco: 'Bloco III', disc: 'Direitos Humanos', ass: '1 Direitos humanos na CF', sub: '1.1 A CF e os tratados internacionais' },
+            { bloco: 'Bloco III', disc: 'Direitos Humanos', ass: '2 Declaração Universal dos Direitos Humanos', sub: '-' },
+            { bloco: 'Bloco III', disc: 'Direitos Humanos', ass: '3 Convenção Americana sobre Direitos Humanos', sub: '-' },
+        ];
+
+        // Mapeamento em objetos de estado completos
+        let db = rawEditalData.map((item, index) => ({
+            id: index + 1,
+            bloco: item.bloco,
+            disciplina: item.disc,
+            assunto: item.ass,
+            subassunto: item.sub,
+            status: 'Não iniciado', // 'Não iniciado', 'Em andamento', 'Concluído'
+            horas: 0,
+            revisoes: 0,
+            questoes: 0,
+            percentual: 0, // calculado
+            observacoes: ''
+        }));
+
+        
+        let filteredDb = [];
+        let sortCol = 'id';
+        let sortAsc = true;
+        let myCharts = {};
+
+        // ══════════════════════════════════════════════════════════════════
+        // SINCRONIZAÇÃO NA NUVEM — projetada para NUNCA sobrescrever dados
+        // por inteiro. Cada LINHA do edital carrega seu próprio `_ts`
+        // (timestamp da última edição). O merge é feito linha a linha:
+        // quem editou por último aquela linha específica, vence — nunca
+        // "o documento inteiro mais novo vence" (foi essa lógica de
+        // documento inteiro que causou perda de dados na outra planilha).
+        // ══════════════════════════════════════════════════════════════════
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOqVATyjQGkavGPhVRskxFC30EyXmlY1o",
+            authDomain: "estudeiprf.firebaseapp.com",
+            projectId: "estudeiprf",
+            storageBucket: "estudeiprf.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "estudeiprf-app"
+        };
+
+        let fbApp = null, fbAuth = null, fbDb = null, currentUser = null;
+        let _crossDeviceUnsubscribe = null;
+        let _syncDebounceTimer = null;
+        let _pushInFlight = false;
+        let _pushQueued = false;
+
+        try {
+            fbApp  = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb   = firebase.firestore();
+        } catch (e) { console.error('[Edital] Firebase init falhou:', e); }
+
+        // ── Backup local rotativo (3 slots) — rede de segurança extra ──────
+        const EDITAL_BACKUP_PREFIX = 'prf_edital_backup_';
+        function _editalBackup() {
+            try {
+                const slot = Math.floor(Date.now() / 1000) % 3;
+                localStorage.setItem(EDITAL_BACKUP_PREFIX + slot, JSON.stringify({ ts: new Date().toISOString(), data: db }));
+            } catch (e) { /* ignora falhas de quota */ }
+        }
+
+        // ── Merge item a item — nunca sobrescreve o array inteiro ──────────
+        function mergeEditalDb(localArr, cloudArr) {
+            const cloudMap = new Map(cloudArr.map(r => [r.id, r]));
+            const seenIds = new Set();
+            const merged = localArr.map(localRow => {
+                seenIds.add(localRow.id);
+                const cloudRow = cloudMap.get(localRow.id);
+                if (!cloudRow) return localRow; // só existe local, mantém
+                const localTs = localRow._ts || 0;
+                const cloudTs = cloudRow._ts || 0;
+                return cloudTs > localTs ? cloudRow : localRow; // vence quem editou por último ESSA linha
+            });
+            // Linhas que só existem na nuvem (ex: vieram de outro dispositivo antes deste array existir)
+            cloudArr.forEach(cloudRow => {
+                if (!seenIds.has(cloudRow.id)) merged.push(cloudRow);
+            });
+            return merged;
+        }
+
+        async function _readCloudEdital(uid) {
+            const doc = await fbDb.collection('users').doc(uid).collection('editalPRF').doc('data').get();
+            if (!doc.exists || !Array.isArray(doc.data().items)) return null;
+            return doc.data().items;
+        }
+
+        async function _writeCloudEdital(uid, items) {
+            await fbDb.collection('users').doc(uid).collection('editalPRF').doc('data').set({
+                items, updatedAt: new Date().toISOString()
+            });
+        }
+
+        // Lê a nuvem "na hora", mescla com o estado local atual e grava dos
+        // dois lados. Nunca usa um snapshot antigo em memória — sempre relê
+        // a nuvem antes de decidir, então uma aba "esquecida" aberta não
+        // consegue empurrar dados velhos por cima de edições novas.
+        async function _syncNow(showToastMsg) {
+            if (!currentUser || !fbDb) return;
+            if (_pushInFlight) { _pushQueued = true; return; }
+            _pushInFlight = true;
+            _setSyncStatus('Sincronizando…', 'spinning');
+            try {
+                const cloudItems = await _readCloudEdital(currentUser.uid);
+                let resultDb;
+                if (!cloudItems) {
+                    resultDb = db; // nuvem ainda não tem nada — sobe o que temos
+                } else {
+                    resultDb = mergeEditalDb(db, cloudItems);
+                }
+                db = resultDb;
+                localStorage.setItem('prf_edital_data', JSON.stringify(db));
+                await _writeCloudEdital(currentUser.uid, db);
+                _editalBackup();
+                applyFilters();
+                _setSyncStatus('Sincronizado ✓', 'ok');
+                if (showToastMsg) _showSyncToast(showToastMsg);
+            } catch (e) {
+                console.error('[Edital] Erro ao sincronizar:', e);
+                _setSyncStatus('Erro — tentando de novo', 'error');
+            } finally {
+                _pushInFlight = false;
+                if (_pushQueued) { _pushQueued = false; _syncNow(); }
+            }
+        }
+
+        function _scheduleSync() {
+            if (!currentUser) return;
+            clearTimeout(_syncDebounceTimer);
+            _syncDebounceTimer = setTimeout(() => _syncNow(), 2500);
+        }
+
+        function forceSyncNow() { _syncNow('Sincronização manual concluída.'); }
+
+        function _setSyncStatus(text, mode) {
+            const el = document.getElementById('sync-status-text');
+            const icon = document.getElementById('sync-icon');
+            if (el) el.innerText = text;
+            if (icon) icon.className = mode === 'spinning'
+                ? 'fa-solid fa-rotate fa-spin'
+                : mode === 'error' ? 'fa-solid fa-triangle-exclamation text-yellow-300' : 'fa-solid fa-cloud-arrow-up';
+        }
+
+        function _showSyncToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'fixed bottom-4 right-4 bg-gray-900 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        function _startEditalListener(uid) {
+            if (_crossDeviceUnsubscribe) { _crossDeviceUnsubscribe(); _crossDeviceUnsubscribe = null; }
+            _crossDeviceUnsubscribe = fbDb.collection('users').doc(uid).collection('editalPRF').doc('data')
+                .onSnapshot(async (doc) => {
+                    if (!doc.exists || !Array.isArray(doc.data().items)) return;
+                    if (doc.metadata.hasPendingWrites) return; // é a nossa própria escrita voltando, ignora
+                    const cloudItems = doc.data().items;
+                    const merged = mergeEditalDb(db, cloudItems);
+                    // Só re-renderiza/grava se algo de fato mudou
+                    if (JSON.stringify(merged) !== JSON.stringify(db)) {
+                        db = merged;
+                        localStorage.setItem('prf_edital_data', JSON.stringify(db));
+                        applyFilters();
+                        _editalBackup();
+                        _showSyncToast('☁ Progresso atualizado de outro dispositivo.');
+                    }
+                }, (err) => console.warn('[Edital] Listener error:', err.message));
+        }
+
+        // ── Autenticação ─────────────────────────────────────────────────
+        function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); document.getElementById('login-error').classList.add('hidden'); }
+
+        function _loginErr(msg) {
+            const el = document.getElementById('login-error');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass  = document.getElementById('login-password').value;
+            if (!email || !pass) return _loginErr('Preencha e-mail e senha.');
+            try {
+                await fbAuth.signInWithEmailAndPassword(email, pass);
+            } catch (e) { _loginErr('Não foi possível entrar: ' + (e.message || e.code)); }
+        }
+
+        async function doSignup() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass  = document.getElementById('login-password').value;
+            if (!email || !pass) return _loginErr('Preencha e-mail e senha.');
+            if (pass.length < 6) return _loginErr('A senha precisa ter ao menos 6 caracteres.');
+            try {
+                await fbAuth.createUserWithEmailAndPassword(email, pass);
+            } catch (e) { _loginErr('Não foi possível criar conta: ' + (e.message || e.code)); }
+        }
+
+        function doLogout() {
+            if (_crossDeviceUnsubscribe) { _crossDeviceUnsubscribe(); _crossDeviceUnsubscribe = null; }
+            fbAuth.signOut();
+        }
+
+        function _onLoggedInUI(email) {
+            document.getElementById('sync-logged-out').classList.add('hidden');
+            document.getElementById('sync-logged-in').classList.remove('hidden');
+            document.getElementById('sync-logged-in').classList.add('flex');
+        }
+        function _onLoggedOutUI() {
+            document.getElementById('sync-logged-in').classList.add('hidden');
+            document.getElementById('sync-logged-out').classList.remove('hidden');
+        }
+
+        if (fbAuth) {
+            fbAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = { uid: user.uid, email: user.email };
+                    _onLoggedInUI(user.email);
+                    closeLoginModal();
+                    // Primeiro contato com a nuvem: SEMPRE mescla, nunca sobrescreve
+                    // cegamente em nenhuma direção.
+                    await _syncNow('Conectado — dados combinados com a nuvem.');
+                    _startEditalListener(user.uid);
+                } else {
+                    currentUser = null;
+                    _onLoggedOutUI();
+                }
+            });
+        }
+
+        // Inicialização
+        window.onload = function() {
+            // Carregar do localStorage
+            const savedData = localStorage.getItem('prf_edital_data');
+            if (savedData) {
+                // Fazer merge inteligente para caso ganhemos novos itens no array bruto futuramente
+                const parsed = JSON.parse(savedData);
+                db = db.map(item => {
+                    const savedItem = parsed.find(p => p.id === item.id);
+                    return savedItem ? savedItem : item;
+                });
+            }
+
+            // Popula selects de filtro
+            const disciplinas = [...new Set(db.map(i => i.disciplina))].sort();
+            const filterSelect = document.getElementById('filter-disciplina');
+            disciplinas.forEach(d => {
+                let opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                filterSelect.appendChild(opt);
+            });
+
+            applyFilters();
+            setTimeout(_editalBackup, 500);
+            setInterval(_editalBackup, 5 * 60 * 1000);
+        };
+
+        // Salvar localmente
+        function saveData() {
+            localStorage.setItem('prf_edital_data', JSON.stringify(db));
+            updateDashboard();
+            _scheduleSync();
+        }
+
+        function resetData() {
+            if(confirm("Tem certeza que deseja apagar todo o seu progresso? Essa ação não pode ser desfeita.")) {
+                localStorage.removeItem('prf_edital_data');
+                location.reload();
+            }
+        }
+
+        // Sistema de Abas
+        function switchTab(tab) {
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-planilha').classList.add('hidden');
+            document.getElementById('tab-dashboard').classList.remove('bg-blue-800');
+            document.getElementById('tab-planilha').classList.remove('bg-blue-800');
+
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('bg-blue-800');
+            
+            if(tab === 'dashboard') updateDashboard();
+        }
+
+        // Filtros e Ordenação
+        function applyFilters() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const disc = document.getElementById('filter-disciplina').value;
+            const status = document.getElementById('filter-status').value;
+
+            filteredDb = db.filter(item => {
+                const matchSearch = item.assunto.toLowerCase().includes(search) || item.subassunto.toLowerCase().includes(search);
+                const matchDisc = disc === 'Todas' || item.disciplina === disc;
+                const matchStatus = status === 'Todos' || item.status === status;
+                return matchSearch && matchDisc && matchStatus;
+            });
+
+            doSort();
+        }
+
+        function setSort(col) {
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
+            
+            // UI Arrow update
+            document.querySelectorAll('th i.fa-sort, th i.fa-sort-up, th i.fa-sort-down').forEach(el => {
+                el.className = 'fa-solid fa-sort text-gray-400 text-xs';
+            });
+            const icon = document.getElementById(`sort-${col}`);
+            if(icon) icon.className = `fa-solid fa-sort-${sortAsc ? 'up' : 'down'} text-blue-300 text-xs`;
+
+            doSort();
+        }
+
+        function doSort() {
+            filteredDb.sort((a, b) => {
+                let valA = a[sortCol];
+                let valB = b[sortCol];
+                if(typeof valA === 'string') valA = valA.toLowerCase();
+                if(typeof valB === 'string') valB = valB.toLowerCase();
+                
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            filteredDb.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                // Colorir linha baseado no status
+                let rowColor = 'status-nao-iniciado';
+                if (item.status === 'Em andamento') rowColor = 'status-em-andamento';
+                if (item.status === 'Concluído') rowColor = 'status-concluido';
+                tr.className = `hover:bg-blue-50 transition-colors ${rowColor}`;
+
+                // Calcular Percentual based on status (Não iniciado = 0, Em andamento = 50, Concluído = 100)
+                let pctValue = 0;
+                if(item.status === 'Em andamento') pctValue = 50;
+                if(item.status === 'Concluído') pctValue = 100;
+                item.percentual = pctValue; // Sync object
+
+                tr.innerHTML = `
+                    <td class="p-3 border-b border-gray-200">
+                        <span class="block text-xs font-semibold text-gray-500">${item.bloco}</span>
+                        <span class="font-medium text-gray-800">${item.disciplina}</span>
+                    </td>
+                    <td class="p-3 border-b border-gray-200 text-gray-700">${item.assunto}</td>
+                    <td class="p-3 border-b border-gray-200 text-gray-600 text-xs">${item.subassunto}</td>
+                    <td class="p-3 border-b border-gray-200">
+                        <select onchange="updateRow(${item.id}, 'status', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-sm focus:ring-blue-500">
+                            <option value="Não iniciado" ${item.status === 'Não iniciado' ? 'selected' : ''}>Não iniciado</option>
+                            <option value="Em andamento" ${item.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                            <option value="Concluído" ${item.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                        </select>
+                    </td>
+                    <td class="p-3 border-b border-gray-200 text-center">
+                        <input type="number" min="0" step="0.5" onchange="updateRow(${item.id}, 'horas', parseFloat(this.value)||0)" value="${item.horas}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                    </td>
+                    <td class="p-3 border-b border-gray-200 text-center">
+                        <input type="number" min="0" onchange="updateRow(${item.id}, 'revisoes', parseInt(this.value)||0)" value="${item.revisoes}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                    </td>
+                    <td class="p-3 border-b border-gray-200 text-center">
+                        <input type="number" min="0" onchange="updateRow(${item.id}, 'questoes', parseInt(this.value)||0)" value="${item.questoes}" class="w-20 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                    </td>
+                    <td class="p-3 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold w-8 text-right">${pctValue}%</span>
+                            <div class="w-16 bg-gray-200 rounded-full h-2">
+                                <div class="bg-${pctValue===100?'green':pctValue>0?'yellow':'gray'}-500 h-2 rounded-full" style="width: ${pctValue}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 border-b border-gray-200">
+                        <input type="text" onchange="updateRow(${item.id}, 'observacoes', this.value)" value="${item.observacoes}" placeholder="Notas..." class="w-full bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 focus:outline-none p-1 text-sm">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateRow(id, field, value) {
+            const index = db.findIndex(i => i.id === id);
+            if(index > -1) {
+                db[index][field] = value;
+                db[index]._ts = Date.now(); // marca ESTA linha como editada agora (usado no merge)
+                saveData();
+                // Se mudou status, refaz a tabela para colorir e atualizar %
+                if(field === 'status') {
+                    applyFilters(); 
+                }
+            }
+        }
+
+        function updateDashboard() {
+            const totalTopics = db.length;
+            const completedTopics = db.filter(i => i.status === 'Concluído').length;
+            const inProgressTopics = db.filter(i => i.status === 'Em andamento').length;
+            
+            let totalHours = 0;
+            let totalQuestions = 0;
+            let totalRevisions = 0;
+
+            const discData = {};
+            const blocoData = {'Bloco I': 0, 'Bloco II': 0, 'Bloco III': 0};
+
+            db.forEach(item => {
+                totalHours += item.horas;
+                totalQuestions += item.questoes;
+                totalRevisions += item.revisoes;
+
+                // Agrupar por disciplina para progresso
+                if(!discData[item.disciplina]) discData[item.disciplina] = { total: 0, completed: 0, half: 0 };
+                discData[item.disciplina].total += 1;
+                if(item.status === 'Concluído') discData[item.disciplina].completed += 1;
+                if(item.status === 'Em andamento') discData[item.disciplina].half += 1;
+
+                // Agrupar questões por bloco
+                if(blocoData[item.bloco] !== undefined) {
+                    blocoData[item.bloco] += item.questoes;
+                }
+            });
+
+            // Atualizar Cards e Barra Global
+            // Regra: Concluído = 1, Em andamento = 0.5
+            const globalScore = completedTopics + (inProgressTopics * 0.5);
+            const globalPct = Math.round((globalScore / totalTopics) * 100) || 0;
+            
+            document.getElementById('global-percentage-text').innerText = `${globalPct}%`;
+            document.getElementById('global-progress-bar').style.width = `${globalPct}%`;
+            if (globalPct === 100) { document.getElementById('global-progress-bar').className = "bg-green-500 h-4 rounded-full transition-all duration-500"; }
+            
+            document.getElementById('card-topics').innerText = `${completedTopics} / ${totalTopics}`;
+            document.getElementById('card-hours').innerText = `${totalHours}h`;
+            document.getElementById('card-questions').innerText = totalQuestions;
+            document.getElementById('card-revisions').innerText = totalRevisions;
+
+            // Preparar dados para o Gráfico de Progresso por Disciplina
+            const labels = Object.keys(discData).sort();
+            const progressDataset = labels.map(l => {
+                const d = discData[l];
+                return Math.round(((d.completed + (d.half * 0.5)) / d.total) * 100);
+            });
+
+            renderCharts(labels, progressDataset, blocoData);
+        }
+
+        function renderCharts(discLabels, discProgressData, blocoData) {
+            // Chart Progresso por Disciplina
+            const ctxProg = document.getElementById('chart-progress').getContext('2d');
+            if(myCharts.prog) myCharts.prog.destroy();
+            
+            myCharts.prog = new Chart(ctxProg, {
+                type: 'bar',
+                data: {
+                    labels: discLabels,
+                    datasets: [{
+                        label: '% Concluído',
+                        data: discProgressData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+                        x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart Questões por Bloco
+            const ctxQuest = document.getElementById('chart-questions').getContext('2d');
+            if(myCharts.quest) myCharts.quest.destroy();
+
+            myCharts.quest = new Chart(ctxQuest, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bloco I', 'Bloco II', 'Bloco III'],
+                    datasets: [{
+                        data: [blocoData['Bloco I'], blocoData['Bloco II'], blocoData['Bloco III']],
+                        backgroundColor: ['#3b82f6', '#eab308', '#22c55e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM para acentos no Excel
+            // Cabeçalho
+            csvContent += "Bloco;Disciplina;Assunto;Subassunto;Status;Horas Estudadas;Revisoes;Questoes Resolvidas;Percentual (%);Observacoes\n";
+            
+            // Linhas
+            db.forEach(row => {
+                // Limpar quebras de linha nas observações
+                const obs = row.observacoes.replace(/\r?\n|\r/g, " ");
+                let rowString = `${row.bloco};${row.disciplina};"${row.assunto}";"${row.subassunto}";${row.status};${row.horas};${row.revisoes};${row.questoes};${row.percentual};"${obs}"`;
+                csvContent += rowString + "\n";
+            });
+
+            // Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Edital_Verticalizado_PRF.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportBackup() {
+            const dataStr = JSON.stringify(db);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'backup_edital_prf.json';
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            document.body.appendChild(linkElement);
+            linkElement.click();
+            document.body.removeChild(linkElement);
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    // Verificação básica se é o arquivo correto
+                    if (Array.isArray(importedData) && importedData.length > 0 && importedData[0].hasOwnProperty('disciplina')) {
+                        db = importedData;
+                        saveData();
+                        applyFilters();
+                        switchTab('dashboard');
+                        alert('Backup importado com sucesso!');
+                    } else {
+                        alert('Arquivo de backup inválido. Certifique-se de ser o arquivo .json gerado por este sistema.');
+                    }
+                } catch (error) {
+                    alert('Erro ao ler o arquivo de backup.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input para permitir importar o mesmo arquivo novamente se necessário
+        }
+
+        // Initialize dashboard state on load
+        setTimeout(updateDashboard, 100);
+
+    </script>
+</body>
+</html>
