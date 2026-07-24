@@ -1013,6 +1013,9 @@
                     <button onclick="openAddTopicModal()" class="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition shadow flex items-center gap-2 text-sm">
                         <i class="fa-solid fa-plus"></i> Adicionar Matéria / Tópico
                     </button>
+                    <button onclick="importEditalVerticalizadoCompleto()" title="Adiciona as disciplinas e tópicos oficiais do edital verticalizado. Nunca apaga nem altera o que você já tem." class="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white font-black rounded-xl transition shadow flex items-center gap-2 text-sm border border-blue-600">
+                        <i class="fa-solid fa-file-import"></i> Importar Edital Completo
+                    </button>
                 </div>
             </div>
 
@@ -2528,6 +2531,65 @@
         // (A inicialização real acontece em window.onload mais abaixo, que
         // carrega os dados locais imediatamente e sincroniza com a nuvem em
         // segundo plano — ver _backgroundCloudSync.)
+
+        // ── EDITAL VERTICALIZADO COMPLETO (Bloco I, II e III) ───────────────
+        // Fonte: PDF oficial do edital verticalizado PRF. Usado apenas pela
+        // função importEditalVerticalizadoCompleto() abaixo, que faz merge
+        // ADITIVO — nunca remove nem sobrescreve disciplinas/tópicos que já
+        // existem no seu banco de dados atual.
+        const EDITAL_VERTICALIZADO_PRF = [
+            { subject: 'Língua Portuguesa', topics: [{ name: '1 Compreensão e interpretação de textos de gêneros variados', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Reconhecimento de tipos e gêneros textuais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Domínio da ortografia oficial', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.1 Emprego de elementos de referenciação, substituição e repetição, conectores', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.2 Emprego de tempos e modos verbais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.1 Emprego das classes de palavras', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.2 Relações de coordenação entre orações e entre termos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.3 Relações de subordinação entre orações e entre termos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.4 Emprego dos sinais de pontuação', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.5 Concordância verbal e nominal', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.6 Regência verbal e nominal', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.7 Emprego do sinal indicativo de crase', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.8 Colocação dos pronomes átonos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6.1 Significação das palavras', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6.2 Substituição de palavras ou de trechos de texto', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6.3 Reorganização da estrutura de orações e de períodos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6.4 Reescrita de textos de diferentes gêneros e níveis de formalidade', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.1 Aspectos gerais da redação oficial', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.2 Finalidade dos expedientes oficiais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.3 Adequação da linguagem ao tipo de documento', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.4 Adequação do formato do texto ao gênero', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Raciocínio Lógico-Matemático', topics: [{ name: '1 Modelagem de situações-problema por meio de equações do 1º e 2º graus e sistemas lineares', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.1 Análise gráfica', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.2 Funções afim, quadrática, exponencial e logarítmica', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.3 Aplicações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.1 Razão e proporção com aplicações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.2 Regra de três simples e composta', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 Porcentagem', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.1 Sequências numéricas', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.2 Progressão aritmética e geométrica', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Noções básicas de contagem, probabilidade e estatística', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.1 Leitura e interpretação de tabelas e gráficos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.2 Cálculo de médias e análise de desvios', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '8 Noções básicas de teoria dos conjuntos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9.1 Utilização de escalas', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9.2 Visualização de figuras espaciais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9.3 Representações bidimensionais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '10.1 Áreas e volumes', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '10.2 Estimativas', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '10.3 Aplicações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Informática', topics: [{ name: '1 Conceito de internet e intranet', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.1 Ferramentas e aplicativos comerciais de navegação, e-mail, busca, etc.', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.2 Noções de sistema operacional (ambiente Windows)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.3 Acesso a distância, transferência de arquivos, áudio, vídeo', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.1 Internet das coisas (IoT)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.2 Big data', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.3 Inteligência artificial', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.1 Noções de vírus, worms, phishing', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.2 Aplicativos para segurança (antivírus, firewall, VPN, etc.)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Computação na nuvem (cloud computing)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Física', topics: [{ name: '1 Cinemática escalar, cinemática vetorial', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Movimento circular', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Leis de Newton e suas aplicações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 Trabalho', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Potência', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Energia cinética, energia potencial, atrito', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7 Conservação de energia e suas transformações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '8 Quantidade de movimento e conservação da quantidade de movimento, impulso', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9 Colisões', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Ética e Cidadania', topics: [{ name: '1 Ética e moral', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Ética, princípios e valores', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Ética e função pública: integridade', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.1 Princípios da Administração Pública', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.2 Deveres dos servidores públicos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.3 Política de governança da administração pública', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.4 Promoção da ética e de regras de conduta (Códigos de Ética)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.1 Promoção da transparência e acesso à informação', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.2 Tratamento de conflitos de interesses e nepotismo', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Geopolítica', topics: [{ name: '1 O Brasil político: nação e território', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Organização do Estado Brasileiro', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 A divisão interregional do trabalho e da produção no Brasil', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 A estrutura urbana brasileira e as grandes metrópoles', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Distribuição espacial da população no Brasil e movimentos migratórios', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Integração entre indústria e estrutura urbana e setor agrícola', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7 Rede de transporte no Brasil: modais e infraestruturas', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '8 A integração do Brasil ao processo de internacionalização da economia', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9 Geografia e gestão ambiental', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '10 Macrodivisão natural do espaço brasileiro', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Língua Estrangeira', topics: [{ name: '1 Compreensão de texto escrito (Inglês ou Espanhol)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Itens gramaticais relevantes (Inglês ou Espanhol)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Legislação de Trânsito', topics: [{ name: '1 Lei nº 9.503/1997 (CTB) e suas alterações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Lei nº 5.970/1973', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: 'Resoluções listadas no edital (4/98 a 810/20)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Direito Administrativo', topics: [{ name: '1.1 Centralização, descentralização, concentração', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '1.2 Adm direta e indireta / 1.3 Autarquias, fundações...', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2.1 Conceito, requisitos, atributos, classificação e espécies', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.1 Legislação (Lei 8.112/90) e disposições constitucionais', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.2 Disposições doutrinárias (Cargo, emprego e função)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3.3 Carreira de PRF (Leis 9.654/98, 12.855/13, etc.)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4.1 Hierárquico, disciplinar, regulamentar, polícia. 4.2 Uso e abuso', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5.1 a 5.5 Princípios, contratação direta, modalidades, tipos e procedimento', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6.1 Administrativo, 6.2 Judicial, 6.3 Legislativo', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7.1 a 7.3 Responsabilidade por ato, omissão, requisitos e excludentes', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '8.1 Conceito / 8.2 Princípios expressos e implícitos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Direito Constitucional', topics: [{ name: 'Fundamentos, originário, derivado, reforma, revisão e emendas', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: 'Individuais, coletivos, sociais, nacionalidade, políticos, remédios', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: 'Forma e sistema, chefia, atribuições, bens e competências da União', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: 'Forças Armadas, Segurança Pública e atribuições da PRF', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: 'Base, objetivos, seguridade social, meio ambiente, família', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Direito Penal', topics: [{ name: '1 Princípios básicos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Aplicação da lei penal (tempo, espaço, territorialidade)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Tipicidade (dolo, culpa, erro de tipo, tentativa)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 Ilicitude (causas de exclusão, excesso punível)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Culpabilidade (exclusão, imputabilidade, erro de proibição)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Crimes em espécie (pessoa, patrimônio, dignidade sexual, Adm. Pública)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Direito Processual Penal', topics: [{ name: '1 Ação penal (conceito, características, espécies, condições)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Termo Circunstanciado de Ocorrência (Lei 9.099/95)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Prova (conceito, provas ilícitas, meios de prova, busca e apreensão)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 Prisão (conceito, formalidades, espécies, flagrante)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Identificação Criminal (art. 5º, LVIII, CF e Lei 12.037/09)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Diligências Investigatórias (art. 6º e 13 do CPP)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Legislação Especial', topics: [{ name: '1 Lei nº 5.553/1968 e Lei nº 12.037/2009', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Lei nº 8.069/1990 (ECA) e suas alterações', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Lei nº 8.072/1990 (Crimes Hediondos)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '4 Decreto 1.655/95 e Decreto 9.662/19 (Competências PRF)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '5 Lei nº 9.099/1995 (Juizados Especiais)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '6 Lei nº 9.455/1997 (Tortura)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '7 Lei nº 9.605/1998 (Crimes Ambientais, Cap. III e V)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '8 Lei nº 10.826/2003 (Estatuto do Desarmamento, Cap. IV)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '9 Lei nº 11.343/2006 (Lei de Drogas)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '10 Lei nº 12.850/2013 (Organização Criminosa)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '11 Lei nº 13.675/2018 (SUSP)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '12 Lei nº 13.869/2019 (Abuso de Autoridade)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] },
+            { subject: 'Direitos Humanos', topics: [{ name: '1.1 A CF e os tratados internacionais de direitos humanos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '2 Declaração Universal dos Direitos Humanos', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }, { name: '3 Convenção Americana sobre Direitos Humanos (Decreto 678/92)', status: 'Não Estudado', qCorrect: 0, qTotal: 0 }] }
+        ];
+
+        // Merge 100% aditivo: adiciona disciplinas/tópicos que faltam,
+        // NUNCA remove, substitui ou zera nada que já existe. Uma disciplina
+        // já existente ganha só os tópicos novos que ainda não tem (por
+        // nome); uma disciplina nova é adicionada inteira. O progresso
+        // (status, qCorrect, qTotal) de tudo que já existia fica intocado.
+        function importEditalVerticalizadoCompleto() {
+            if (!Array.isArray(studyDb.syllabus)) studyDb.syllabus = [];
+            let disciplinasNovas = 0, topicosNovos = 0;
+
+            EDITAL_VERTICALIZADO_PRF.forEach(fonteDisc => {
+                let alvo = studyDb.syllabus.find(d => d.subject === fonteDisc.subject);
+                if (!alvo) {
+                    alvo = { subject: fonteDisc.subject, topics: [] };
+                    studyDb.syllabus.push(alvo);
+                    disciplinasNovas++;
+                }
+                if (!Array.isArray(alvo.topics)) alvo.topics = [];
+                fonteDisc.topics.forEach(fonteTopico => {
+                    const jaExiste = alvo.topics.some(t => t.name === fonteTopico.name);
+                    if (!jaExiste) {
+                        alvo.topics.push({ ...fonteTopico }); // cópia, nunca a mesma referência
+                        topicosNovos++;
+                    }
+                });
+            });
+
+            if (disciplinasNovas === 0 && topicosNovos === 0) {
+                showAlert('Seu edital já está completo — nenhum item novo para importar.');
+                return;
+            }
+
+            saveDatabase();
+            try { renderSyllabusTab(); } catch(e) {}
+            try { updateDashboardMetrics(); } catch(e) {}
+            showAlert(`Edital importado: +${disciplinasNovas} disciplina(s) e +${topicosNovos} tópico(s) novo(s). Nada do que você já tinha foi alterado.`);
+        }
 
         function generateRandomSyncCode() {
             return `PRF-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
@@ -6674,36 +6736,29 @@ function renderHistoryTab() {
                             if (!cloudParsed.history)    cloudParsed.history    = [];
                             if (!cloudParsed.revisions)  cloudParsed.revisions  = [];
 
-                            // CORREÇÃO (perda de dados): a versão antiga sempre
-                            // sobrescrevia studyDb às cegas com o que veio da nuvem.
-                            // Se este dispositivo tivesse alterações locais ainda não
-                            // enviadas (ex: editando offline, ou push ainda no debounce),
-                            // elas eram perdidas silenciosamente. Agora, se o local
-                            // também mudou desde o último sync, fazemos MERGE em vez de
-                            // sobrescrever — igual ao que já acontece no boot e no botão
-                            // "Sincronizar Agora".
-                            const lastSyncAt   = await _getLastSyncAt();
-                            const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
-
+                            // CORREÇÃO DEFINITIVA (perda de dados de 21/07): a
+                            // tentativa de correção anterior ainda tinha um
+                            // caminho ("else", quando localChanged é falso)
+                            // que sobrescrevia studyDb às cegas com o que
+                            // veio da nuvem. Foi exatamente esse caminho que
+                            // apagou o histórico real de um dispositivo ao
+                            // aplicar por cima dele um documento zerado vindo
+                            // de outro aparelho. Agora não existe mais esse
+                            // atalho: SEMPRE mescla item a item, sem exceção.
                             _lastAppliedCloudTs = cloudUpdatedAt;
 
-                            let resultDb, toastMsg;
-                            if (localChanged) {
-                                const diff = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
-                                resultDb = _mergeStudyDbs(studyDb, cloudParsed);
+                            const diff = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
+                            const resultDb = _mergeStudyDbs(studyDb, cloudParsed);
+                            if (JSON.stringify(resultDb) !== JSON.stringify(cloudParsed)) {
                                 await _writeStudyDbToCloud(uid, resultDb); // publica o merge para a nuvem
-                                const parts = [];
-                                if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
-                                if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
-                                if (diff.revDiff  > 0) parts.push(`+${diff.revDiff} revisão(ões)`);
-                                toastMsg = `🔀 Alterações de outro dispositivo combinadas com as suas${parts.length ? ' (' + parts.join(', ') + ')' : ''}.`;
-                            } else {
-                                resultDb = cloudParsed;
-                                const cloudTime = new Date(cloudUpdatedAt).toLocaleTimeString('pt-BR', {
-                                    hour:'2-digit', minute:'2-digit', second:'2-digit'
-                                });
-                                toastMsg = `☁ Dados atualizados de outro dispositivo (${cloudTime})`;
                             }
+                            const parts = [];
+                            if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                            if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                            if (diff.revDiff  > 0) parts.push(`+${diff.revDiff} revisão(ões)`);
+                            const toastMsg = parts.length
+                                ? `🔀 Alterações de outro dispositivo combinadas com as suas (${parts.join(', ')}).`
+                                : `☁ Sincronizado com outro dispositivo.`;
 
                             studyDb = resultDb;
                             await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
@@ -9028,42 +9083,43 @@ function renderHistoryTab() {
                     const cloudHasData = cloudDoc && cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
 
                     if (cloudHasData) {
-                        const lastSyncAt     = await _getLastSyncAt();
-                        const localUpdatedAt = studyDb.updatedAt         || '1970-01-01T00:00:00.000Z';
-                        const cloudUpdatedAt = cloudDoc.data().updatedAt || '1970-01-01T00:00:00.000Z';
-
-                        const localChanged = new Date(localUpdatedAt) > new Date(lastSyncAt);
-                        const cloudChanged = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
-                        const conflict     = localChanged && cloudChanged;
-
+                        // CORREÇÃO DEFINITIVA (perda de dados de 21/07): esta
+                        // função tinha 3 caminhos — um deles ("cloudChanged
+                        // && !localChanged") sobrescrevia o dispositivo local
+                        // por INTEIRO com o que veio da nuvem, sem checar se
+                        // o conteúdo fazia sentido. Foi assim que um banco
+                        // zerado (de um dispositivo novo) apagou o histórico
+                        // real. Agora só existe UM caminho: sempre mesclar
+                        // item a item com _mergeStudyDbs — união de sessões,
+                        // resumos e revisões por ID, e progresso do edital
+                        // que só avança, nunca regride. Nenhum lado nunca é
+                        // descartado por inteiro.
                         const cloudData   = await _readStudyDbFromCloud(fbUser.uid);
                         const cloudParsed = JSON.parse(cloudData.json);
                         if (!cloudParsed.summaries) cloudParsed.summaries = [];
                         if (!cloudParsed.history)   cloudParsed.history   = [];
                         if (!cloudParsed.revisions) cloudParsed.revisions = [];
 
-                        if (conflict) {
-                            const diff = _countMergeDiff(cloudParsed, _mergeStudyDbs(studyDb, cloudParsed));
-                            studyDb = _mergeStudyDbs(studyDb, cloudParsed);
+                        const merged = _mergeStudyDbs(studyDb, cloudParsed);
+                        const diff = _countMergeDiff(cloudParsed, merged);
+                        studyDb = merged;
+                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+
+                        // Só reescreve a nuvem se o merge realmente trouxe algo
+                        // novo do lado local (evita escritas desnecessárias e
+                        // evita disparar o listener de outros dispositivos à toa).
+                        if (JSON.stringify(merged) !== JSON.stringify(cloudParsed)) {
                             await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                            await _setLastSyncAt();
-                            renderAllTabs();
-                            const parts = [];
-                            if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
-                            if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
-                            showToast(`🔄 Dados de outro dispositivo combinados${parts.length ? ' (' + parts.join(', ') + ')' : ''}.`, 'info');
-                        } else if (cloudChanged && !localChanged) {
-                            studyDb = cloudParsed;
-                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                            await _setLastSyncAt();
-                            renderAllTabs();
-                            showToast('☁ Dados atualizados a partir da nuvem.', 'info');
+                        }
+                        await _setLastSyncAt();
+                        renderAllTabs();
+                        const parts = [];
+                        if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
+                        if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
+                        if (parts.length) {
+                            showToast(`🔄 Dados combinados com a nuvem (${parts.join(', ')}).`, 'info');
                         } else {
-                            studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                            await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                            await _setLastSyncAt();
+                            showToast('☁ Sincronizado com a nuvem.', 'info');
                         }
                     } else {
                         studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
