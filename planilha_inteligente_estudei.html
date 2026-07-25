@@ -817,6 +817,81 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Planeamento Ativo -->
+                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between gap-4">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Planeamento Ativo</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-blue-950 p-4 rounded-xl border border-blue-800 space-y-2">
+                                <span class="text-xxs font-bold text-yellow-400 uppercase tracking-widest block"><i class="fa-solid fa-road mr-1"></i>Sugerido para Estudar Agora:</span>
+                                <span class="text-xs font-bold bg-yellow-400 text-slate-900 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block" id="dash-next-subject">--</span>
+                                <h4 class="text-sm font-bold text-white mt-1" id="dash-next-topic">Selecione ou inicie uma disciplina</h4>
+                                <p class="text-xs text-gray-400">Tempo planeado: <strong id="dash-next-time">--</strong></p>
+                            </div>
+
+                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                                <span class="text-xxs font-bold text-emerald-400 uppercase tracking-widest block"><i class="fa-solid fa-circle-check mr-1"></i>Última Matéria Concluída:</span>
+                                <h5 class="text-xs font-bold text-white truncate" id="dash-last-subject">Aguardando registo</h5>
+                                <p class="text-xxs text-gray-300" id="dash-last-topic">Complete uma sessão para atualizar permanentemente este bloco.</p>
+                                <div class="flex justify-between items-center pt-1 border-t border-slate-800/60 mt-1">
+                                    <span class="text-xxs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-semibold" id="dash-last-status">Aguardando</span>
+                                    <span class="text-xxs text-gray-400" id="dash-last-time">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <button onclick="startNextCycleSubject()" class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition duration-200 shadow-lg flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-play"></i> Iniciar Próxima Matéria do Ciclo
+                        </button>
+                        <button onclick="switchTab('cronometro')" class="w-full py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition duration-200 border border-blue-700 flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-stopwatch"></i> Ir para o Cronómetro Tático
+                        </button>
+                    </div>
+
+                    <!-- Cronograma Semanal Gerenciável -->
+                    <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xxs font-bold text-yellow-400 uppercase tracking-widest"><i class="fa-solid fa-calendar-week mr-1"></i>Cronograma Semanal</span>
+                            <span class="text-xxs text-gray-400" id="weekly-schedule-total">-- planeado/semana</span>
+                        </div>
+                        <div id="weekly-schedule-grid" class="space-y-1.5">
+                            <!-- Preenchido dinamicamente via JS: renderWeeklySchedule() -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendário de Estudos -->
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-calendar-days text-prf-yellow mr-2"></i>Calendário de Estudos</h3>
+                        <div class="flex items-center gap-1">
+                            <button onclick="calPrevMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <span id="cal-month-label" class="text-xs font-bold text-gray-300 px-2 min-w-[110px] text-center"></span>
+                            <button onclick="calNextMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center mb-1">
+                        <span class="text-xxs text-gray-500 font-bold">S</span>
+                        <span class="text-xxs text-gray-500 font-bold">T</span>
+                        <span class="text-xxs text-gray-500 font-bold">Q</span>
+                        <span class="text-xxs text-gray-500 font-bold">Q</span>
+                        <span class="text-xxs text-gray-500 font-bold">S</span>
+                        <span class="text-xxs text-gray-500 font-bold">S</span>
+                        <span class="text-xxs text-gray-500 font-bold">D</span>
+                    </div>
+                    <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
+                    <div class="flex items-center gap-3 mt-3">
+                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-500 inline-block"></span> Estudou</span>
+                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span> Hoje</span>
+                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-950 border border-blue-800 inline-block"></span> Não estudou</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Meta Diária de Estudo -->
             <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
@@ -881,69 +956,6 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Planeamento Ativo -->
-                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between gap-4">
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Planeamento Ativo</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-blue-950 p-4 rounded-xl border border-blue-800 space-y-2">
-                                <span class="text-xxs font-bold text-yellow-400 uppercase tracking-widest block"><i class="fa-solid fa-road mr-1"></i>Sugerido para Estudar Agora:</span>
-                                <span class="text-xs font-bold bg-yellow-400 text-slate-900 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block" id="dash-next-subject">--</span>
-                                <h4 class="text-sm font-bold text-white mt-1" id="dash-next-topic">Selecione ou inicie uma disciplina</h4>
-                                <p class="text-xs text-gray-400">Tempo planeado: <strong id="dash-next-time">--</strong></p>
-                            </div>
-
-                            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
-                                <span class="text-xxs font-bold text-emerald-400 uppercase tracking-widest block"><i class="fa-solid fa-circle-check mr-1"></i>Última Matéria Concluída:</span>
-                                <h5 class="text-xs font-bold text-white truncate" id="dash-last-subject">Aguardando registo</h5>
-                                <p class="text-xxs text-gray-300" id="dash-last-topic">Complete uma sessão para atualizar permanentemente este bloco.</p>
-                                <div class="flex justify-between items-center pt-1 border-t border-slate-800/60 mt-1">
-                                    <span class="text-xxs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-semibold" id="dash-last-status">Aguardando</span>
-                                    <span class="text-xxs text-gray-400" id="dash-last-time">--</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <button onclick="startNextCycleSubject()" class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-black rounded-xl transition duration-200 shadow-lg flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-play"></i> Iniciar Próxima Matéria do Ciclo
-                        </button>
-                        <button onclick="switchTab('cronometro')" class="w-full py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl transition duration-200 border border-blue-700 flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-stopwatch"></i> Ir para o Cronómetro Tático
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Calendário de Estudos -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-calendar-days text-prf-yellow mr-2"></i>Calendário de Estudos</h3>
-                        <div class="flex items-center gap-1">
-                            <button onclick="calPrevMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                            <span id="cal-month-label" class="text-xs font-bold text-gray-300 px-2 min-w-[110px] text-center"></span>
-                            <button onclick="calNextMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1 text-center mb-1">
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">T</span>
-                        <span class="text-xxs text-gray-500 font-bold">Q</span>
-                        <span class="text-xxs text-gray-500 font-bold">Q</span>
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">D</span>
-                    </div>
-                    <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
-                    <div class="flex items-center gap-3 mt-3">
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-500 inline-block"></span> Estudou</span>
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span> Hoje</span>
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-950 border border-blue-800 inline-block"></span> Não estudou</span>
-                    </div>
-                </div>
-            </div>
 
             <!-- Tempo de Estudo por Disciplina -->
             <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
@@ -2524,7 +2536,22 @@
             currentCycleStep: 0,
             history: [],
             revisions: [],
-            summaries: [] 
+            summaries: [],
+            // Cronograma semanal gerenciável: um plano por dia da semana,
+            // editável pelo usuário na aba Dashboard (Planeamento Ativo).
+            weeklySchedule: [
+                { day: 'Segunda', items: [{ subject: '', duration: 60 }] },
+                { day: 'Terça',   items: [{ subject: '', duration: 60 }] },
+                { day: 'Quarta',  items: [{ subject: '', duration: 60 }] },
+                { day: 'Quinta',  items: [{ subject: '', duration: 60 }] },
+                { day: 'Sexta',   items: [{ subject: '', duration: 60 }] },
+                { day: 'Sábado',  items: [{ subject: '', duration: 90 }] },
+                { day: 'Domingo', items: [] }
+            ],
+            // Registra exclusões (id → data/hora) para que a sincronização
+            // saiba que um item foi apagado de propósito, em vez de tratá-lo
+            // como "só existe de um lado, então adiciona de volta".
+            tombstones: { history: {}, summaries: {} }
         };
 
         // === INICIALIZAÇÃO ===
@@ -2808,6 +2835,65 @@
             return { json, updatedAt: data.updatedAt || '1970-01-01T00:00:00.000Z' };
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        // ── ÚNICO PONTO DE SINCRONIZAÇÃO SEGURO ─────────────────────────────
+        // AUDITORIA (22/07): existiam 5 caminhos de código diferentes falando
+        // com o Firestore (auto-save após edição, sync manual, sync periódico
+        // de 3min, boot da página, listener em tempo real), e cada um tinha
+        // sua própria lógica de decisão — alguns comparavam só um timestamp
+        // do documento inteiro e, quando decidiam que "só a nuvem mudou" ou
+        // "só o local mudou", faziam uma ESCRITA CEGA (studyDb = cloudParsed,
+        // ou _writeStudyDbToCloud(studyDb) sem ler a nuvem primeiro). Foi
+        // assim que dados reais foram apagados por um banco zerado.
+        //
+        // Esta função é agora o ÚNICO lugar que lê ou escreve o documento
+        // inteiro do usuário no Firestore. Todo caminho (auto-save, botão
+        // manual, ciclo de 3min, boot, "carregar da nuvem") passa por ela.
+        // Ela SEMPRE lê a nuvem na hora e SEMPRE mescla item a item com
+        // _mergeStudyDbs — nunca decide "um lado vence por inteiro".
+        // ══════════════════════════════════════════════════════════════════════
+        async function _safeCloudSync() {
+            if (!currentUser) { return { ok: false, reason: 'logged-out' }; }
+            if (!navigator.onLine) { _markPendingSync(true); return { ok: false, reason: 'offline' }; }
+
+            const cloudDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+            const cloudHasData = cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
+
+            if (!cloudHasData) {
+                // Nada na nuvem ainda — não há o que mesclar, envia o local.
+                studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
+                await _writeStudyDbToCloud(currentUser.uid, studyDb);
+                await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+                await _setLastSyncAt();
+                _lastAppliedCloudTs = studyDb.updatedAt;
+                _markPendingSync(false);
+                return { ok: true, action: 'upload-initial' };
+            }
+
+            const cloudData   = await _readStudyDbFromCloud(currentUser.uid);
+            const cloudParsed = JSON.parse(cloudData.json);
+            if (!cloudParsed.summaries)  cloudParsed.summaries  = [];
+            if (!cloudParsed.history)    cloudParsed.history    = [];
+            if (!cloudParsed.revisions)  cloudParsed.revisions  = [];
+            if (!cloudParsed.tombstones) cloudParsed.tombstones = { history: {}, summaries: {} };
+
+            const merged = _mergeStudyDbs(studyDb, cloudParsed);
+            const diff   = _countMergeDiff(cloudParsed, merged);
+            studyDb = merged;
+            await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
+
+            // Só reescreve a nuvem se o merge realmente trouxe algo novo do
+            // lado local — evita escritas desnecessárias e evita disparar à
+            // toa o listener de outros dispositivos.
+            if (JSON.stringify(merged) !== JSON.stringify(cloudParsed)) {
+                await _writeStudyDbToCloud(currentUser.uid, studyDb);
+            }
+            _lastAppliedCloudTs = studyDb.updatedAt;
+            await _setLastSyncAt();
+            _markPendingSync(false);
+            return { ok: true, action: 'merged', diff };
+        }
+
         // Envia dados para o Firestore imediatamente (chamado após o debounce)
         async function _pushToCloud() {
             if (!currentUser || !navigator.onLine) {
@@ -2828,16 +2914,13 @@
                 if (iconEl) iconEl.classList.add('sync-spinning');
                 if (statusEl) { statusEl.innerText = 'Enviando para nuvem…'; statusEl.style.color = '#60a5fa'; }
 
-                // Envia em pedaços (chunks) para nunca esbarrar no limite de 1MB do Firestore
-                await _writeStudyDbToCloud(currentUser.uid, studyDb);
-                await _setLastSyncAt(studyDb.updatedAt);
-                // CORREÇÃO: marca este timestamp como "já aplicado" para que o
-                // listener de tempo real não confunda nosso próprio envio com uma
-                // alteração vinda de outro dispositivo (evitava re-leituras e
-                // notificações "☁ atualizado de outro dispositivo" falsas).
-                _lastAppliedCloudTs = studyDb.updatedAt;
-
-                _markPendingSync(false);
+                const result = await _safeCloudSync();
+                if (result.ok && result.action === 'merged' && result.diff) {
+                    const parts = [];
+                    if (result.diff.histDiff > 0) parts.push(`+${result.diff.histDiff} sessão(ões)`);
+                    if (result.diff.sumDiff  > 0) parts.push(`+${result.diff.sumDiff} resumo(s)`);
+                    if (parts.length) { renderAllTabs(); showToast(`🔄 Combinado com a nuvem (${parts.join(', ')}).`, 'info'); }
+                }
 
                 // Atualiza UI de sync
                 const now = new Date();
@@ -2863,6 +2946,8 @@
                 if (iconEl) iconEl.classList.remove('sync-spinning');
             }
         }
+
+
 
         // Mantida por compatibilidade com código antigo que chama updateSyncStatusDisplay
         function updateSyncStatusDisplay(ok) {
@@ -5260,6 +5345,8 @@
         function deleteActiveSummary() {
             if (!activeSummaryId) return;
             showConfirm("Excluir este resumo permanentemente?", () => {
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {} };
+                studyDb.tombstones.summaries[activeSummaryId] = new Date().toISOString();
                 studyDb.summaries = studyDb.summaries.filter(s => s.id !== activeSummaryId);
                 saveDatabase(); activeSummaryId = null;
                 document.getElementById('active-summary-workspace').classList.add('hidden');
@@ -5644,7 +5731,12 @@ function renderHistoryTab() {
         }
 
         function deleteHistorySession(id) {
-            showConfirm("Apagar registo?", () => { studyDb.history = studyDb.history.filter(s => s.id !== id); saveDatabase(); renderAllTabs(); });
+            showConfirm("Apagar registo?", () => {
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {} };
+                studyDb.tombstones.history[id] = new Date().toISOString();
+                studyDb.history = studyDb.history.filter(s => s.id !== id);
+                saveDatabase(); renderAllTabs();
+            });
         }
 
         function openEditHistoryModal(id) {
@@ -6481,7 +6573,13 @@ function renderHistoryTab() {
                             if (!parsed.summaries)  parsed.summaries  = [];
                             if (!parsed.history)    parsed.history    = [];
                             if (!parsed.revisions)  parsed.revisions  = [];
-                            studyDb = parsed;
+                            if (!parsed.tombstones) parsed.tombstones = { history: {}, summaries: {} };
+                            // CORREÇÃO: antes fazia studyDb = parsed (troca cega).
+                            // Se este aparelho já tivesse algo local (ex: você
+                            // testou a planilha antes de logar), isso se perdia
+                            // no instante do login. Agora mescla item a item,
+                            // igual a todo o resto da sincronização.
+                            studyDb = _mergeStudyDbs(studyDb, parsed);
                             await saveDatabase();
                             renderAllTabs();
                         }
@@ -6542,25 +6640,22 @@ function renderHistoryTab() {
         async function loadFromCloud() {
             if (!currentUser) { showAlert("Inicie sessão primeiro."); return; }
             try {
-                const cloudData = await _readStudyDbFromCloud(currentUser.uid);
-                if (!cloudData || !cloudData.json) { showAlert("Sem dados na nuvem para esta conta."); return; }
-                const parsed = JSON.parse(cloudData.json);
-                if (!parsed.syllabus) { showAlert("Dados inválidos."); return; }
-                if (!parsed.summaries)  parsed.summaries  = [];
-                if (!parsed.history)    parsed.history    = [];
-                if (!parsed.revisions)  parsed.revisions  = [];
-                studyDb = parsed;
-                await saveDatabase();
+                // CORREÇÃO: antes sobrescrevia studyDb às cegas com o que vinha
+                // da nuvem. Agora sempre mescla — "carregar da nuvem" nunca
+                // pode fazer você perder algo que só existe localmente.
+                const result = await _safeCloudSync();
+                if (!result.ok) { showAlert("Não foi possível carregar da nuvem agora."); return; }
                 renderAllTabs();
+                showAlert("✅ Dados combinados com a nuvem.");
             } catch(e) {
                 showAlert("Erro ao carregar: " + e.message);
             }
         }
 
         // ══════════════════════════════════════════════════════════════════════
-        // ── SMART SYNC COM MERGE INTELIGENTE ─────────────────────────────────
-        // Detecta conflito (ambos os lados mudaram desde o último sync) e faz
-        // merge automático sem perda de dados.
+        // ── SMART SYNC — agora só chama o caminho único e seguro ────────────
+        // (a antiga lógica de "upload / download / merge" por comparação de
+        // timestamp do documento inteiro foi removida — ver _safeCloudSync)
         // ══════════════════════════════════════════════════════════════════════
         async function smartSyncNow(silent) {
             if (!currentUser) {
@@ -6581,82 +6676,19 @@ function renderHistoryTab() {
             if (labelEl) labelEl.textContent = 'Sincronizando...';
 
             try {
-                const cloudMetaDoc = await fbDb.collection('users').doc(currentUser.uid).get();
-                const lastSyncAt    = await _getLastSyncAt();
-                const localUpdatedAt = studyDb.updatedAt || '1970-01-01T00:00:00.000Z';
-                const cloudExists    = cloudMetaDoc.exists && (cloudMetaDoc.data().studyDb || cloudMetaDoc.data().chunkCount);
-                const cloudUpdatedAt = (cloudMetaDoc.exists && cloudMetaDoc.data().updatedAt) ? cloudMetaDoc.data().updatedAt : '1970-01-01T00:00:00.000Z';
+                const result = await _safeCloudSync();
+                renderAllTabs();
 
-                const localChangedSinceSync = new Date(localUpdatedAt) > new Date(lastSyncAt);
-                const cloudChangedSinceSync = new Date(cloudUpdatedAt) > new Date(lastSyncAt);
-                const conflict = localChangedSinceSync && cloudChangedSinceSync;
-
-                let action = 'upload'; // default
-                if (!cloudExists) {
-                    action = 'upload'; // nada na nuvem → envia local
-                } else if (conflict) {
-                    action = 'merge';  // ambos mudaram → merge inteligente
-                } else if (cloudChangedSinceSync && !localChangedSinceSync) {
-                    action = 'download'; // só nuvem mudou → baixa
-                } else {
-                    action = 'upload';   // só local mudou ou iguais → envia
-                }
-
-                if (action === 'merge') {
-                    // ── MERGE: combina local + nuvem sem perda de dados ──
-                    const cloudData   = await _readStudyDbFromCloud(currentUser.uid);
-                    const cloudParsed = JSON.parse(cloudData.json);
-                    if (!cloudParsed.summaries) cloudParsed.summaries = [];
-                    if (!cloudParsed.history)   cloudParsed.history   = [];
-                    if (!cloudParsed.revisions) cloudParsed.revisions = [];
-
-                    const beforeCount = { history: (cloudParsed.history||[]).length };
-                    const merged = _mergeStudyDbs(studyDb, cloudParsed);
-                    const diff   = _countMergeDiff(cloudParsed, merged);
-
-                    studyDb = merged;
-                    // Envia resultado do merge para nuvem
-                    await _writeStudyDbToCloud(currentUser.uid, studyDb);
-                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                    await _setLastSyncAt();
-                    renderAllTabs();
-
-                    // Mostra info do merge
-                    const conflictInfo = document.getElementById('sync-conflict-info');
-                    if (conflictInfo) conflictInfo.classList.remove('hidden');
-                    setTimeout(() => { if(conflictInfo) conflictInfo.classList.add('hidden'); }, 8000);
-
+                if (result.action === 'merged' && result.diff) {
                     const parts = [];
-                    if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
-                    if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
-                    if (diff.revDiff  > 0) parts.push(`+${diff.revDiff} revisão(ões)`);
+                    if (result.diff.histDiff > 0) parts.push(`+${result.diff.histDiff} sessão(ões)`);
+                    if (result.diff.sumDiff  > 0) parts.push(`+${result.diff.sumDiff} resumo(s)`);
+                    if (result.diff.revDiff  > 0) parts.push(`+${result.diff.revDiff} revisão(ões)`);
                     const detail = parts.length ? ` (${parts.join(', ')} recuperados)` : '';
-
-                    if (!silent) showToast(`🔀 Merge concluído! Dados de 2 dispositivos unidos${detail}.`, 'info');
-                    else         showToast(`🔀 Sync: dados offline + nuvem fundidos${detail}.`, 'info');
-
-                } else if (action === 'download') {
-                    // ── DOWNLOAD: nuvem mais recente, local não mudou ──
-                    const cloudData = await _readStudyDbFromCloud(currentUser.uid);
-                    const parsed = JSON.parse(cloudData.json);
-                    if (parsed && parsed.syllabus) {
-                        if (!parsed.summaries) parsed.summaries = [];
-                        if (!parsed.history)   parsed.history   = [];
-                        if (!parsed.revisions) parsed.revisions = [];
-                        studyDb = parsed;
-                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                        await _setLastSyncAt();
-                        renderAllTabs();
-                    }
-                    if (!silent) showAlert("✅ Dados atualizados da nuvem!");
-
-                } else {
-                    // ── UPLOAD: local mais recente ──
-                    studyDb.updatedAt = new Date().toISOString();
-                    await _writeStudyDbToCloud(currentUser.uid, studyDb);
-                    await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                    await _setLastSyncAt();
-                    if (!silent) showAlert("✅ Sincronizado! Dados enviados para a nuvem.");
+                    if (!silent) showToast(`🔀 Sincronizado! Dados combinados${detail}.`, 'info');
+                    else         showToast(`🔀 Sync: dados combinados${detail}.`, 'info');
+                } else if (!silent) {
+                    showAlert("✅ Sincronizado!");
                 }
 
                 // Atualiza UI
@@ -6665,7 +6697,6 @@ function renderHistoryTab() {
                 const statusEl = document.getElementById('sync-status-text');
                 if (timeEl)   timeEl.innerText = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                 if (statusEl) { statusEl.innerText = 'Sincronizado ✓'; statusEl.style.color = '#10b981'; }
-                _markPendingSync(false);
                 _showOfflineBanner(false);
 
             } catch(e) {
@@ -8298,10 +8329,21 @@ function renderHistoryTab() {
         function _mergeStudyDbs(localDb, cloudDb) {
             const merged = JSON.parse(JSON.stringify(cloudDb)); // base = nuvem
 
+            // ── 0. TOMBSTONES: união dos dois lados (uma exclusão nunca se perde) ──
+            const localTomb = (localDb.tombstones) || { history: {}, summaries: {} };
+            const cloudTomb = (cloudDb.tombstones) || { history: {}, summaries: {} };
+            const mergedTombHist = { ...(cloudTomb.history || {}), ...(localTomb.history || {}) };
+            const mergedTombSum  = { ...(cloudTomb.summaries || {}), ...(localTomb.summaries || {}) };
+            merged.tombstones = { history: mergedTombHist, summaries: mergedTombSum };
+
             // ── 1. HISTÓRICO: união por ID — garante que sessões offline não se perdem ──
+            // Itens com uma lápide (excluídos de propósito em qualquer dispositivo)
+            // ficam de fora, em vez de serem "ressuscitados" só por existirem
+            // ainda no outro lado.
             const cloudHistIds = new Set((cloudDb.history || []).map(h => String(h.id)));
             const localOnlyHist = (localDb.history || []).filter(h => !cloudHistIds.has(String(h.id)));
-            merged.history = [...(cloudDb.history || []), ...localOnlyHist];
+            merged.history = [...(cloudDb.history || []), ...localOnlyHist]
+                .filter(h => !mergedTombHist[h.id] && !mergedTombHist[String(h.id)]);
             merged.history.sort((a, b) => String(a.date||'').localeCompare(String(b.date||'')));
 
             // ── 2. RESUMOS: união por ID, conflito → versão com lastEdited mais recente ──
@@ -8317,7 +8359,7 @@ function renderHistoryTab() {
                     if (localDate > cloudDate) cloudSumMap[s.id] = s;
                 }
             });
-            merged.summaries = Object.values(cloudSumMap);
+            merged.summaries = Object.values(cloudSumMap).filter(s => !mergedTombSum[s.id] && !mergedTombSum[String(s.id)]);
 
             // ── 3. REVISÕES SM2: por chave subject+topic, guarda o mais recente ──
             const revKey = r => `${r.subject || ''}||${r.topic || ''}`;
@@ -8378,6 +8420,14 @@ function renderHistoryTab() {
             merged.studyCycle      = localDb.studyCycle      || cloudDb.studyCycle      || [];
             merged.currentCycleStep = localDb.currentCycleStep ?? cloudDb.currentCycleStep ?? 0;
 
+            // ── 5b. CRONOGRAMA SEMANAL: mesma regra do ciclo — é configuração,
+            // não dado incremental, então usa local (quem editou por último
+            // NESTE dispositivo prevalece; se quiser mesclar de outro
+            // dispositivo, é só sincronizar antes de editar de novo).
+            merged.weeklySchedule = (localDb.weeklySchedule && localDb.weeklySchedule.length === 7)
+                ? localDb.weeklySchedule
+                : (cloudDb.weeklySchedule || []);
+
             // ── 6. META DIÁRIA + SYNC CODE ──
             merged.dailyGoalMinutes = Math.max(localDb.dailyGoalMinutes || 0, cloudDb.dailyGoalMinutes || 0) || undefined;
             merged.syncCode = localDb.syncCode || cloudDb.syncCode || '';
@@ -8403,6 +8453,32 @@ function renderHistoryTab() {
             if (!Array.isArray(studyDb.history))   { studyDb.history   = []; repaired = true; }
             if (!Array.isArray(studyDb.revisions)) { studyDb.revisions = []; repaired = true; }
             if (!Array.isArray(studyDb.summaries)) { studyDb.summaries = []; repaired = true; }
+            if (!studyDb.tombstones || typeof studyDb.tombstones !== 'object') { studyDb.tombstones = { history: {}, summaries: {} }; repaired = true; }
+            if (!studyDb.tombstones.history)   { studyDb.tombstones.history   = {}; repaired = true; }
+            if (!studyDb.tombstones.summaries) { studyDb.tombstones.summaries = {}; repaired = true; }
+            if (!Array.isArray(studyDb.weeklySchedule) || studyDb.weeklySchedule.length !== 7) {
+                studyDb.weeklySchedule = [
+                    { day: 'Segunda', items: [{ subject: '', duration: 60 }] },
+                    { day: 'Terça',   items: [{ subject: '', duration: 60 }] },
+                    { day: 'Quarta',  items: [{ subject: '', duration: 60 }] },
+                    { day: 'Quinta',  items: [{ subject: '', duration: 60 }] },
+                    { day: 'Sexta',   items: [{ subject: '', duration: 60 }] },
+                    { day: 'Sábado',  items: [{ subject: '', duration: 90 }] },
+                    { day: 'Domingo', items: [] }
+                ];
+                repaired = true;
+            } else {
+                // MIGRAÇÃO: formato antigo tinha 1 matéria por dia (subject/duration
+                // direto no dia). Converte para o novo formato com uma lista de
+                // matérias por dia, sem perder o que já estava planejado.
+                studyDb.weeklySchedule.forEach(d => {
+                    if (!Array.isArray(d.items)) {
+                        d.items = (d.subject) ? [{ subject: d.subject, duration: d.duration || 60 }] : [];
+                        delete d.subject; delete d.duration;
+                        repaired = true;
+                    }
+                });
+            }
 
             studyDb.syllabus.forEach(sub => {
                 if (!Array.isArray(sub.topics)) { sub.topics = []; repaired = true; }
@@ -8885,12 +8961,96 @@ function renderHistoryTab() {
             try { initCalendar();            } catch(e) { console.error('cal',e); }
             try { renderDailyTip();          } catch(e) { console.error('tip',e); }
             try { updateIntelligencePanel(); } catch(e) { console.error('intel',e); }
+            try { renderWeeklySchedule();     } catch(e) { console.error('weekly',e); }
             const _df = document.getElementById('form-session-date');
             if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
             syncSessionDatePicker();
         }
 
-        // ── OVERRIDE saveStudySession: usa SM2 em vez de intervalos fixos ────
+        // ── CRONOGRAMA SEMANAL GERENCIÁVEL (múltiplas matérias por dia) ─────
+        function renderWeeklySchedule() {
+            const grid = document.getElementById('weekly-schedule-grid');
+            const totalEl = document.getElementById('weekly-schedule-total');
+            if (!grid) return;
+            if (!Array.isArray(studyDb.weeklySchedule)) return;
+
+            const subjects = (studyDb.syllabus || []).map(s => s.subject);
+            let weekTotal = 0;
+
+            grid.innerHTML = studyDb.weeklySchedule.map((dayObj, dayIdx) => {
+                const items = Array.isArray(dayObj.items) ? dayObj.items : [];
+                const dayTotal = items.reduce((sum, it) => sum + (it.duration || 0), 0);
+                weekTotal += dayTotal;
+
+                const rows = items.map((it, itemIdx) => {
+                    const options = ['<option value="">— Selecione —</option>']
+                        .concat(subjects.map(s => `<option value="${s.replace(/"/g,'&quot;')}" ${it.subject === s ? 'selected' : ''}>${s}</option>`))
+                        .join('');
+                    return `
+                    <div class="flex items-center gap-2">
+                        <select onchange="updateWeeklyScheduleItem(${dayIdx}, ${itemIdx}, 'subject', this.value)"
+                            class="flex-grow bg-input-dark border border-blue-800 rounded-md px-2 py-1 text-xxs text-white focus:outline-none focus:border-yellow-400">
+                            ${options}
+                        </select>
+                        <input type="number" min="0" max="600" step="15" value="${it.duration || 0}"
+                            onchange="updateWeeklyScheduleItem(${dayIdx}, ${itemIdx}, 'duration', this.value)"
+                            class="w-16 bg-input-dark border border-blue-800 rounded-md px-2 py-1 text-xxs text-white text-center focus:outline-none focus:border-yellow-400" title="Minutos planejados">
+                        <span class="text-xxs text-gray-500 shrink-0">min</span>
+                        <button onclick="removeWeeklyScheduleItem(${dayIdx}, ${itemIdx})" title="Remover" class="text-gray-500 hover:text-red-400 transition px-1">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>`;
+                }).join('') || `<p class="text-xxs text-gray-500 italic">Nenhuma matéria planejada — dia livre.</p>`;
+
+                return `
+                <div class="bg-blue-900/30 rounded-lg px-3 py-2.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xxs font-bold text-gray-300">${dayObj.day}</span>
+                        <div class="flex items-center gap-2">
+                            ${dayTotal > 0 ? `<span class="text-xxs text-gray-500">${dayTotal} min</span>` : ''}
+                            <button onclick="addWeeklyScheduleItem(${dayIdx})" title="Adicionar matéria neste dia" class="text-xxs font-bold text-yellow-400 hover:text-yellow-300 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> Matéria
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">${rows}</div>
+                </div>`;
+            }).join('');
+
+            if (totalEl) {
+                const h = Math.floor(weekTotal / 60), m = weekTotal % 60;
+                totalEl.innerText = `${h}h${m > 0 ? m + 'm' : ''} planejado/semana`;
+            }
+        }
+
+        function addWeeklyScheduleItem(dayIdx) {
+            if (!Array.isArray(studyDb.weeklySchedule) || !studyDb.weeklySchedule[dayIdx]) return;
+            if (!Array.isArray(studyDb.weeklySchedule[dayIdx].items)) studyDb.weeklySchedule[dayIdx].items = [];
+            studyDb.weeklySchedule[dayIdx].items.push({ subject: '', duration: 60 });
+            saveDatabase();
+            renderWeeklySchedule();
+        }
+
+        function removeWeeklyScheduleItem(dayIdx, itemIdx) {
+            if (!Array.isArray(studyDb.weeklySchedule) || !studyDb.weeklySchedule[dayIdx]) return;
+            studyDb.weeklySchedule[dayIdx].items.splice(itemIdx, 1);
+            saveDatabase();
+            renderWeeklySchedule();
+        }
+
+        function updateWeeklyScheduleItem(dayIdx, itemIdx, field, value) {
+            if (!Array.isArray(studyDb.weeklySchedule) || !studyDb.weeklySchedule[dayIdx]) return;
+            const item = studyDb.weeklySchedule[dayIdx].items[itemIdx];
+            if (!item) return;
+            item[field] = field === 'duration' ? (parseInt(value) || 0) : value;
+            saveDatabase();
+            renderWeeklySchedule();
+        }
+        window.addWeeklyScheduleItem = addWeeklyScheduleItem;
+        window.removeWeeklyScheduleItem = removeWeeklyScheduleItem;
+        window.updateWeeklyScheduleItem = updateWeeklyScheduleItem;
+
+
         function saveStudySession(e) {
             e.preventDefault();
             const subject = document.getElementById('form-subject').value;
@@ -9079,53 +9239,22 @@ function renderHistoryTab() {
                     if (iconEl)   iconEl.classList.add('sync-spinning');
                     if (statusEl) { statusEl.innerText = 'Sincronizando…'; statusEl.style.color = '#60a5fa'; }
 
-                    const cloudDoc = await fbDb.collection('users').doc(fbUser.uid).get();
-                    const cloudHasData = cloudDoc && cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
-
-                    if (cloudHasData) {
-                        // CORREÇÃO DEFINITIVA (perda de dados de 21/07): esta
-                        // função tinha 3 caminhos — um deles ("cloudChanged
-                        // && !localChanged") sobrescrevia o dispositivo local
-                        // por INTEIRO com o que veio da nuvem, sem checar se
-                        // o conteúdo fazia sentido. Foi assim que um banco
-                        // zerado (de um dispositivo novo) apagou o histórico
-                        // real. Agora só existe UM caminho: sempre mesclar
-                        // item a item com _mergeStudyDbs — união de sessões,
-                        // resumos e revisões por ID, e progresso do edital
-                        // que só avança, nunca regride. Nenhum lado nunca é
-                        // descartado por inteiro.
-                        const cloudData   = await _readStudyDbFromCloud(fbUser.uid);
-                        const cloudParsed = JSON.parse(cloudData.json);
-                        if (!cloudParsed.summaries) cloudParsed.summaries = [];
-                        if (!cloudParsed.history)   cloudParsed.history   = [];
-                        if (!cloudParsed.revisions) cloudParsed.revisions = [];
-
-                        const merged = _mergeStudyDbs(studyDb, cloudParsed);
-                        const diff = _countMergeDiff(cloudParsed, merged);
-                        studyDb = merged;
-                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-
-                        // Só reescreve a nuvem se o merge realmente trouxe algo
-                        // novo do lado local (evita escritas desnecessárias e
-                        // evita disparar o listener de outros dispositivos à toa).
-                        if (JSON.stringify(merged) !== JSON.stringify(cloudParsed)) {
-                            await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                        }
-                        await _setLastSyncAt();
+                    // Usa o único caminho seguro de sincronização (ver
+                    // _safeCloudSync) em vez de manter uma segunda cópia da
+                    // lógica de merge aqui — duas cópias do mesmo raciocínio
+                    // é como o bug antigo conseguiu sobreviver escondido num
+                    // dos caminhos enquanto o outro parecia corrigido.
+                    const result = await _safeCloudSync();
+                    if (result.ok) {
                         renderAllTabs();
-                        const parts = [];
-                        if (diff.histDiff > 0) parts.push(`+${diff.histDiff} sessão(ões)`);
-                        if (diff.sumDiff  > 0) parts.push(`+${diff.sumDiff} resumo(s)`);
-                        if (parts.length) {
-                            showToast(`🔄 Dados combinados com a nuvem (${parts.join(', ')}).`, 'info');
+                        if (result.action === 'merged' && result.diff) {
+                            const parts = [];
+                            if (result.diff.histDiff > 0) parts.push(`+${result.diff.histDiff} sessão(ões)`);
+                            if (result.diff.sumDiff  > 0) parts.push(`+${result.diff.sumDiff} resumo(s)`);
+                            showToast(parts.length ? `🔄 Dados combinados com a nuvem (${parts.join(', ')}).` : '☁ Sincronizado com a nuvem.', 'info');
                         } else {
                             showToast('☁ Sincronizado com a nuvem.', 'info');
                         }
-                    } else {
-                        studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                        await _writeStudyDbToCloud(fbUser.uid, studyDb);
-                        await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
-                        await _setLastSyncAt();
                     }
 
                     const now = new Date();
