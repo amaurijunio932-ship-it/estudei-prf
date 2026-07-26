@@ -864,31 +864,105 @@
                     </div>
                 </div>
 
-                <!-- Calendário de Estudos -->
+                <!-- Calendário de Atividade -->
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-calendar-days text-prf-yellow mr-2"></i>Calendário de Estudos</h3>
-                        <div class="flex items-center gap-1">
-                            <button onclick="calPrevMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                            <span id="cal-month-label" class="text-xs font-bold text-gray-300 px-2 min-w-[110px] text-center"></span>
-                            <button onclick="calNextMonth()" class="w-7 h-7 rounded-lg bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="bg-rose-500/20 text-rose-400 text-lg w-10 h-10 rounded-xl flex items-center justify-center shrink-0"><i class="fa-solid fa-calendar-days"></i></div>
+                        <div class="min-w-0">
+                            <h3 class="text-base font-black text-white truncate">Calendário de Atividade</h3>
+                            <p class="text-xxs text-gray-400" id="activity-cal-subtitle">Dias de estudo em --</p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-7 gap-1 text-center mb-1">
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">T</span>
-                        <span class="text-xxs text-gray-500 font-bold">Q</span>
-                        <span class="text-xxs text-gray-500 font-bold">Q</span>
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">S</span>
-                        <span class="text-xxs text-gray-500 font-bold">D</span>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <button onclick="activityCalPrevYear()" class="w-6 h-6 rounded-md bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition shrink-0"><i class="fa-solid fa-chevron-left text-xxs"></i></button>
+                        <span id="activity-cal-year-label" class="text-xxs font-bold text-gray-300"></span>
+                        <button onclick="activityCalNextYear()" class="w-6 h-6 rounded-md bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition shrink-0"><i class="fa-solid fa-chevron-right text-xxs"></i></button>
                     </div>
-                    <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
-                    <div class="flex items-center gap-3 mt-3">
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-500 inline-block"></span> Estudou</span>
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-yellow-400 inline-block"></span> Hoje</span>
-                        <span class="flex items-center gap-1 text-xxs text-gray-400"><span class="w-3 h-3 rounded-sm bg-blue-950 border border-blue-800 inline-block"></span> Não estudou</span>
+
+                    <div class="overflow-x-auto pb-1">
+                        <div id="activity-cal-grid" class="flex items-start gap-3"></div>
                     </div>
+
+                    <div class="flex items-center gap-1.5 mt-3 text-xxs text-gray-400">
+                        <span>Menos</span>
+                        <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#312e81"></span>
+                        <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#86efac"></span>
+                        <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#4ade80"></span>
+                        <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#22c55e"></span>
+                        <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:#15803d"></span>
+                        <span>Mais</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                            <div class="text-orange-400"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                            <div>
+                                <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Sequência Atual</span>
+                                <h4 class="text-base font-black text-white"><span id="activity-current-streak">0</span> dias</h4>
+                            </div>
+                        </div>
+                        <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                            <div class="text-amber-400"><i class="fa-solid fa-trophy"></i></div>
+                            <div>
+                                <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Recorde</span>
+                                <h4 class="text-base font-black text-white"><span id="activity-record-streak">0</span> dias</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights do Estudei -->
+            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <span class="text-sm font-black text-white flex items-center gap-2">
+                        <span class="bg-blue-600 text-white text-xs font-black px-2 py-0.5 rounded-md tracking-wide">INSIGHTS</span>
+                        DO ESTUDEI <i class="fa-solid fa-wand-magic-sparkles text-prf-yellow"></i>
+                    </span>
+                    <button onclick="openInsightsAnalysisModal()" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-book-open"></i> Análise completa <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                        <div class="text-blue-400"><i class="fa-solid fa-chart-simple"></i></div>
+                        <div>
+                            <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Questões</span>
+                            <h4 class="text-base font-black text-white" id="insights-questions">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                        <div class="text-emerald-400"><i class="fa-solid fa-circle-check"></i></div>
+                        <div>
+                            <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Taxa</span>
+                            <h4 class="text-base font-black text-emerald-400" id="insights-taxa">--</h4>
+                        </div>
+                    </div>
+                    <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                        <div class="text-sky-400"><i class="fa-solid fa-layer-group"></i></div>
+                        <div>
+                            <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Disciplinas</span>
+                            <h4 class="text-base font-black text-white" id="insights-disciplinas">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3 flex items-center gap-2">
+                        <div class="text-rose-400"><i class="fa-solid fa-bullseye"></i></div>
+                        <div>
+                            <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest block">Meta</span>
+                            <h4 class="text-base font-black text-rose-400" id="insights-meta">70%</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-xxs font-bold text-emerald-400 uppercase tracking-widest">Suas Melhores Áreas</span>
+                    <div id="insights-best-label" class="mt-0.5"><p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas melhores áreas.</p></div>
+                </div>
+                <div>
+                    <span class="text-xxs font-bold text-red-400 uppercase tracking-widest">Suas Piores Áreas</span>
+                    <div id="insights-worst-label" class="mt-0.5"><p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas piores áreas.</p></div>
                 </div>
             </div>
 
@@ -1000,6 +1074,36 @@
                 <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-gauge-high text-prf-yellow mr-2"></i>Aproveitamento por Disciplina (Questões)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
                     <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <!-- ── ANÁLISE DE DESEMPENHO (novos gráficos) ── -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Evolução da Taxa de Acerto -->
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
+                    <div class="flex items-start justify-between mb-1">
+                        <div>
+                            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-line text-prf-yellow mr-2"></i>Evolução da Taxa de Acerto</h3>
+                            <p class="text-xxs text-gray-400">Percentual de acerto por semana — mostra se você está melhorando de verdade</p>
+                        </div>
+                        <span id="accuracy-trend-badge" class="shrink-0 text-xxs font-black px-2.5 py-1 rounded-lg bg-blue-950 text-gray-400 border border-blue-800">--</span>
+                    </div>
+                    <div class="h-64 relative mt-3">
+                        <canvas id="accuracyTrendChart"></canvas>
+                    </div>
+                    <p id="accuracy-trend-empty" class="hidden text-xs text-gray-500 text-center py-10">Responda questões em pelo menos 2 semanas diferentes para ver sua evolução aqui.</p>
+                </div>
+
+                <!-- Ranking de Acerto por Disciplina -->
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
+                    <div>
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-ranking-star text-prf-yellow mr-2"></i>Ranking de Acerto por Disciplina</h3>
+                        <p class="text-xxs text-gray-400">Da mais fraca à mais forte — para saber onde focar agora</p>
+                    </div>
+                    <div class="relative mt-3" style="min-height:16rem;" id="subject-accuracy-chart-wrap">
+                        <canvas id="subjectAccuracyChart"></canvas>
+                    </div>
+                    <p id="subject-accuracy-empty" class="hidden text-xs text-gray-500 text-center py-10">Responda questões em pelo menos uma disciplina para ver o ranking aqui.</p>
                 </div>
             </div>
 
@@ -1802,6 +1906,86 @@
     </div>
 
     <!-- Modal: Central Sincronização -->
+    <!-- Modal: Análise Completa de Insights -->
+    <div id="modal-insights-analysis" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[140] flex items-center justify-center p-4 hidden" onclick="if(event.target===this)closeInsightsAnalysisModal()">
+        <div class="bg-card-dark border border-blue-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Análise Completa</h3>
+                <button onclick="closeInsightsAnalysisModal()" class="text-gray-400 hover:text-white transition text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3">
+                    <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest">Total Questões</span>
+                    <h4 class="text-2xl font-black text-white mt-1" id="insights-modal-total">0</h4>
+                    <p class="text-xxs text-gray-500 mt-0.5">consolidado</p>
+                </div>
+                <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-3">
+                    <span class="text-xxs font-bold text-gray-400 uppercase tracking-widest">Taxa de Acerto</span>
+                    <h4 class="text-2xl font-black mt-1 text-emerald-400" id="insights-modal-taxa">0%</h4>
+                    <p class="text-xxs mt-0.5 text-gray-500" id="insights-modal-taxa-sub">--</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-950/40 rounded-xl border border-blue-800 p-4 space-y-3">
+                <div>
+                    <span class="text-sm font-bold text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-1"></i>Acertos vs Erros</span>
+                    <p class="text-xxs text-gray-400" id="insights-modal-total-sub">0 questões respondidas</p>
+                </div>
+                <div class="relative w-40 h-40 mx-auto">
+                    <canvas id="insightsDonutChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-xl font-black text-white" id="insights-modal-donut-pct">0%</span>
+                        <span class="text-xxs text-gray-400">Aproveitamento</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-center">
+                        <h5 class="text-lg font-black text-emerald-400" id="insights-modal-correct">0</h5>
+                        <p class="text-xxs text-emerald-300">Acertos • <span id="insights-modal-correct-pct">0%</span></p>
+                    </div>
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-center">
+                        <h5 class="text-lg font-black text-red-400" id="insights-modal-wrong">0</h5>
+                        <p class="text-xxs text-red-300">Erros • <span id="insights-modal-wrong-pct">0%</span></p>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center justify-between text-xxs">
+                        <span class="text-gray-400 font-bold flex items-center gap-1"><i class="fa-solid fa-medal text-yellow-400"></i>Performance</span>
+                        <span class="font-bold" id="insights-modal-performance-label">--</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all" id="insights-modal-performance-bar" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button type="button" onclick="toggleInsightsSection('worst')" class="w-full flex items-center justify-between bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2.5 text-left transition">
+                    <span class="text-xs font-bold text-red-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down"></i> Top 10 piores — consolidado</span>
+                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥25 · meta <span id="insights-modal-goal-worst">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-worst"></i></span>
+                </button>
+                <div id="insights-list-worst" class="space-y-2 px-1"></div>
+            </div>
+
+            <div class="space-y-2">
+                <button type="button" onclick="toggleInsightsSection('best')" class="w-full flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5 text-left transition">
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> Top 10 melhores — consolidado</span>
+                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥25 · meta <span id="insights-modal-goal-best">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-best"></i></span>
+                </button>
+                <div id="insights-list-best" class="space-y-2 px-1"></div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1 border-t border-blue-900/60">
+                <span class="text-xxs text-gray-500">Meta de aproveitamento para as listas acima</span>
+                <div class="flex items-center gap-1">
+                    <input type="number" id="insights-goal-input" min="1" max="100" class="w-16 bg-input-dark border border-blue-800 rounded-md px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-yellow-400" onchange="updateInsightsGoal(this.value)">
+                    <span class="text-xxs text-gray-500">%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-sync-center" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden">
         <div class="bg-card-dark border-2 border-yellow-400 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative">
             <button onclick="closeSyncCenterModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
@@ -2324,6 +2508,8 @@
         let evolutionChart = null;
         let evoGranularity = 'month';
         let evoSubjectFilter = 'all';
+        let accuracyTrendChart = null;
+        let subjectAccuracyChart = null;
         let timerInterval = null, pauseInterval = null;
         let totalSeconds = 0, pauseSeconds = 0;
         let isTimerRunning = false, isTimerPaused = false;
@@ -3355,21 +3541,10 @@
             if (['dashboard', 'edital', 'ciclo', 'cronometro', 'historico', 'resumos'].includes(hash)) switchTab(hash);
         }
 
-        function renderAllTabs() {
-            updateDashboardMetrics();
-            renderSyllabusTab();
-            renderStudyCycleTab();
-            renderHistoryTab();
-            populateFormDropdowns();
-            renderSummariesTree();
-            updateChartData();
-            initCalendar();
-            renderDailyTip();
-            // Garante que a data já aparece preenchida ao carregar
-            const _df = document.getElementById('form-session-date');
-            if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
-            syncSessionDatePicker();
-        }
+        // (renderAllTabs "completo" está definido mais abaixo, perto do fim
+        // do script — é aquele que realmente roda. Uma versão duplicada e
+        // desatualizada existia aqui antes; era código morto, removida
+        // durante a auditoria para evitar confusão em futuras edições.)
 
         // === 1. DASHBOARD COMPONENT ===
         function updateDashboardMetrics() {
@@ -3449,7 +3624,7 @@
             // Grid de Desempenho (Questões por Matéria)
             let performanceGrid = document.getElementById('subject-performance-grid');
             if (performanceGrid) {
-                performanceGrid.innerHTML = '';
+                const _perfParts = [];
                 studyDb.syllabus.forEach(sub => {
                     let sQ = 0, sC = 0;
                     sub.topics.forEach(t => { sQ += (t.qTotal || 0); sC += (t.qCorrect || 0); });
@@ -3464,7 +3639,7 @@
 
                     let mins = _sumDurationMinutes(studyDb.history.filter(s => s.subject === sub.subject));
 
-                    performanceGrid.innerHTML += `
+                    _perfParts.push(`
                         <div class="bg-blue-950 p-4 rounded-xl border border-blue-900 shadow-sm flex flex-col justify-between">
                             <div class="flex justify-between items-start">
                                 <span class="font-bold text-sm text-white block truncate w-3/4">${sub.subject}</span>
@@ -3475,8 +3650,9 @@
                                 <span>🎯 ${sC}/${sQ} q.</span>
                             </div>
                         </div>
-                    `;
+                    `);
                 });
+                performanceGrid.innerHTML = _perfParts.join('');
             }
 
             // Rascunho
@@ -3763,6 +3939,7 @@
             const accordion = document.getElementById('edital-content-accordion');
             if (!accordion) return;
             accordion.innerHTML = '';
+            const _accHtmlParts = []; // acumula e escreve no DOM uma única vez (evita reparse O(n²) por disciplina)
             
             const hideStudied = document.getElementById('toggle-hide-studied') ? document.getElementById('toggle-hide-studied').checked : false;
 
@@ -3829,7 +4006,7 @@
                 });
 
                 if (rowsCount > 0) {
-                    accordion.innerHTML += `
+                    _accHtmlParts.push(`
                         <div class="bg-card-dark rounded-2xl border border-blue-900 overflow-hidden shadow" id="subject-block-${sIdx}">
                             <div class="px-5 py-4 prf-blue flex justify-between items-center border-b border-blue-900 cursor-pointer" onclick="toggleSubjectBlock(${sIdx})">
                                 <div class="flex items-center gap-3">
@@ -3866,9 +4043,10 @@
                                 </table>
                             </div>
                         </div>
-                    `;
+                    `);
                 }
             });
+            accordion.innerHTML = _accHtmlParts.join('');
             applyCollapsedState();
         }
 
@@ -5612,6 +5790,9 @@ ${conteudo}
             return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         }
 
+let _historyVisibleDays = 30;   // paginação: quantos DIAS de histórico mostrar de uma vez
+let _historyLastFilterKey = '';  // detecta mudança de busca/filtro para resetar a paginação
+
 function renderHistoryTab() {
             const tbody = document.getElementById('history-table-body');
             if (!tbody) return; tbody.innerHTML = '';
@@ -5627,6 +5808,12 @@ function renderHistoryTab() {
 
             const searchVal = (document.getElementById('history-search')?.value || '').toLowerCase();
             const filterSubject = document.getElementById('history-filter-subject')?.value || '';
+
+            // Nova busca/filtro → volta a paginação para o começo (mostra os
+            // dias mais recentes primeiro, evita "sumiço" de resultados
+            // filtrados que ficariam além da página atual).
+            const _filterKey = searchVal + '|' + filterSubject;
+            if (_filterKey !== _historyLastFilterKey) { _historyVisibleDays = 30; _historyLastFilterKey = _filterKey; }
 
             let sorted = [...studyDb.history].sort((a,b) => {
                 if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
@@ -5649,12 +5836,20 @@ function renderHistoryTab() {
             const ptMonths = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
             const groups = {};
             const groupOrder = [];
+            const htmlParts = []; // acumula strings e faz UM único innerHTML no final (evita re-parse O(n²) do DOM a cada grupo)
             sorted.forEach(s => {
                 if (!groups[s.date]) { groups[s.date] = []; groupOrder.push(s.date); }
                 groups[s.date].push(s);
             });
 
-            groupOrder.forEach((date, gIdx) => {
+            // ── PAGINAÇÃO: mostra só os N dias mais recentes de cada vez ──
+            // Sem isso, a tabela renderiza o histórico inteiro sempre — tranquilo
+            // hoje, mas cresce sem limite conforme você usa o app por meses.
+            const _totalDays = groupOrder.length;
+            const _pagedGroupOrder = groupOrder.slice(0, _historyVisibleDays);
+            const _hasMoreDays = _totalDays > _historyVisibleDays;
+
+            _pagedGroupOrder.forEach((date, gIdx) => {
                 const sessions = groups[date];
                 const [y, mo, d] = date.split('-').map(Number);
                 const dateObj = new Date(y, mo - 1, d);
@@ -5671,7 +5866,7 @@ function renderHistoryTab() {
                 const typesSummary = [...new Set(sessions.map(s=>typeIcons[s.type]||'📚'))].join(' ');
 
                 // Date separator row
-                tbody.innerHTML += `
+                htmlParts.push(`
                     <tr style="${gIdx > 0 ? 'border-top: 2px solid rgba(30,58,138,0.4);' : ''}">
                         <td colspan="9" style="padding:0;">
                             <div style="display:flex;align-items:center;gap:12px;padding:10px 16px 8px;
@@ -5697,7 +5892,7 @@ function renderHistoryTab() {
                             </div>
                         </td>
                     </tr>
-                `;
+                `);
 
                 // Session rows for this date
                 sessions.forEach(s => {
@@ -5710,7 +5905,7 @@ function renderHistoryTab() {
                     let pagesCell = s.pages > 0 ? `<span class="text-cyan-400 font-bold">${s.pages}p</span>` : `<span class="text-gray-600">--</span>`;
                     let notesCell = s.notes ? `<span class="text-gray-300 text-xs italic" title="${s.notes.replace(/"/g,"'")}">${s.notes.length > 40 ? s.notes.substring(0,40)+'…' : s.notes}</span>` : `<span class="text-gray-600">--</span>`;
 
-                    tbody.innerHTML += `
+                    htmlParts.push(`
                         <tr class="hover:bg-blue-950/20" style="border-left:3px solid transparent;">
                             <td class="px-4 py-3 text-gray-600 text-xs" style="padding-left:20px;">—</td>
                             <td class="px-4 py-3 text-white font-bold">${s.subject}</td>
@@ -5725,10 +5920,36 @@ function renderHistoryTab() {
                                 <button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1" title="Apagar registo"><i class="fa-solid fa-trash-can"></i></button>
                             </td>
                         </tr>
-                    `;
+                    `);
                 });
             });
+
+            if (_hasMoreDays) {
+                const _shownSessions = _pagedGroupOrder.reduce((n, d) => n + groups[d].length, 0);
+                htmlParts.push(`
+                    <tr>
+                        <td colspan="9" class="px-4 py-4 text-center">
+                            <button onclick="loadMoreHistoryDays()" class="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl border border-blue-700 transition inline-flex items-center gap-2">
+                                <i class="fa-solid fa-chevron-down"></i> Carregar mais dias
+                            </button>
+                            <p class="text-xxs text-gray-500 mt-2">Mostrando ${_pagedGroupOrder.length} de ${_totalDays} dias (${_shownSessions} de ${sorted.length} sessões)</p>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            // ÚNICA escrita no DOM para toda a tabela — antes eram 2 escritas
+            // por dia de histórico (uma por grupo + uma por sessão), cada uma
+            // fazendo o navegador re-parsear a tabela inteira acumulada até
+            // ali. Com muitos dias de estudo isso vira O(n²) e trava a aba.
+            tbody.innerHTML = htmlParts.join('');
         }
+
+        function loadMoreHistoryDays() {
+            _historyVisibleDays += 30;
+            renderHistoryTab();
+        }
+        window.loadMoreHistoryDays = loadMoreHistoryDays;
 
         function deleteHistorySession(id) {
             showConfirm("Apagar registo?", () => {
@@ -6390,6 +6611,177 @@ function renderHistoryTab() {
         window.setSubjectChartPeriod = setSubjectChartPeriod;
         window.navSubjectChart = navSubjectChart;
         window.renderSubjectTimeChart = renderSubjectTimeChart;
+
+        // ══════════════════════════════════════════════════════════════════
+        // ── EVOLUÇÃO DA TAXA DE ACERTO (semanal) ────────────────────────────
+        // Agrupa todas as sessões com questões (qTotal > 0) por semana do
+        // calendário e calcula o % de acerto agregado daquela semana. Isso
+        // responde a pergunta mais importante de quem estuda para concurso:
+        // "estou realmente melhorando, ou só estudando mais?"
+        // ══════════════════════════════════════════════════════════════════
+        function _isoWeekKey(dateStr) {
+            // Retorna algo como "2026-W07" — chave por ano+semana ISO, estável
+            // para agrupar/ordenar cronologicamente.
+            const d = new Date(dateStr + 'T00:00:00');
+            if (isNaN(d)) return null;
+            const target = new Date(d.valueOf());
+            const dayNr = (d.getDay() + 6) % 7;
+            target.setDate(target.getDate() - dayNr + 3);
+            const firstThursday = new Date(target.getFullYear(), 0, 4);
+            const weekNr = 1 + Math.round(((target - firstThursday) / 86400000 - 3 + ((firstThursday.getDay() + 6) % 7)) / 7);
+            return `${target.getFullYear()}-W${String(weekNr).padStart(2,'0')}`;
+        }
+
+        function renderAccuracyTrendChart() {
+            const canvas = document.getElementById('accuracyTrendChart');
+            const emptyEl = document.getElementById('accuracy-trend-empty');
+            const badgeEl = document.getElementById('accuracy-trend-badge');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const withQuestions = (studyDb.history || []).filter(s => (s.qTotal || 0) > 0 && s.date);
+            const weekMap = {}; // weekKey -> { correct, total, labelDate }
+            withQuestions.forEach(s => {
+                const wk = _isoWeekKey(s.date);
+                if (!wk) return;
+                if (!weekMap[wk]) weekMap[wk] = { correct: 0, total: 0, date: s.date };
+                weekMap[wk].correct += (s.qCorrect || 0);
+                weekMap[wk].total   += (s.qTotal   || 0);
+                if (s.date < weekMap[wk].date) weekMap[wk].date = s.date;
+            });
+            const weekKeys = Object.keys(weekMap).sort(); // "YYYY-Www" ordena cronologicamente como string
+
+            if (canvas.parentElement) canvas.parentElement.style.display = weekKeys.length >= 2 ? '' : 'none';
+            if (emptyEl) emptyEl.classList.toggle('hidden', weekKeys.length >= 2);
+            if (weekKeys.length < 2) {
+                if (accuracyTrendChart) { accuracyTrendChart.destroy(); accuracyTrendChart = null; }
+                if (badgeEl) { badgeEl.innerText = '--'; }
+                return;
+            }
+
+            const labels = weekKeys.map(k => {
+                const [y, mo, d] = weekMap[k].date.split('-').map(Number);
+                return `${String(d).padStart(2,'0')}/${String(mo).padStart(2,'0')}`;
+            });
+            const dataVals = weekKeys.map(k => Math.round((weekMap[k].correct / weekMap[k].total) * 100));
+            const volumes  = weekKeys.map(k => weekMap[k].total);
+
+            // Badge: compara a última semana com a primeira, para dar um resumo rápido
+            const first = dataVals[0], last = dataVals[dataVals.length - 1];
+            const delta = last - first;
+            if (badgeEl) {
+                if (delta > 0)      { badgeEl.innerText = `▲ +${delta}pp desde o início`; badgeEl.className = 'shrink-0 text-xxs font-black px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-800'; }
+                else if (delta < 0) { badgeEl.innerText = `▼ ${delta}pp desde o início`;  badgeEl.className = 'shrink-0 text-xxs font-black px-2.5 py-1 rounded-lg bg-red-500/15 text-red-400 border border-red-800'; }
+                else                { badgeEl.innerText = `— estável`;                     badgeEl.className = 'shrink-0 text-xxs font-black px-2.5 py-1 rounded-lg bg-blue-950 text-gray-400 border border-blue-800'; }
+            }
+
+            if (accuracyTrendChart) { accuracyTrendChart.destroy(); accuracyTrendChart = null; }
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+            gradient.addColorStop(0, 'rgba(255,212,0,0.35)');
+            gradient.addColorStop(1, 'rgba(255,212,0,0)');
+
+            accuracyTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Taxa de acerto',
+                        data: dataVals,
+                        borderColor: '#FFD400',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: dataVals.map((_, i) => Math.min(3 + Math.sqrt(volumes[i]), 9)),
+                        pointBackgroundColor: '#FFD400',
+                        pointBorderColor: '#111c36',
+                        pointBorderWidth: 2,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { color: '#94a3b8', callback: v => v + '%' }, grid: { color: 'rgba(59,130,246,0.1)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.parsed.y}% de acerto (${volumes[ctx.dataIndex]} questões na semana)`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        window.renderAccuracyTrendChart = renderAccuracyTrendChart;
+
+        // ══════════════════════════════════════════════════════════════════
+        // ── RANKING DE ACERTO POR DISCIPLINA (barras horizontais) ───────────
+        // Ordena da disciplina mais fraca para a mais forte — resposta visual
+        // direta e imediata para "em que devo focar meus estudos agora".
+        // ══════════════════════════════════════════════════════════════════
+        function renderSubjectAccuracyChart() {
+            const canvas = document.getElementById('subjectAccuracyChart');
+            const emptyEl = document.getElementById('subject-accuracy-empty');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const rows = (studyDb.syllabus || []).map(sub => {
+                let q = 0, c = 0;
+                (sub.topics || []).forEach(t => { q += (t.qTotal || 0); c += (t.qCorrect || 0); });
+                return { subject: sub.subject, q, c, acc: q > 0 ? Math.round((c / q) * 100) : null };
+            }).filter(r => r.q > 0).sort((a, b) => a.acc - b.acc); // mais fraca primeiro
+
+            const wrap = document.getElementById('subject-accuracy-chart-wrap');
+            if (wrap) wrap.style.display = rows.length > 0 ? '' : 'none';
+            if (emptyEl) emptyEl.classList.toggle('hidden', rows.length > 0);
+            if (rows.length === 0) {
+                if (subjectAccuracyChart) { subjectAccuracyChart.destroy(); subjectAccuracyChart = null; }
+                return;
+            }
+
+            // Altura dinâmica: ~34px por disciplina, para não espremer quando há muitas
+            if (wrap) wrap.style.height = Math.max(256, rows.length * 34) + 'px';
+
+            const colorFor = acc => acc >= 80 ? '#10b981' : acc >= 60 ? '#FFD400' : '#ef4444';
+
+            if (subjectAccuracyChart) { subjectAccuracyChart.destroy(); subjectAccuracyChart = null; }
+            subjectAccuracyChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: rows.map(r => r.subject),
+                    datasets: [{
+                        data: rows.map(r => r.acc),
+                        backgroundColor: rows.map(r => colorFor(r.acc)),
+                        borderRadius: 5,
+                        barThickness: 18
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { min: 0, max: 100, ticks: { color: '#94a3b8', callback: v => v + '%' }, grid: { color: 'rgba(59,130,246,0.1)' } },
+                        y: { ticks: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const r = rows[ctx.dataIndex];
+                                    return ` ${r.acc}% de acerto (${r.c}/${r.q} questões)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        window.renderSubjectAccuracyChart = renderSubjectAccuracyChart;
 
         function updateStudyTypeChartData() {
             if(!studyTypeChart) return;
@@ -8260,6 +8652,121 @@ function renderHistoryTab() {
             }
         }
 
+        // ── CALENDÁRIO DE ATIVIDADE (heatmap anual, estilo GitHub) ──────────
+        let activityCalYear;
+        const ACTIVITY_LEVEL_COLORS = ['#312e81', '#86efac', '#4ade80', '#22c55e', '#15803d'];
+
+        function initActivityCalendar() {
+            activityCalYear = new Date().getFullYear();
+            renderActivityCalendar();
+        }
+
+        function activityCalPrevYear() {
+            activityCalYear--;
+            renderActivityCalendar();
+        }
+
+        function activityCalNextYear() {
+            activityCalYear++;
+            renderActivityCalendar();
+        }
+
+        function _dayMinutesMap() {
+            const map = {};
+            studyDb.history.forEach(s => {
+                map[s.date] = (map[s.date] || 0) + (_sessionSeconds(s) / 60);
+            });
+            return map;
+        }
+
+        function _activityLevel(mins) {
+            if (!mins || mins <= 0) return 0;
+            if (mins < 30) return 1;
+            if (mins < 60) return 2;
+            if (mins < 120) return 3;
+            return 4;
+        }
+
+        function _computeStreaks() {
+            const dates = [...new Set(studyDb.history.map(s => s.date))].sort();
+            if (dates.length === 0) return { current: 0, record: 0 };
+
+            const studyDatesSet = new Set(dates);
+            const todayStr = todayBrazil();
+            let current = 0, d = new Date(todayStr + 'T12:00:00');
+            while (true) {
+                const ds = d.toISOString().slice(0, 10);
+                if (studyDatesSet.has(ds)) { current++; d.setDate(d.getDate() - 1); }
+                else break;
+            }
+
+            let record = 0, run = 0, prev = null;
+            dates.forEach(ds => {
+                if (prev) {
+                    const prevDate = new Date(prev + 'T12:00:00');
+                    const curDate = new Date(ds + 'T12:00:00');
+                    const diffDays = Math.round((curDate - prevDate) / 86400000);
+                    run = diffDays === 1 ? run + 1 : 1;
+                } else {
+                    run = 1;
+                }
+                record = Math.max(record, run);
+                prev = ds;
+            });
+            record = Math.max(record, current);
+            return { current, record };
+        }
+
+        function renderActivityCalendar() {
+            if (!activityCalYear) activityCalYear = new Date().getFullYear();
+            const grid = document.getElementById('activity-cal-grid');
+            const yearLabel = document.getElementById('activity-cal-year-label');
+            const subtitle = document.getElementById('activity-cal-subtitle');
+            if (!grid || !yearLabel) return;
+
+            yearLabel.innerText = 'ANO ' + activityCalYear;
+            if (subtitle) subtitle.innerText = 'Dias de estudo em ' + activityCalYear;
+
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const dayMinutes = _dayMinutesMap();
+            const todayStr = todayBrazil();
+
+            let html = '';
+            for (let m = 0; m < 12; m++) {
+                const lastDate = new Date(activityCalYear, m + 1, 0).getDate();
+                html += '<div class="flex flex-col items-start shrink-0">'
+                      + '<span class="text-xxs text-gray-400 font-bold" style="height:14px;line-height:14px;">' + monthNames[m] + '</span>'
+                      + '<div style="display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:2px;">';
+
+                for (let d = 1; d <= lastDate; d++) {
+                    const dateObj = new Date(activityCalYear, m, d);
+                    const weekday = dateObj.getDay(); // 0=Dom ... 6=Sáb
+                    const mm = String(m + 1).padStart(2, '0');
+                    const dd = String(d).padStart(2, '0');
+                    const dateStr = activityCalYear + '-' + mm + '-' + dd;
+                    const isToday = dateStr === todayStr;
+                    const mins = dayMinutes[dateStr] || 0;
+                    const level = _activityLevel(mins);
+                    const color = isToday ? '#FFD400' : ACTIVITY_LEVEL_COLORS[level];
+                    const h = Math.floor(mins / 60), mi = Math.round(mins % 60);
+                    const tip = dateStr + (mins > 0 ? (': ' + (h > 0 ? h + 'h ' : '') + mi + 'min') : ': sem estudo');
+
+                    html += '<div style="grid-row:' + (weekday + 1) + ';width:11px;height:11px;border-radius:2px;background:' + color + ';" title="' + tip + '"></div>';
+                }
+                html += '</div></div>';
+            }
+            grid.innerHTML = html;
+
+            const streaks = _computeStreaks();
+            const curEl = document.getElementById('activity-current-streak');
+            const recEl = document.getElementById('activity-record-streak');
+            if (curEl) curEl.innerText = streaks.current;
+            if (recEl) recEl.innerText = streaks.record;
+        }
+
+        window.activityCalPrevYear = activityCalPrevYear;
+        window.activityCalNextYear = activityCalNextYear;
+
         window.generateTextSyncCode = generateTextSyncCode; window.openImportModal = openImportModal; window.closeImportModal = closeImportModal; window.importManualCodeFromModal = importManualCodeFromModal;
         window.manualSyncNow = manualSyncNow; window.enterFullscreenEditor = enterFullscreenEditor; window.exitFullscreenEditor = exitFullscreenEditor; window.toggleFsTheme = toggleFsTheme; window.toggleFsToolbar = toggleFsToolbar; window.stCmd = stCmd; window.stHighlight = stHighlight; window.stInsertAlert = stInsertAlert; window.stInsertObs = stInsertObs; window.smartSyncNow = smartSyncNow; window.loadFromCloud = loadFromCloud;
         window.filterEditalSubject = filterEditalSubject; window.updateTopicStatus = updateTopicStatus; window.deleteSubject = deleteSubject; window.deleteTopic = deleteTopic;
@@ -8431,7 +8938,24 @@ function renderHistoryTab() {
             // ── 6. META DIÁRIA + SYNC CODE ──
             merged.dailyGoalMinutes = Math.max(localDb.dailyGoalMinutes || 0, cloudDb.dailyGoalMinutes || 0) || undefined;
             merged.syncCode = localDb.syncCode || cloudDb.syncCode || '';
-            merged.updatedAt = new Date().toISOString();
+
+            // ── CORREÇÃO CRÍTICA (loop infinito de sincronização) ──────────
+            // Esta função SEMPRE carimbava `new Date().toISOString()` aqui,
+            // mesmo quando o merge não mudava NADA em relação à nuvem. Isso
+            // fazia o resultado parecer "sempre mais novo" que a nuvem, então
+            // o caminho de escrita sempre decidia reenviar — o que disparava
+            // o listener em tempo real de novo, que mesclava de novo, que
+            // carimbava um novo "agora" de novo, ad infinitum. Foi exatamente
+            // isso que causou a enxurrada de erros "resource-exhausted" do
+            // Firestore vista em produção. Agora só carimba um timestamp novo
+            // se o conteúdo realmente mudou; caso contrário mantém o da nuvem,
+            // e as comparações "isso é diferente do que já está na nuvem?"
+            // rio abaixo passam a dar false corretamente, quebrando o ciclo.
+            const _mergedNoTs = JSON.stringify({ ...merged, updatedAt: undefined });
+            const _cloudNoTs  = JSON.stringify({ ...cloudDb, updatedAt: undefined });
+            merged.updatedAt = (_mergedNoTs !== _cloudNoTs)
+                ? new Date().toISOString()
+                : (cloudDb.updatedAt || new Date().toISOString());
 
             return merged;
         }
@@ -8958,10 +9482,14 @@ function renderHistoryTab() {
             try { renderSummariesTree();     } catch(e) { console.error('tree',e); }
             try { updateChartData();         } catch(e) { console.error('chart',e); }
             try { renderSubjectTimeChart();  } catch(e) { console.error('subjectchart',e); }
+            try { renderAccuracyTrendChart(); } catch(e) { console.error('acctrend',e); }
+            try { renderSubjectAccuracyChart(); } catch(e) { console.error('accrank',e); }
             try { initCalendar();            } catch(e) { console.error('cal',e); }
+            try { renderActivityCalendar();  } catch(e) { console.error('activitycal',e); }
             try { renderDailyTip();          } catch(e) { console.error('tip',e); }
             try { updateIntelligencePanel(); } catch(e) { console.error('intel',e); }
             try { renderWeeklySchedule();     } catch(e) { console.error('weekly',e); }
+            try { renderInsightsCard();        } catch(e) { console.error('insights',e); }
             const _df = document.getElementById('form-session-date');
             if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
             syncSessionDatePicker();
@@ -8979,15 +9507,20 @@ function renderHistoryTab() {
 
             grid.innerHTML = studyDb.weeklySchedule.map((dayObj, dayIdx) => {
                 const items = Array.isArray(dayObj.items) ? dayObj.items : [];
-                const dayTotal = items.reduce((sum, it) => sum + (it.duration || 0), 0);
+                const dayTotal = items.reduce((sum, it) => sum + (it.active === false ? 0 : (it.duration || 0)), 0);
                 weekTotal += dayTotal;
 
                 const rows = items.map((it, itemIdx) => {
+                    const active = it.active !== false;
                     const options = ['<option value="">— Selecione —</option>']
                         .concat(subjects.map(s => `<option value="${s.replace(/"/g,'&quot;')}" ${it.subject === s ? 'selected' : ''}>${s}</option>`))
                         .join('');
                     return `
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 transition ${active ? '' : 'opacity-40'}">
+                        <button onclick="toggleWeeklyScheduleItem(${dayIdx}, ${itemIdx})" title="${active ? 'Ativo — clique para desativar' : 'Inativo — clique para ativar'}"
+                            class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${active ? 'bg-emerald-500' : 'bg-slate-700'}">
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white transition" style="transform:${active ? 'translateX(18px)' : 'translateX(2px)'}"></span>
+                        </button>
                         <select onchange="updateWeeklyScheduleItem(${dayIdx}, ${itemIdx}, 'subject', this.value)"
                             class="flex-grow bg-input-dark border border-blue-800 rounded-md px-2 py-1 text-xxs text-white focus:outline-none focus:border-yellow-400">
                             ${options}
@@ -9046,9 +9579,189 @@ function renderHistoryTab() {
             saveDatabase();
             renderWeeklySchedule();
         }
+
+        function toggleWeeklyScheduleItem(dayIdx, itemIdx) {
+            if (!Array.isArray(studyDb.weeklySchedule) || !studyDb.weeklySchedule[dayIdx]) return;
+            const item = studyDb.weeklySchedule[dayIdx].items[itemIdx];
+            if (!item) return;
+            item.active = item.active === false ? true : false;
+            saveDatabase();
+            renderWeeklySchedule();
+        }
         window.addWeeklyScheduleItem = addWeeklyScheduleItem;
         window.removeWeeklyScheduleItem = removeWeeklyScheduleItem;
         window.updateWeeklyScheduleItem = updateWeeklyScheduleItem;
+        window.toggleWeeklyScheduleItem = toggleWeeklyScheduleItem;
+
+        // ── INSIGHTS DO ESTUDEI (cartão + análise completa) ─────────────────
+        const INSIGHTS_MIN_QUESTIONS = 25; // nº mínimo de questões p/ entrar nos rankings
+        let insightsDonutChart = null;
+
+        function computeInsightsData() {
+            const perSubject = [];
+            let totalQ = 0, totalC = 0;
+            (studyDb.syllabus || []).forEach(sub => {
+                let sQ = 0, sC = 0;
+                (sub.topics || []).forEach(t => { sQ += (t.qTotal || 0); sC += (t.qCorrect || 0); });
+                totalQ += sQ; totalC += sC;
+                if (sQ > 0) perSubject.push({ subject: sub.subject, qCorrect: sC, qTotal: sQ, accuracy: (sC / sQ) * 100 });
+            });
+
+            const goal = studyDb.accuracyGoalPercent || 70;
+            const eligible = perSubject.filter(s => s.qTotal >= INSIGHTS_MIN_QUESTIONS);
+            const best = eligible.filter(s => s.accuracy >= goal).sort((a, b) => b.accuracy - a.accuracy).slice(0, 10);
+            const worst = eligible.filter(s => s.accuracy < goal).sort((a, b) => a.accuracy - b.accuracy).slice(0, 10);
+
+            return {
+                totalQ, totalC,
+                accuracy: totalQ > 0 ? (totalC / totalQ) * 100 : 0,
+                disciplinesCount: perSubject.length,
+                goal, best, worst, perSubject
+            };
+        }
+
+        function renderInsightsCard() {
+            const d = computeInsightsData();
+            window._insightsData = d;
+
+            const qEl = document.getElementById('insights-questions');
+            const tEl = document.getElementById('insights-taxa');
+            const dEl = document.getElementById('insights-disciplinas');
+            const mEl = document.getElementById('insights-meta');
+            if (qEl) qEl.innerText = d.totalQ;
+            if (tEl) tEl.innerText = d.totalQ > 0 ? Math.round(d.accuracy) + '%' : '--';
+            if (dEl) dEl.innerText = d.disciplinesCount;
+            if (mEl) mEl.innerText = d.goal + '%';
+
+            const bestEl = document.getElementById('insights-best-label');
+            const worstEl = document.getElementById('insights-worst-label');
+            if (bestEl) {
+                bestEl.innerHTML = d.best.length > 0
+                    ? `<h5 class="text-sm font-black text-white">${d.best[0].subject}</h5>`
+                    : `<p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas melhores áreas.</p>`;
+            }
+            if (worstEl) {
+                worstEl.innerHTML = d.worst.length > 0
+                    ? `<h5 class="text-sm font-black text-white">${d.worst[0].subject}</h5>`
+                    : `<p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas piores áreas.</p>`;
+            }
+        }
+        window.renderInsightsCard = renderInsightsCard;
+
+        function _renderInsightsList(items, kind) {
+            const goal = (window._insightsData && window._insightsData.goal) || 70;
+            if (!items.length) {
+                const msg = kind === 'worst'
+                    ? `Nenhuma disciplina com ≥${INSIGHTS_MIN_QUESTIONS} questões abaixo da sua meta (${goal}%).`
+                    : `Nenhuma disciplina com ≥${INSIGHTS_MIN_QUESTIONS} questões acima ou igual à sua meta (${goal}%).`;
+                return `<p class="text-xs text-gray-500 italic px-1 py-1">${msg}</p>`;
+            }
+            const barColor = kind === 'worst' ? 'bg-red-500' : 'bg-emerald-500';
+            const textColor = kind === 'worst' ? 'text-red-400' : 'text-emerald-400';
+            return items.map(it => `
+                <div class="bg-slate-900/60 rounded-lg px-3 py-2 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-bold text-white truncate pr-2">${it.subject}</span>
+                        <span class="text-xs font-bold ${textColor} shrink-0">${it.accuracy.toFixed(1)}%</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow h-1.5 bg-slate-800 rounded-full overflow-hidden mr-2">
+                            <div class="h-full ${barColor} rounded-full" style="width:${Math.min(100, it.accuracy)}%"></div>
+                        </div>
+                        <span class="text-xxs text-gray-500 shrink-0">${it.qCorrect}/${it.qTotal}</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderInsightsDonutChart(correct, total) {
+            const canvas = document.getElementById('insightsDonutChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            const errors = Math.max(0, total - correct);
+            if (insightsDonutChart) insightsDonutChart.destroy();
+            insightsDonutChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['Acertos', 'Erros'], datasets: [{ data: [correct || 0, errors || 0], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0 }] },
+                options: { cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
+            });
+        }
+
+        function renderInsightsModalContent() {
+            const d = computeInsightsData();
+            window._insightsData = d;
+            const pct = d.accuracy;
+            const acimaDaMeta = d.totalQ > 0 && pct >= d.goal;
+
+            document.getElementById('insights-modal-total').innerText = d.totalQ;
+
+            const taxaEl = document.getElementById('insights-modal-taxa');
+            const taxaSubEl = document.getElementById('insights-modal-taxa-sub');
+            taxaEl.innerText = d.totalQ > 0 ? Math.round(pct) + '%' : '--';
+            taxaEl.className = 'text-2xl font-black mt-1 ' + (d.totalQ === 0 ? 'text-white' : (acimaDaMeta ? 'text-emerald-400' : 'text-red-400'));
+            taxaSubEl.innerText = d.totalQ === 0 ? 'Sem questões registradas' : (acimaDaMeta ? 'Acima da meta' : 'Abaixo da meta');
+
+            document.getElementById('insights-modal-total-sub').innerText = `${d.totalQ} questões respondidas`;
+            document.getElementById('insights-modal-donut-pct').innerText = d.totalQ > 0 ? Math.round(pct) + '%' : '0%';
+            document.getElementById('insights-modal-correct').innerText = d.totalC;
+            document.getElementById('insights-modal-wrong').innerText = Math.max(0, d.totalQ - d.totalC);
+            document.getElementById('insights-modal-correct-pct').innerText = (d.totalQ > 0 ? Math.round(pct) : 0) + '%';
+            document.getElementById('insights-modal-wrong-pct').innerText = (d.totalQ > 0 ? Math.round(100 - pct) : 0) + '%';
+
+            const perfLabelEl = document.getElementById('insights-modal-performance-label');
+            const perfBarEl = document.getElementById('insights-modal-performance-bar');
+            let perfLabel = 'Sem dados', perfBarColor = 'bg-slate-600', perfTextColor = 'text-gray-400';
+            if (d.totalQ > 0) {
+                if (pct >= 85)      { perfLabel = 'Excelente'; perfBarColor = 'bg-emerald-500'; perfTextColor = 'text-emerald-400'; }
+                else if (pct >= 70) { perfLabel = 'Bom';       perfBarColor = 'bg-emerald-500'; perfTextColor = 'text-emerald-400'; }
+                else if (pct >= 50) { perfLabel = 'Regular';   perfBarColor = 'bg-yellow-400';  perfTextColor = 'text-yellow-400'; }
+                else                { perfLabel = 'Fraco';     perfBarColor = 'bg-red-500';     perfTextColor = 'text-red-400'; }
+            }
+            perfLabelEl.innerText = perfLabel;
+            perfLabelEl.className = 'font-bold ' + perfTextColor;
+            perfBarEl.style.width = Math.min(100, pct) + '%';
+            perfBarEl.className = 'h-full rounded-full transition-all ' + perfBarColor;
+
+            document.getElementById('insights-modal-goal-worst').innerText = d.goal;
+            document.getElementById('insights-modal-goal-best').innerText = d.goal;
+            document.getElementById('insights-list-worst').innerHTML = _renderInsightsList(d.worst, 'worst');
+            document.getElementById('insights-list-best').innerHTML = _renderInsightsList(d.best, 'best');
+
+            const goalInput = document.getElementById('insights-goal-input');
+            if (goalInput) goalInput.value = d.goal;
+
+            renderInsightsDonutChart(d.totalC, d.totalQ);
+        }
+
+        function openInsightsAnalysisModal() {
+            const modal = document.getElementById('modal-insights-analysis');
+            if (!modal) return;
+            renderInsightsModalContent();
+            modal.classList.remove('hidden');
+        }
+
+        function closeInsightsAnalysisModal() {
+            document.getElementById('modal-insights-analysis')?.classList.add('hidden');
+        }
+
+        function toggleInsightsSection(kind) {
+            const list = document.getElementById('insights-list-' + kind);
+            const chevron = document.getElementById('insights-chevron-' + kind);
+            if (!list) return;
+            const nowHidden = list.classList.toggle('hidden');
+            if (chevron) chevron.style.transform = nowHidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
+        function updateInsightsGoal(value) {
+            const goal = Math.min(100, Math.max(1, parseInt(value) || 70));
+            studyDb.accuracyGoalPercent = goal;
+            saveDatabase();
+            renderInsightsCard();
+            renderInsightsModalContent();
+        }
+
+        window.openInsightsAnalysisModal = openInsightsAnalysisModal;
+        window.closeInsightsAnalysisModal = closeInsightsAnalysisModal;
+        window.toggleInsightsSection = toggleInsightsSection;
+        window.updateInsightsGoal = updateInsightsGoal;
 
 
         function saveStudySession(e) {
