@@ -854,9 +854,14 @@
 
                     <!-- Cronograma Semanal Gerenciável -->
                     <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-4 space-y-3">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between cursor-pointer select-none" onclick="toggleWeeklyScheduleCollapse()">
                             <span class="text-xxs font-bold text-yellow-400 uppercase tracking-widest"><i class="fa-solid fa-calendar-week mr-1"></i>Cronograma Semanal</span>
-                            <span class="text-xxs text-gray-400" id="weekly-schedule-total">-- planeado/semana</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xxs text-gray-400" id="weekly-schedule-total">-- planeado/semana</span>
+                                <button id="weekly-schedule-collapse-btn" title="Recolher/Expandir" class="text-gray-400 hover:text-yellow-400 transition w-5 h-5 flex items-center justify-center">
+                                    <i class="fa-solid fa-chevron-up text-xs transition-transform"></i>
+                                </button>
+                            </div>
                         </div>
                         <div id="weekly-schedule-grid" class="space-y-1.5">
                             <!-- Preenchido dinamicamente via JS: renderWeeklySchedule() -->
@@ -2804,7 +2809,7 @@
             EDITAL_VERTICALIZADO_PRF.forEach(fonteDisc => {
                 let alvo = studyDb.syllabus.find(d => d.subject === fonteDisc.subject);
                 if (!alvo) {
-                    alvo = { subject: fonteDisc.subject, topics: [] };
+                    alvo = { id: _newId(), subject: fonteDisc.subject, topics: [] };
                     studyDb.syllabus.push(alvo);
                     disciplinasNovas++;
                 }
@@ -2812,7 +2817,7 @@
                 fonteDisc.topics.forEach(fonteTopico => {
                     const jaExiste = alvo.topics.some(t => t.name === fonteTopico.name);
                     if (!jaExiste) {
-                        alvo.topics.push({ ...fonteTopico }); // cópia, nunca a mesma referência
+                        alvo.topics.push({ ...fonteTopico, id: _newId() }); // cópia, nunca a mesma referência
                         topicosNovos++;
                     }
                 });
@@ -2831,6 +2836,27 @@
 
         function generateRandomSyncCode() {
             return `PRF-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
+        }
+
+        // ── IDs estáveis para matérias/assuntos ──────────────────────────────
+        // Identidade por ID (em vez de por nome) é o que permite renomear uma
+        // matéria/assunto sem que a sincronização o confunda com "item apagado
+        // + item novo" e crie duplicados. _stableId é determinístico (mesmo
+        // texto → mesmo id em qualquer aparelho), usado só para preencher IDs
+        // em dados antigos que ainda não tinham essa marcação — assim local e
+        // nuvem chegam ao MESMO id de forma independente, sem precisar
+        // sincronizar nada antes. Itens criados a partir de agora usam _newId,
+        // que é aleatório (não precisa ser determinístico — já nasce com id).
+        function _stableId(str) {
+            let hash = 5381;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) + hash) + str.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return 'h' + Math.abs(hash).toString(36);
+        }
+        function _newId() {
+            return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         }
 
         // === STORAGE: usa window.storage (Artifacts) com fallback para localStorage ===
@@ -4086,7 +4112,10 @@
                 const subj = studyDb.syllabus[sIdx];
                 if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                 if (!studyDb.tombstones.syllabusSubjects) studyDb.tombstones.syllabusSubjects = {};
-                if (subj) studyDb.tombstones.syllabusSubjects[subj.subject] = new Date().toISOString();
+                if (subj) {
+                    const key = subj.id || subj.subject;
+                    studyDb.tombstones.syllabusSubjects[key] = new Date().toISOString();
+                }
                 studyDb.syllabus.splice(sIdx, 1);
                 saveDatabase(); renderAllTabs();
             });
@@ -4097,7 +4126,10 @@
                 const top  = subj ? subj.topics[tIdx] : null;
                 if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                 if (!studyDb.tombstones.syllabusTopics) studyDb.tombstones.syllabusTopics = {};
-                if (subj && top) studyDb.tombstones.syllabusTopics[`${subj.subject}||${top.name}`] = new Date().toISOString();
+                if (subj && top) {
+                    const key = top.id || `${subj.subject}||${top.name}`;
+                    studyDb.tombstones.syllabusTopics[key] = new Date().toISOString();
+                }
                 studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
                 saveDatabase(); renderAllTabs();
             });
@@ -4200,14 +4232,14 @@
             if (sel === 'NEW_SUBJECT') {
                 targetSub = newSub;
                 if (!studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase())) {
-                    studyDb.syllabus.push({ subject: targetSub, topics: [] });
+                    studyDb.syllabus.push({ id: _newId(), subject: targetSub, topics: [] });
                     studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
                 }
             }
 
             const subObj = studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase());
             if (subObj) {
-                subObj.topics.push({ name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
+                subObj.topics.push({ id: _newId(), name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
                 subObj.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeAddTopicModal(); renderAllTabs(); showAlert("Tópico adicionado!");
             }
@@ -8948,19 +8980,25 @@ function renderHistoryTab() {
             // valor de questões e o status mais avançado, para não perder progresso
             // feito offline em outro dispositivo sem essa marcação.
             const STATUS_ORDER = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
-            const localSylMap = {};
-            (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; });
+            const localSylMap = {};     // por nome (compatibilidade com dados antigos sem id)
+            const localSylMapById = {}; // por id (preferido — sobrevive a renomear)
+            (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; if (s.id) localSylMapById[s.id] = s; });
+
+            const _subjKey = s => s.id || s.subject;
+            const _topKey  = (subjName, t) => t.id || `${subjName}||${t.name}`;
 
             merged.syllabus = (cloudDb.syllabus || [])
-                .filter(cloudSubj => !mergedTombSubj[cloudSubj.subject]) // matéria apagada → não ressuscita
+                .filter(cloudSubj => !mergedTombSubj[cloudSubj.id] && !mergedTombSubj[cloudSubj.subject]) // matéria apagada → não ressuscita
                 .map(cloudSubj => {
-                const localSubj = localSylMap[cloudSubj.subject];
+                const localSubj = (cloudSubj.id && localSylMapById[cloudSubj.id]) || localSylMap[cloudSubj.subject];
                 if (!localSubj) return cloudSubj;
 
                 const mergedTopics = (cloudSubj.topics || [])
-                    .filter(cloudT => !mergedTombTop[`${cloudSubj.subject}||${cloudT.name}`]) // assunto apagado → não ressuscita
+                    .filter(cloudT => !mergedTombTop[_topKey(cloudSubj.subject, cloudT)]) // assunto apagado → não ressuscita
                     .map(cloudT => {
-                    const localT = (localSubj.topics || []).find(t => t.name === cloudT.name);
+                    const localT = (localSubj.topics || []).find(t =>
+                        (cloudT.id && t.id === cloudT.id) || (!cloudT.id && t.name === cloudT.name)
+                    );
                     if (!localT) return cloudT;
 
                     if (cloudT.updatedAt || localT.updatedAt) {
@@ -8974,6 +9012,8 @@ function renderHistoryTab() {
 
                     return {
                         ...cloudT,
+                        // Nome/id: se só um lado tem id (dado antigo sendo migrado), preserva
+                        id: cloudT.id || localT.id,
                         // Questões: pega o máximo (local pode ter feito mais enquanto offline)
                         qCorrect: Math.max(cloudT.qCorrect || 0, localT.qCorrect || 0),
                         qTotal:   Math.max(cloudT.qTotal   || 0, localT.qTotal   || 0),
@@ -8982,16 +9022,17 @@ function renderHistoryTab() {
                     };
                 });
 
-                // Tópicos que existem só no local (adicionados offline) → adiciona
-                const cloudTopicNames = new Set((cloudSubj.topics || []).map(t => t.name));
-                const localOnlyTopics = (localSubj.topics || []).filter(t => !cloudTopicNames.has(t.name));
+                // Tópicos que existem só no local (adicionados offline, OU renomeados —
+                // pelo id/nome não batem mais com nenhum tópico do lado da nuvem) → adiciona
+                const cloudTopicKeys = new Set((cloudSubj.topics || []).map(t => _topKey(cloudSubj.subject, t)));
+                const localOnlyTopics = (localSubj.topics || []).filter(t => !cloudTopicKeys.has(_topKey(cloudSubj.subject, t)));
 
-                return { ...cloudSubj, topics: [...mergedTopics, ...localOnlyTopics] };
+                return { ...cloudSubj, id: cloudSubj.id || localSubj.id, topics: [...mergedTopics, ...localOnlyTopics] };
             });
 
-            // Disciplinas que existem só no local (adicionadas offline) → adiciona
-            const cloudSubjNames = new Set((cloudDb.syllabus || []).map(s => s.subject));
-            (localDb.syllabus || []).filter(s => !cloudSubjNames.has(s.subject))
+            // Disciplinas que existem só no local (adicionadas offline, OU renomeadas) → adiciona
+            const cloudSubjKeys = new Set((cloudDb.syllabus || []).map(_subjKey));
+            (localDb.syllabus || []).filter(s => !cloudSubjKeys.has(_subjKey(s)))
                 .forEach(s => merged.syllabus.push(s));
 
             // ── 5. CICLO DE ESTUDOS: usa local (o utilizador activo prevalece) ──
@@ -9079,11 +9120,13 @@ function renderHistoryTab() {
 
             studyDb.syllabus.forEach(sub => {
                 if (!Array.isArray(sub.topics)) { sub.topics = []; repaired = true; }
+                if (!sub.id) { sub.id = _stableId(sub.subject); repaired = true; }
                 sub.topics.forEach(t => {
                     if (t.qCorrect  == null) { t.qCorrect = 0; repaired = true; }
                     if (t.qTotal    == null) { t.qTotal   = 0; repaired = true; }
                     if (!t.status)           { t.status   = 'Não Estudado'; repaired = true; }
                     if (t.qCorrect > t.qTotal) { t.qCorrect = t.qTotal; repaired = true; }
+                    if (!t.id) { t.id = _stableId(sub.subject + '||' + t.name); repaired = true; }
                 });
             });
 
@@ -9569,6 +9612,27 @@ function renderHistoryTab() {
         }
 
         // ── CRONOGRAMA SEMANAL GERENCIÁVEL (múltiplas matérias por dia) ─────
+        const WEEKLY_SCHEDULE_COLLAPSE_KEY = 'estudei_prf_weekly_schedule_collapsed';
+
+        function applyWeeklyScheduleCollapseState() {
+            const grid = document.getElementById('weekly-schedule-grid');
+            const btn = document.getElementById('weekly-schedule-collapse-btn');
+            if (!grid || !btn) return;
+            let collapsed = false;
+            try { collapsed = localStorage.getItem(WEEKLY_SCHEDULE_COLLAPSE_KEY) === '1'; } catch(e) {}
+            grid.style.display = collapsed ? 'none' : '';
+            const icon = btn.querySelector('i');
+            if (icon) icon.style.transform = collapsed ? 'rotate(180deg)' : '';
+        }
+
+        function toggleWeeklyScheduleCollapse() {
+            let collapsed = false;
+            try { collapsed = localStorage.getItem(WEEKLY_SCHEDULE_COLLAPSE_KEY) === '1'; } catch(e) {}
+            collapsed = !collapsed;
+            try { localStorage.setItem(WEEKLY_SCHEDULE_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+            applyWeeklyScheduleCollapseState();
+        }
+
         function renderWeeklySchedule() {
             const grid = document.getElementById('weekly-schedule-grid');
             const totalEl = document.getElementById('weekly-schedule-total');
@@ -9627,6 +9691,8 @@ function renderHistoryTab() {
                 const h = Math.floor(weekTotal / 60), m = weekTotal % 60;
                 totalEl.innerText = `${h}h${m > 0 ? m + 'm' : ''} planejado/semana`;
             }
+
+            applyWeeklyScheduleCollapseState();
         }
 
         function addWeeklyScheduleItem(dayIdx) {
