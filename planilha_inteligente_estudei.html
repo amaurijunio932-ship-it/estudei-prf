@@ -1137,6 +1137,9 @@
                     <button onclick="importEditalVerticalizadoCompleto()" title="Adiciona as disciplinas e tópicos oficiais do edital verticalizado. Nunca apaga nem altera o que você já tem." class="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white font-black rounded-xl transition shadow flex items-center gap-2 text-sm border border-blue-600">
                         <i class="fa-solid fa-file-import"></i> Importar Edital Completo
                     </button>
+                    <button onclick="recalcularEditalAPartirDoHistorico()" title="Reconta as questões de cada tópico somando apenas o que está no Histórico. Use se os números do Edital parecerem errados ou fora de sincronia." class="px-5 py-2.5 bg-orange-900/40 hover:bg-orange-900/70 text-orange-300 font-black rounded-xl transition shadow flex items-center gap-2 text-sm border border-orange-700/60">
+                        <i class="fa-solid fa-rotate"></i> Recalcular Edital pelo Histórico
+                    </button>
                 </div>
             </div>
 
@@ -2828,11 +2831,72 @@
                 return;
             }
 
+            // AUDITORIA (ordem numérica e alfabética): antes, disciplinas e
+            // tópicos novos eram só empilhados no fim do array, ficando fora
+            // de ordem. Agora, depois do merge aditivo, tudo é reordenado:
+            // disciplinas em ordem alfabética, tópicos de cada disciplina em
+            // ordem numérica/alfabética (mesmo critério usado ao renomear).
+            studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
+            studyDb.syllabus.forEach(sub => {
+                sub.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+            });
+
             saveDatabase();
             try { renderSyllabusTab(); } catch(e) {}
             try { updateDashboardMetrics(); } catch(e) {}
             showAlert(`Edital importado: +${disciplinasNovas} disciplina(s) e +${topicosNovos} tópico(s) novo(s). Nada do que você já tinha foi alterado.`);
         }
+
+        // FERRAMENTA DE REPARO (auditoria 2026-07-29): corrige tópicos cujo
+        // qTotal/qCorrect ficaram fora de sincronia com o Histórico por causa
+        // dos bugs de sincronização já corrigidos no código (função duplicada
+        // sem "updatedAt" e exclusão de sessão sem desfazer o efeito no Edital).
+        //
+        // Importante: só reescreve um tópico se ele tiver pelo menos UMA sessão
+        // no Histórico. Tópicos com números só "manuais" (lançados via "Editar
+        // questões", sem sessão correspondente no Histórico) NÃO são tocados,
+        // para não apagar dado digitado de propósito. É uma ação manual — só
+        // roda quando você clica no botão, nunca sozinha.
+        function recalcularEditalAPartirDoHistorico() {
+            showConfirm(
+                'Isso vai recontar as questões de cada tópico somando apenas as sessões que estão hoje no Histórico. ' +
+                'Tópicos sem nenhuma sessão no Histórico (números lançados manualmente) não serão alterados. Continuar?',
+                () => {
+                    const somaPorTopico = {}; // chave: "disciplina||tópico" -> {qTotal, qCorrect, temHistorico}
+                    (studyDb.history || []).forEach(h => {
+                        if (!h || !h.subject || !h.topic) return;
+                        const chave = h.subject + '||' + h.topic;
+                        if (!somaPorTopico[chave]) somaPorTopico[chave] = { qTotal: 0, qCorrect: 0 };
+                        somaPorTopico[chave].qTotal   += (h.qTotal   || 0);
+                        somaPorTopico[chave].qCorrect += (h.qCorrect || 0);
+                    });
+
+                    let topicosCorrigidos = 0;
+                    const agora = new Date().toISOString();
+                    (studyDb.syllabus || []).forEach(sub => {
+                        (sub.topics || []).forEach(t => {
+                            const chave = sub.subject + '||' + t.name;
+                            const soma = somaPorTopico[chave];
+                            if (!soma) return; // sem sessão no histórico → não mexe (pode ser manual)
+                            if (soma.qTotal !== (t.qTotal||0) || soma.qCorrect !== (t.qCorrect||0)) {
+                                t.qTotal = soma.qTotal;
+                                t.qCorrect = soma.qCorrect;
+                                t.updatedAt = agora;
+                                topicosCorrigidos++;
+                            }
+                        });
+                    });
+
+                    saveDatabase();
+                    try { renderSyllabusTab(); } catch(e) {}
+                    try { updateDashboardMetrics(); } catch(e) {}
+                    showAlert(topicosCorrigidos > 0
+                        ? `Recalculado: ${topicosCorrigidos} tópico(s) corrigido(s) para bater com o Histórico.`
+                        : 'Tudo certo — nenhum tópico estava fora de sincronia com o Histórico.');
+                }
+            );
+        }
+        window.recalcularEditalAPartirDoHistorico = recalcularEditalAPartirDoHistorico;
 
         function generateRandomSyncCode() {
             return `PRF-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
@@ -4239,6 +4303,18 @@
 
             const subObj = studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase());
             if (subObj) {
+                // AUDITORIA (prevenção de duplicados): antes, era possível
+                // adicionar um assunto com o mesmo nome de um que já existe
+                // na disciplina (ex.: colando dados de outra planilha) e o
+                // sistema criava um tópico duplicado — o que ambiguiza o
+                // cruzamento com o Histórico (chave "disciplina||tópico").
+                // Mesmo critério de checagem já usado no import do edital
+                // oficial (jaExiste), agora aplicado aqui também.
+                const jaExiste = subObj.topics.some(t => t.name.trim().toLowerCase() === newTop.trim().toLowerCase());
+                if (jaExiste) {
+                    showAlert(`"${newTop}" já existe em "${subObj.subject}". Use "Editar questões" nesse tópico em vez de criar um novo.`);
+                    return;
+                }
                 subObj.topics.push({ id: _newId(), name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
                 subObj.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeAddTopicModal(); renderAllTabs(); showAlert("Tópico adicionado!");
@@ -4258,6 +4334,14 @@
                 const old = studyDb.syllabus[idx].subject;
                 studyDb.syllabus[idx].subject = val;
                 studyDb.studyCycle.forEach(c => { if(c.subject === old) c.subject = val; });
+                // AUDITORIA (sincronização): antes, renomear uma disciplina só
+                // atualizava o Ciclo de Estudos. Histórico e Resumos guardam o
+                // nome da disciplina como texto próprio, então ficavam com o
+                // nome antigo para sempre — quebrando a sincronização entre
+                // Edital, Histórico, Resumos e os gráficos/painéis que cruzam
+                // esses dados pelo nome da disciplina.
+                (studyDb.history || []).forEach(h => { if (h.subject === old) h.subject = val; });
+                (studyDb.summaries || []).forEach(s => { if (s.subject === old) s.subject = val; });
                 studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeRenameSubjectModal(); renderAllTabs();
             }
@@ -4275,7 +4359,16 @@
             const tIdx = document.getElementById('modal-rename-topic-tidx').value;
             const val = document.getElementById('modal-rename-topic-input').value.trim();
             if (val) {
+                const subj = studyDb.syllabus[sIdx].subject;
+                const old  = studyDb.syllabus[sIdx].topics[tIdx].name;
                 studyDb.syllabus[sIdx].topics[tIdx].name = val;
+                // AUDITORIA (sincronização): sem isto, sessões do Histórico e
+                // Resumos vinculados ao nome antigo do tópico ficavam
+                // "órfãos" — o Histórico continuava mostrando o nome velho, e
+                // recalcularEditalAPartirDoHistorico() nunca mais encontrava
+                // essas sessões (chave "disciplina||tópico" deixava de bater).
+                (studyDb.history || []).forEach(h => { if (h.subject === subj && h.topic === old) h.topic = val; });
+                (studyDb.summaries || []).forEach(s => { if (s.subject === subj && s.topic === old) s.topic = val; });
                 studyDb.syllabus[sIdx].topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeRenameTopicModal(); renderAllTabs();
             }
@@ -5225,60 +5318,14 @@
             return `${y}-${m}-${d}`;
         }
 
-        function saveStudySession(e) {
-            e.preventDefault();
-            const subject = document.getElementById('form-subject').value;
-            const topic = document.getElementById('form-topic').value;
-            // Always sync from HH:MM:SS fields first (which are kept in sync with the timer)
-            syncDurationFromHMS();
-            const duration = parseInt(document.getElementById('form-duration').value) || 0;
-            const durH = parseInt(document.getElementById('form-dur-h').value) || 0;
-            const durM = parseInt(document.getElementById('form-dur-m').value) || 0;
-            const durS = parseInt(document.getElementById('form-dur-s').value) || 0;
-            const durationSec = durH * 3600 + durM * 60 + durS;
-            const type = document.getElementById('form-study-type').value;
-            const qC = parseInt(document.getElementById('form-questions-correct').value) || 0;
-            const qT = parseInt(document.getElementById('form-questions-total').value) || 0;
-            
-            const sData = studyDb.syllabus.find(s => s.subject === subject);
-            if (sData) {
-                const tData = sData.topics.find(t => t.name === topic);
-                if (tData) {
-                    tData.qCorrect += qC; tData.qTotal += qT;
-                    if (type === "Teoria") tData.status = "Teoria Vista";
-                    else if (type === "Questões") tData.status = "Questões Feitas";
-                    else if (type === "Revisão") tData.status = "Revisado";
-                    tData.updatedAt = new Date().toISOString();
-                }
-            }
-
-            const pages = parseInt(document.getElementById('form-pages').value) || 0;
-            const notes = (document.getElementById('form-notes').value || '').trim();
-
-            const sessionDateEl = document.getElementById('form-session-date');
-            const sessionDate = (sessionDateEl && sessionDateEl.value && sessionDateEl.value.length === 10) ? brToISO(sessionDateEl.value) : todayBrazil();
-
-            studyDb.history.push({
-                id: Date.now(), date: sessionDate,
-                subject, topic, duration, durationSec, type, qCorrect: qC, qTotal: qT, pages, notes
-            });
-
-            advanceCycleForSubject(subject);
-
-            saveDatabase(); renderAllTabs(); switchTab('dashboard');
-            
-            // Reset
-            document.getElementById('study-session-form').reset();
-            const _df = document.getElementById('form-session-date'); if (_df) _df.value = isoToBR(todayBrazil());
-            syncSessionDatePicker();
-            clearInterval(timerInterval); clearInterval(pauseInterval);
-            totalSeconds = 0; pauseSeconds = 0;
-            timerBaseSeconds = 0; timerStartTs = null;
-            pauseBaseSeconds = 0; pauseStartTs = null;
-            isTimerRunning = false; isTimerPaused = false;
-            updateTimerDisplays();
-            showToast('✅ Sessão salva com sucesso!', 'success');
-        }
+        // NOTA DE AUDITORIA (2026-07-29): esta função existia DUPLICADA no
+        // arquivo (aqui e mais adiante, perto do motor de sync). Em JS, quando
+        // duas "function nome(){}" são declaradas no mesmo escopo, só a ÚLTIMA
+        // do arquivo realmente executa — esta cópia daqui nunca rodava. Foi
+        // removida para não confundir manutenção futura; a versão que roda de
+        // fato (mais abaixo, perto de "MOTOR DE SINCRONIZAÇÃO AUTOMÁTICA") foi
+        // corrigida para voltar a carimbar `updatedAt`, que é o que faltava e
+        // causava a desincronização do Edital Verticalizado entre dispositivos.
 
         function quickStudyTopic(sIdx, tIdx) {
             const sub = studyDb.syllabus[sIdx];
@@ -6026,6 +6073,25 @@ function renderHistoryTab() {
             showConfirm("Apagar registo?", () => {
                 if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                 studyDb.tombstones.history[id] = new Date().toISOString();
+
+                // CORREÇÃO (auditoria 2026-07-29): apagar uma sessão do histórico
+                // precisa desfazer as questões que ela havia somado no Edital
+                // Verticalizado — assim como já acontece ao editar um registo.
+                // Sem isto, questões de sessões apagadas continuavam contadas
+                // para sempre no Edital, mesmo sumindo do Histórico.
+                const delSession = studyDb.history.find(s => s.id === id);
+                if (delSession && ((delSession.qTotal||0) > 0 || (delSession.qCorrect||0) > 0)) {
+                    const delSub = studyDb.syllabus.find(s => s.subject === delSession.subject);
+                    if (delSub) {
+                        const delT = delSub.topics.find(t => t.name === delSession.topic);
+                        if (delT) {
+                            delT.qTotal   = Math.max(0, (delT.qTotal   || 0) - (delSession.qTotal   || 0));
+                            delT.qCorrect = Math.max(0, (delT.qCorrect || 0) - (delSession.qCorrect || 0));
+                            delT.updatedAt = new Date().toISOString();
+                        }
+                    }
+                }
+
                 studyDb.history = studyDb.history.filter(s => s.id !== id);
                 saveDatabase(); renderAllTabs();
             });
@@ -6116,14 +6182,17 @@ function renderHistoryTab() {
         function _editBuildSubjectOptions() {
             const fromSyllabus = studyDb.syllabus.map(s => s.subject);
             const fromHistory  = studyDb.history.map(s => s.subject);
-            return [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+            // AUDITORIA (ordem numérica e alfabética): usa o mesmo critério de
+            // ordenação (numeric:true) do resto do app, em vez de comparação
+            // alfabética "pura", que colocava "10" antes de "2".
+            return [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
         }
 
         function _editBuildTopicOptions(subject) {
             const subObj = studyDb.syllabus.find(s => s.subject === subject);
             const fromSyllabus = subObj ? subObj.topics.map(t => t.name) : [];
             const fromHistory  = studyDb.history.filter(s => s.subject === subject).map(s => s.topic);
-            _editTopicBank = [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+            _editTopicBank = [...new Set([...fromSyllabus, ...fromHistory])].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
         }
 
         function _renderEditDD(containerId, items, onClickFn, emptyMsg, icon, color) {
@@ -9130,6 +9199,21 @@ function renderHistoryTab() {
                 });
             });
 
+            // AUDITORIA (ordem numérica e alfabética): garante, sempre que o
+            // banco é validado, que as disciplinas do Edital fiquem em ordem
+            // alfabética e os tópicos de cada disciplina em ordem numérica/
+            // alfabética — mesmo que tenham entrado fora de ordem por uma
+            // mesclagem antiga com a nuvem, edição manual ou dado legado.
+            const _orderKey = arr => arr.map(x => x.subject || x.name).join('§');
+            const _subjOrderBefore = _orderKey(studyDb.syllabus);
+            studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
+            if (_orderKey(studyDb.syllabus) !== _subjOrderBefore) repaired = true;
+            studyDb.syllabus.forEach(sub => {
+                const _topicOrderBefore = _orderKey(sub.topics);
+                sub.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                if (_orderKey(sub.topics) !== _topicOrderBefore) repaired = true;
+            });
+
             const seenH = new Set();
             studyDb.history = studyDb.history.filter(h => {
                 if (!h || !h.id || !h.date || !h.subject) { repaired = true; return false; }
@@ -9930,6 +10014,11 @@ function renderHistoryTab() {
                     if (type === 'Teoria')   tData.status = 'Teoria Vista';
                     else if (type === 'Questões') tData.status = 'Questões Feitas';
                     else if (type === 'Revisão')  tData.status = 'Revisado';
+                    // CORREÇÃO (auditoria 2026-07-29): faltava este carimbo. Sem ele,
+                    // o motor de merge entre dispositivos não reconhece esta sessão
+                    // como uma edição explícita e cai no fallback antigo (Math.max),
+                    // perdendo/desalinhando questões do Edital ao sincronizar.
+                    tData.updatedAt = new Date().toISOString();
                 }
             }
 
