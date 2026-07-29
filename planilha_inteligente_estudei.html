@@ -2173,6 +2173,31 @@
         </div>
     </div>
 
+    <!-- Modal: Editar Questões/Leituras de um Tópico -->
+    <div id="modal-edit-questions" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden" onclick="if(event.target===this)closeEditQuestionsModal()">
+        <div class="bg-card-dark border-2 border-prf-yellow rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-sliders text-prf-yellow mr-2"></i>Editar Questões/Leituras</h3>
+            <p id="edit-q-topic-label" class="text-xs text-gray-400"></p>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xxs text-gray-400 block mb-1">Total de questões</label>
+                    <input type="number" min="0" id="edit-q-total" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="text-xxs text-gray-400 block mb-1">Acertos</label>
+                    <input type="number" min="0" id="edit-q-correct" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400">
+                </div>
+            </div>
+            <div class="flex justify-between items-center gap-2 pt-2">
+                <button type="button" onclick="clearTopicRecords()" class="px-3 py-2 bg-red-900/40 text-red-300 font-bold rounded-xl text-xs hover:bg-red-900/60">Zerar registros</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeEditQuestionsModal()" class="px-4 py-2 bg-slate-800 text-white font-bold rounded-xl text-sm">Cancelar</button>
+                    <button type="button" onclick="saveEditQuestions()" class="px-5 py-2 bg-yellow-400 text-slate-950 font-black rounded-xl text-sm">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Importar Progresso -->
     <div id="modal-import-code" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 hidden">
         <div class="bg-card-dark border-2 border-emerald-500 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -6376,6 +6401,7 @@ function renderHistoryTab() {
                 start.setHours(0,0,0,0);
                 const end = new Date(start);
                 end.setDate(start.getDate() + 6);
+                end.setHours(23, 59, 59, 999);
                 studyDb.history.forEach(s => {
                     const d = new Date(s.date + "T12:00:00");
                     if (d >= start && d <= end) {
