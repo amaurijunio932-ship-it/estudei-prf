@@ -4077,7 +4077,8 @@
 
         function updateTopicStatus(sIdx, tIdx, val) {
             studyDb.syllabus[sIdx].topics[tIdx].status = val;
-            saveDatabase(); updateDashboardMetrics(); renderSyllabusAccordion('all');
+            studyDb.syllabus[sIdx].topics[tIdx].updatedAt = new Date().toISOString();
+            saveDatabase(); updateDashboardMetrics(); renderSyllabusAccordion(_editalActiveFilter);
         }
 
         function deleteSubject(sIdx) {
@@ -4142,6 +4143,7 @@
             if (correct > total) { showAlert('As respostas certas não podem ser maiores que o total.'); return; }
             topic.qTotal   = total;
             topic.qCorrect = correct;
+            topic.updatedAt = new Date().toISOString();
             saveDatabase(); renderAllTabs(); closeEditQuestionsModal();
             showAlert('✅ Registros atualizados!');
         }
@@ -4150,6 +4152,7 @@
             showConfirm('Zerar todos os registros deste tópico?', () => {
                 const topic = studyDb.syllabus[_editQSIdx].topics[_editQTIdx];
                 topic.qTotal = 0; topic.qCorrect = 0;
+                topic.updatedAt = new Date().toISOString();
                 saveDatabase(); renderAllTabs(); closeEditQuestionsModal();
                 showAlert('Registros zerados.');
             });
@@ -4164,7 +4167,8 @@
         function clearSubjectRecords(sIdx) {
             const sub = studyDb.syllabus[sIdx];
             showConfirm(`Apagar todos os registros de questões e leituras de "${sub.subject}"? (O status dos tópicos não será alterado)`, () => {
-                studyDb.syllabus[sIdx].topics.forEach(t => { t.qCorrect = 0; t.qTotal = 0; });
+                const _nowTs = new Date().toISOString();
+                studyDb.syllabus[sIdx].topics.forEach(t => { t.qCorrect = 0; t.qTotal = 0; t.updatedAt = _nowTs; });
                 saveDatabase(); renderAllTabs(); showAlert("Registros apagados com sucesso!");
             });
         }
@@ -5203,6 +5207,7 @@
                     if (type === "Teoria") tData.status = "Teoria Vista";
                     else if (type === "Questões") tData.status = "Questões Feitas";
                     else if (type === "Revisão") tData.status = "Revisado";
+                    tData.updatedAt = new Date().toISOString();
                 }
             }
 
@@ -6251,6 +6256,7 @@ function renderHistoryTab() {
                     if (oldT) {
                         oldT.qTotal   = Math.max(0, (oldT.qTotal   || 0) - oldQTotal);
                         oldT.qCorrect = Math.max(0, (oldT.qCorrect || 0) - oldQCorrect);
+                        oldT.updatedAt = new Date().toISOString();
                     }
                 }
             }
@@ -6266,6 +6272,7 @@ function renderHistoryTab() {
                     if (newT) {
                         newT.qTotal   = (newT.qTotal   || 0) + appliedQTotal;
                         newT.qCorrect = (newT.qCorrect || 0) + appliedQCorrect;
+                        newT.updatedAt = new Date().toISOString();
                     }
                 }
             }
@@ -8911,7 +8918,17 @@ function renderHistoryTab() {
             });
             merged.revisions = Object.values(cloudRevMap);
 
-            // ── 4. SYLLABUS: merge de status por tópico (sempre avança, nunca regride) ──
+            // ── 4. SYLLABUS: merge de status por tópico ──
+            // Regra: se algum dos dois lados tem um "updatedAt" registrado (ou seja,
+            // foi uma edição explícita do usuário — mudar status, editar/zerar
+            // questões), o lado editado mais recentemente vence por inteiro (status
+            // + qCorrect + qTotal juntos), mesmo que os números sejam MENORES —
+            // corrigir/zerar um registro é uma decisão legítima do usuário e não
+            // pode ser "revertida" pela sincronização.
+            // Se nenhum dos dois tem timestamp (tópicos antigos, de antes dessa
+            // correção), cai no comportamento antigo por segurança: pega o maior
+            // valor de questões e o status mais avançado, para não perder progresso
+            // feito offline em outro dispositivo sem essa marcação.
             const STATUS_ORDER = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
             const localSylMap = {};
             (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; });
@@ -8923,6 +8940,12 @@ function renderHistoryTab() {
                 const mergedTopics = (cloudSubj.topics || []).map(cloudT => {
                     const localT = (localSubj.topics || []).find(t => t.name === cloudT.name);
                     if (!localT) return cloudT;
+
+                    if (cloudT.updatedAt || localT.updatedAt) {
+                        const cTime = new Date(cloudT.updatedAt || 0).getTime();
+                        const lTime = new Date(localT.updatedAt || 0).getTime();
+                        return lTime >= cTime ? { ...localT } : { ...cloudT };
+                    }
 
                     const cIdx = STATUS_ORDER.indexOf(cloudT.status);
                     const lIdx = STATUS_ORDER.indexOf(localT.status);
