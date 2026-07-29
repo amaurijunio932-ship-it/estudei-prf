@@ -2762,7 +2762,7 @@
             // Registra exclusões (id → data/hora) para que a sincronização
             // saiba que um item foi apagado de propósito, em vez de tratá-lo
             // como "só existe de um lado, então adiciona de volta".
-            tombstones: { history: {}, summaries: {} }
+            tombstones: { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} }
         };
 
         // === INICIALIZAÇÃO ===
@@ -3086,7 +3086,7 @@
             if (!cloudParsed.summaries)  cloudParsed.summaries  = [];
             if (!cloudParsed.history)    cloudParsed.history    = [];
             if (!cloudParsed.revisions)  cloudParsed.revisions  = [];
-            if (!cloudParsed.tombstones) cloudParsed.tombstones = { history: {}, summaries: {} };
+            if (!cloudParsed.tombstones) cloudParsed.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
 
             const merged = _mergeStudyDbs(studyDb, cloudParsed);
             const diff   = _countMergeDiff(cloudParsed, merged);
@@ -4083,12 +4083,21 @@
 
         function deleteSubject(sIdx) {
             showConfirm("Remover matéria inteira?", () => {
+                const subj = studyDb.syllabus[sIdx];
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
+                if (!studyDb.tombstones.syllabusSubjects) studyDb.tombstones.syllabusSubjects = {};
+                if (subj) studyDb.tombstones.syllabusSubjects[subj.subject] = new Date().toISOString();
                 studyDb.syllabus.splice(sIdx, 1);
                 saveDatabase(); renderAllTabs();
             });
         }
         function deleteTopic(sIdx, tIdx) {
             showConfirm("Apagar este assunto?", () => {
+                const subj = studyDb.syllabus[sIdx];
+                const top  = subj ? subj.topics[tIdx] : null;
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
+                if (!studyDb.tombstones.syllabusTopics) studyDb.tombstones.syllabusTopics = {};
+                if (subj && top) studyDb.tombstones.syllabusTopics[`${subj.subject}||${top.name}`] = new Date().toISOString();
                 studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
                 saveDatabase(); renderAllTabs();
             });
@@ -5553,7 +5562,7 @@
         function deleteActiveSummary() {
             if (!activeSummaryId) return;
             showConfirm("Excluir este resumo permanentemente?", () => {
-                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {} };
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                 studyDb.tombstones.summaries[activeSummaryId] = new Date().toISOString();
                 studyDb.summaries = studyDb.summaries.filter(s => s.id !== activeSummaryId);
                 saveDatabase(); activeSummaryId = null;
@@ -5983,7 +5992,7 @@ function renderHistoryTab() {
 
         function deleteHistorySession(id) {
             showConfirm("Apagar registo?", () => {
-                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {} };
+                if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                 studyDb.tombstones.history[id] = new Date().toISOString();
                 studyDb.history = studyDb.history.filter(s => s.id !== id);
                 saveDatabase(); renderAllTabs();
@@ -6998,7 +7007,7 @@ function renderHistoryTab() {
                             if (!parsed.summaries)  parsed.summaries  = [];
                             if (!parsed.history)    parsed.history    = [];
                             if (!parsed.revisions)  parsed.revisions  = [];
-                            if (!parsed.tombstones) parsed.tombstones = { history: {}, summaries: {} };
+                            if (!parsed.tombstones) parsed.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
                             // CORREÇÃO: antes fazia studyDb = parsed (troca cega).
                             // Se este aparelho já tivesse algo local (ex: você
                             // testou a planilha antes de logar), isso se perdia
@@ -8877,11 +8886,13 @@ function renderHistoryTab() {
             const merged = JSON.parse(JSON.stringify(cloudDb)); // base = nuvem
 
             // ── 0. TOMBSTONES: união dos dois lados (uma exclusão nunca se perde) ──
-            const localTomb = (localDb.tombstones) || { history: {}, summaries: {} };
-            const cloudTomb = (cloudDb.tombstones) || { history: {}, summaries: {} };
+            const localTomb = (localDb.tombstones) || { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
+            const cloudTomb = (cloudDb.tombstones) || { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
             const mergedTombHist = { ...(cloudTomb.history || {}), ...(localTomb.history || {}) };
             const mergedTombSum  = { ...(cloudTomb.summaries || {}), ...(localTomb.summaries || {}) };
-            merged.tombstones = { history: mergedTombHist, summaries: mergedTombSum };
+            const mergedTombSubj = { ...(cloudTomb.syllabusSubjects || {}), ...(localTomb.syllabusSubjects || {}) };
+            const mergedTombTop  = { ...(cloudTomb.syllabusTopics   || {}), ...(localTomb.syllabusTopics   || {}) };
+            merged.tombstones = { history: mergedTombHist, summaries: mergedTombSum, syllabusSubjects: mergedTombSubj, syllabusTopics: mergedTombTop };
 
             // ── 1. HISTÓRICO: união por ID — garante que sessões offline não se perdem ──
             // Itens com uma lápide (excluídos de propósito em qualquer dispositivo)
@@ -8940,11 +8951,15 @@ function renderHistoryTab() {
             const localSylMap = {};
             (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; });
 
-            merged.syllabus = (cloudDb.syllabus || []).map(cloudSubj => {
+            merged.syllabus = (cloudDb.syllabus || [])
+                .filter(cloudSubj => !mergedTombSubj[cloudSubj.subject]) // matéria apagada → não ressuscita
+                .map(cloudSubj => {
                 const localSubj = localSylMap[cloudSubj.subject];
                 if (!localSubj) return cloudSubj;
 
-                const mergedTopics = (cloudSubj.topics || []).map(cloudT => {
+                const mergedTopics = (cloudSubj.topics || [])
+                    .filter(cloudT => !mergedTombTop[`${cloudSubj.subject}||${cloudT.name}`]) // assunto apagado → não ressuscita
+                    .map(cloudT => {
                     const localT = (localSubj.topics || []).find(t => t.name === cloudT.name);
                     if (!localT) return cloudT;
 
@@ -9033,9 +9048,11 @@ function renderHistoryTab() {
             if (!Array.isArray(studyDb.history))   { studyDb.history   = []; repaired = true; }
             if (!Array.isArray(studyDb.revisions)) { studyDb.revisions = []; repaired = true; }
             if (!Array.isArray(studyDb.summaries)) { studyDb.summaries = []; repaired = true; }
-            if (!studyDb.tombstones || typeof studyDb.tombstones !== 'object') { studyDb.tombstones = { history: {}, summaries: {} }; repaired = true; }
+            if (!studyDb.tombstones || typeof studyDb.tombstones !== 'object') { studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} }; repaired = true; }
             if (!studyDb.tombstones.history)   { studyDb.tombstones.history   = {}; repaired = true; }
             if (!studyDb.tombstones.summaries) { studyDb.tombstones.summaries = {}; repaired = true; }
+            if (!studyDb.tombstones.syllabusSubjects) { studyDb.tombstones.syllabusSubjects = {}; repaired = true; }
+            if (!studyDb.tombstones.syllabusTopics)   { studyDb.tombstones.syllabusTopics   = {}; repaired = true; }
             if (!Array.isArray(studyDb.weeklySchedule) || studyDb.weeklySchedule.length !== 7) {
                 studyDb.weeklySchedule = [
                     { day: 'Segunda', items: [{ subject: '', duration: 60 }] },
