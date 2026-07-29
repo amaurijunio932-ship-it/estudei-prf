@@ -7328,6 +7328,13 @@ function renderHistoryTab() {
                 return;
             }
 
+            // Y — sincronizar agora (mesmo padrão do Anki)
+            if (!isEditing && !isEditorCanvas && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                smartSyncNow();
+                return;
+            }
+
             // Ctrl+1-7 — tab switching (skip if inside normal input)
             if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && !isEditorCanvas) {
                 const num = parseInt(e.key);
