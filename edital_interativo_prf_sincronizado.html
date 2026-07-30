@@ -752,6 +752,12 @@
                 }
             }
             if (item.acertos === undefined) item.acertos = 0;
+            if (item.minutos === undefined) item.minutos = 0;
+            if (item.horas === undefined) item.horas = 0;
+            if (item.revisoes === undefined) item.revisoes = 0;
+            if (item.observacoes === undefined) item.observacoes = '';
+            if (item.status === undefined) item.status = 'Não iniciado';
+            if (item.percentual === undefined) item.percentual = 0;
             delete item.erros;
             return item;
         }
