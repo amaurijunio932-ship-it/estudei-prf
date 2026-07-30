@@ -758,7 +758,13 @@
             if (item.observacoes === undefined) item.observacoes = '';
             if (item.status === undefined) item.status = 'Não iniciado';
             if (item.percentual === undefined) item.percentual = 0;
+            if (item.bloco === undefined) item.bloco = '';
+            if (item.disciplina === undefined) item.disciplina = '';
+            if (item.assunto === undefined) item.assunto = '';
+            if (item.subassunto === undefined) item.subassunto = '';
             delete item.erros;
+            delete item.questoes;
+            if (item._ts === undefined) delete item._ts;
             return item;
         }
 
@@ -989,6 +995,7 @@
             refreshDisciplinaOptions();
 
             applyFilters();
+            updateDashboard();
             updateRedacaoCard();
             renderRedacoes();
             setTimeout(_editalBackup, 500);
@@ -2026,7 +2033,7 @@
             // Linhas
             db.forEach(row => {
                 // Limpar quebras de linha nas observações
-                const obs = row.observacoes.replace(/\r?\n|\r/g, " ");
+                const obs = (row.observacoes||'').replace(/\r?\n|\r/g, " ");
                 const tot = row.totalQuestoes||0, ac = row.acertos||0, er = Math.max(0, tot-ac);
                 const pctAcerto = tot > 0 ? Math.round((ac/tot)*100) : '';
                 let rowString = `${row.bloco};${row.disciplina};"${row.assunto}";"${row.subassunto}";${row.status};${row.horas};${row.minutos||0};${row.revisoes};${tot};${ac};${er};${pctAcerto};${row.percentual};"${obs}"`;
@@ -2067,7 +2074,7 @@
                     const importedRedacoes = Array.isArray(importedData) ? null : importedData.redacoes;
                     if (Array.isArray(importedItems) && importedItems.length > 0 && importedItems[0].hasOwnProperty('disciplina')) {
                         const importTs = Date.now();
-                        db = importedItems.map(item => ({ ...item, _ts: importTs }));
+                        db = importedItems.map(item => _normalizeRow({ ...item, _ts: importTs }));
                         if (Array.isArray(importedRedacoes)) redacoes = importedRedacoes.map(r => ({ ...r, _ts: importTs }));
                         saveData();
                         saveRedacoesData();
