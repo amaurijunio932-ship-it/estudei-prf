@@ -5,6 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PRF - Edital Verticalizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Paleta PRF: azul-marinho escuro (blau do brasão) + dourado (campo de
+        // ouro do brasão). Sobrescreve as escalas "blue" e "yellow" do Tailwind
+        // inteiras, então toda classe bg-blue-*, text-blue-*, ring-blue-*,
+        // bg-yellow-* etc. já usada no arquivo passa a usar essas cores
+        // automaticamente, sem precisar trocar classe por classe.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50:  '#eef1f8', 100: '#dbe3f2', 200: '#b0c0e0',
+                            300: '#8098cc', 400: '#5170ac', 500: '#395a8a',
+                            600: '#2d4870', 700: '#223655', 800: '#16243b',
+                            900: '#0d1626', 950: '#070d17'
+                        },
+                        yellow: {
+                            50:  '#fdf8ea', 100: '#faedc4', 200: '#f5db89',
+                            300: '#f0c752', 400: '#e8b429', 500: '#d4a017',
+                            600: '#b8860b', 700: '#8f6708', 800: '#664b06',
+                            900: '#3d2d04', 950: '#241a02'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -18,15 +45,18 @@
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-thumb { background: #b0c0e0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5170ac; }
 
         .status-nao-iniciado { background-color: #ffffff; }
         .status-em-andamento { background-color: #fef9c3; }
         .status-concluido { background-color: #dcfce3; }
         
-        th { position: sticky; top: 0; background-color: #1e293b; color: white; z-index: 10; cursor: pointer;}
-        th:hover { background-color: #334155; }
+        th { position: sticky; top: 0; background-color: #0d1626; color: white; z-index: 10; cursor: pointer;}
+        th:hover { background-color: #16243b; }
+
+        .chart-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .chart-card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col">
@@ -41,6 +71,8 @@
                 <div class="flex items-center space-x-4">
                     <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-800 hover:bg-blue-700 transition">Dashboard</button>
                     <button onclick="switchTab('planilha')" id="tab-planilha" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Edital Verticalizado</button>
+                    <button onclick="switchTab('estatisticas')" id="tab-estatisticas" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Estatísticas</button>
+                    <button onclick="switchTab('redacao')" id="tab-redacao" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Redação</button>
                     <div class="w-px h-6 bg-blue-700"></div>
                     <div id="sync-logged-out" class="flex items-center gap-2">
                         <button onclick="openLoginModal()" class="px-3 py-2 rounded-md text-sm font-medium bg-yellow-500 hover:bg-yellow-400 text-blue-950 transition flex items-center gap-2">
@@ -48,9 +80,9 @@
                         </button>
                     </div>
                     <div id="sync-logged-in" class="hidden items-center gap-3">
-                        <button onclick="forceSyncNow()" id="btn-force-sync" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2" title="Forçar sincronização agora">
+                        <button onclick="forceSyncNow()" id="btn-force-sync" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2" title="Enviar/receber dados da nuvem agora">
                             <i id="sync-icon" class="fa-solid fa-cloud-arrow-up"></i>
-                            <span id="sync-status-text">Sincronizado</span>
+                            <span id="sync-status-text">Sincronizar</span>
                         </button>
                         <button onclick="doLogout()" class="text-xs text-blue-300 hover:text-white transition" title="Sair da conta">
                             <i class="fa-solid fa-right-from-bracket"></i>
@@ -81,7 +113,72 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 overflow-hidden flex flex-col">
         
-        <div id="view-dashboard" class="flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
+    <!-- MODAL DE TÓPICO (Criar/Editar Disciplina, Assunto e Subassunto) -->
+    <div id="topic-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="topic-modal-title" class="text-lg font-bold text-gray-800"><i class="fa-solid fa-plus text-blue-600 mr-2"></i>Novo Tópico</h3>
+                <button onclick="closeTopicModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="topic-id" value="">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Bloco</label>
+                    <select id="topic-bloco" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                        <option value="Bloco I">Bloco I</option>
+                        <option value="Bloco II">Bloco II</option>
+                        <option value="Bloco III">Bloco III</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Disciplina</label>
+                    <input type="text" id="topic-disciplina" list="disciplinas-datalist" placeholder="Ex: Direito Administrativo" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                    <datalist id="disciplinas-datalist"></datalist>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Assunto</label>
+                    <input type="text" id="topic-assunto" placeholder="Ex: 1 Conceitos gerais" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Subassunto</label>
+                    <input type="text" id="topic-subassunto" placeholder="Ex: 1.1 Detalhamento (opcional)" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                </div>
+                <p id="topic-modal-error" class="hidden text-xs text-red-600">Preencha ao menos Disciplina e Assunto.</p>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeTopicModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition">Cancelar</button>
+                <button onclick="saveTopicModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE REDAÇÃO (Criar/Editar) -->
+    <div id="redacao-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="redacao-modal-title" class="text-lg font-bold text-gray-800"><i class="fa-solid fa-pen-nib text-purple-600 mr-2"></i>Nova Redação</h3>
+                <button onclick="closeRedacaoModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="redacao-id" value="">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tema</label>
+                    <input type="text" id="redacao-tema" placeholder="Ex: Segurança pública nas rodovias federais" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Nota (0 a 20)</label>
+                    <input type="number" id="redacao-nota" min="0" max="20" step="0.25" placeholder="Ex: 16.5" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500">
+                </div>
+                <p id="redacao-modal-error" class="hidden text-xs text-red-600">Preencha o tema e uma nota válida entre 0 e 20.</p>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button onclick="closeRedacaoModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition">Cancelar</button>
+                <button onclick="saveRedacaoModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
             <!-- Header Dashboard -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">Visão Geral dos Estudos</h1>
@@ -114,7 +211,7 @@
             </div>
 
             <!-- Cards Resumo -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div class="bg-blue-100 p-4 rounded-lg text-blue-600"><i class="fa-solid fa-book-open text-xl"></i></div>
                     <div>
@@ -134,29 +231,75 @@
                     <div>
                         <p class="text-sm text-gray-500">Questões Resolvidas</p>
                         <p id="card-questions" class="text-2xl font-bold text-gray-800">0</p>
+                        <p id="card-questions-sub" class="text-xs text-gray-400"><span class="text-green-600 font-medium">0 acertos</span> / <span class="text-red-600 font-medium">0 erros</span></p>
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-purple-100 p-4 rounded-lg text-purple-600"><i class="fa-solid fa-rotate-left text-xl"></i></div>
+                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-percent text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Total de Revisões</p>
-                        <p id="card-revisions" class="text-2xl font-bold text-gray-800">0</p>
+                        <p class="text-sm text-gray-500">Aproveitamento Geral</p>
+                        <p id="card-aproveitamento" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-purple-100 p-4 rounded-lg text-purple-600"><i class="fa-solid fa-pen-nib text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Nota da Redação</p>
+                        <p id="card-redacao" class="text-2xl font-bold text-gray-800">-</p>
+                        <p id="card-redacao-sub" class="text-xs text-gray-400"></p>
                     </div>
                 </div>
             </div>
 
             <!-- Gráficos -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
-                    <h3 class="font-semibold text-gray-700 mb-4">Progresso por Disciplina (%)</h3>
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <h3 class="font-semibold text-gray-700">Progresso por Disciplina (%)</h3>
+                    </div>
                     <div class="relative h-72">
                         <canvas id="chart-progress"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="font-semibold text-gray-700 mb-4">Questões por Bloco</h3>
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <h3 class="font-semibold text-gray-700">Questões por Bloco</h3>
+                    </div>
                     <div class="relative h-64 flex justify-center">
                         <canvas id="chart-questions"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos adicionais: status, aproveitamento e horas -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <h3 class="font-semibold text-gray-700">Status dos Tópicos</h3>
+                    </div>
+                    <div class="relative h-64 flex justify-center">
+                        <canvas id="chart-status"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+                        <h3 class="font-semibold text-gray-700">Aproveitamento por Disciplina</h3>
+                    </div>
+                    <div class="relative h-64 flex justify-center">
+                        <canvas id="chart-radar"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                        <h3 class="font-semibold text-gray-700">Horas de Estudo por Disciplina</h3>
+                    </div>
+                    <div class="relative h-64">
+                        <canvas id="chart-hours"></canvas>
                     </div>
                 </div>
             </div>
@@ -168,7 +311,10 @@
                     <h1 class="text-2xl font-bold text-gray-800">Edital Verticalizado</h1>
                     <p class="text-sm text-gray-500">Atualize seu progresso diretamente nas linhas.</p>
                 </div>
-                <div class="flex gap-3 flex-1 sm:flex-none">
+                <div class="flex gap-3 flex-1 sm:flex-none flex-wrap">
+                    <button onclick="openTopicModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Novo Tópico
+                    </button>
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         <input type="text" id="search-input" placeholder="Buscar assunto..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64" oninput="applyFilters()">
@@ -183,6 +329,10 @@
                         <option value="Em andamento">Em andamento</option>
                         <option value="Concluído">Concluído</option>
                     </select>
+                    <div class="flex gap-1">
+                        <button onclick="setAllGroupsCollapsed(false)" class="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition" title="Expandir todas as disciplinas"><i class="fa-solid fa-angles-down"></i></button>
+                        <button onclick="setAllGroupsCollapsed(true)" class="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition" title="Recolher todas as disciplinas"><i class="fa-solid fa-angles-up"></i></button>
+                    </div>
                 </div>
             </div>
 
@@ -194,17 +344,164 @@
                             <th onclick="setSort('assunto')" class="p-3 font-semibold border-b border-gray-300"><div class="flex items-center gap-1">Assunto <i id="sort-assunto" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
                             <th onclick="setSort('subassunto')" class="p-3 font-semibold border-b border-gray-300"><div class="flex items-center gap-1">Subassunto <i id="sort-subassunto" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
                             <th onclick="setSort('status')" class="p-3 font-semibold border-b border-gray-300 w-40"><div class="flex items-center gap-1">Status <i id="sort-status" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
-                            <th onclick="setSort('horas')" class="p-3 font-semibold border-b border-gray-300 text-center w-24" title="Horas Estudadas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-clock"></i> Hr <i id="sort-horas" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('horas')" class="p-3 font-semibold border-b border-gray-300 text-center w-20" title="Horas Estudadas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-clock"></i> Hr <i id="sort-horas" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('minutos')" class="p-3 font-semibold border-b border-gray-300 text-center w-20" title="Minutos Estudados"><div class="flex justify-center items-center gap-1">Min <i id="sort-minutos" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
                             <th onclick="setSort('revisoes')" class="p-3 font-semibold border-b border-gray-300 text-center w-24" title="Revisões Feitas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Rev <i id="sort-revisoes" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
-                            <th onclick="setSort('questoes')" class="p-3 font-semibold border-b border-gray-300 text-center w-28" title="Questões Resolvidas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-check-double"></i> Qtd <i id="sort-questoes" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
-                            <th onclick="setSort('percentual')" class="p-3 font-semibold border-b border-gray-300 text-center w-24"><div class="flex justify-center items-center gap-1">% <i id="sort-percentual" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('totalQuestoes')" class="p-3 font-semibold border-b border-gray-300 text-center w-20" title="Total de questões resolvidas"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-list-check"></i> Total <i id="sort-totalQuestoes" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th onclick="setSort('acertos')" class="p-3 font-semibold border-b border-gray-300 text-center w-20" title="Quantas você acertou"><div class="flex justify-center items-center gap-1"><i class="fa-solid fa-check text-green-400"></i> Acertos <i id="sort-acertos" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
+                            <th class="p-3 font-semibold border-b border-gray-300 text-center w-24" title="Percentual de acerto nas questões">% Acerto</th>
+                            <th onclick="setSort('percentual')" class="p-3 font-semibold border-b border-gray-300 text-center w-24"><div class="flex justify-center items-center gap-1">% Concl. <i id="sort-percentual" class="fa-solid fa-sort text-gray-400 text-xs"></i></div></th>
                             <th class="p-3 font-semibold border-b border-gray-300">Observações</th>
+                            <th class="p-3 font-semibold border-b border-gray-300 text-center w-20">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-gray-200">
                         <!-- Rows rendered via JS -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="view-estatisticas" class="hidden flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Estatísticas de Questões</h1>
+                <p class="text-sm text-gray-500">Desempenho individual por matéria, assunto e subassunto.</p>
+            </div>
+
+            <!-- Cards Resumo de Estatísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-blue-100 p-4 rounded-lg text-blue-600"><i class="fa-solid fa-list-check text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Total de Questões</p>
+                        <p id="stats-card-total" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-green-100 p-4 rounded-lg text-green-600"><i class="fa-solid fa-check text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Acertos</p>
+                        <p id="stats-card-acertos" class="text-2xl font-bold text-green-700">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-red-100 p-4 rounded-lg text-red-600"><i class="fa-solid fa-xmark text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Erros</p>
+                        <p id="stats-card-erros" class="text-2xl font-bold text-red-700">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-percent text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Aproveitamento Geral</p>
+                        <p id="stats-card-aproveitamento" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos de Estatísticas -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <h3 class="font-semibold text-gray-700">Ranking de Aproveitamento por Disciplina</h3>
+                    </div>
+                    <div class="relative" style="height: 320px;">
+                        <canvas id="chart-stats-ranking"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <h3 class="font-semibold text-gray-700">Acertos vs. Erros</h3>
+                    </div>
+                    <div class="relative h-72 flex justify-center">
+                        <canvas id="chart-stats-donut"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <h3 class="font-semibold text-gray-700">Desempenho por Disciplina</h3>
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="stats-search-input" placeholder="Buscar disciplina..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64" oninput="renderStats()">
+                </div>
+            </div>
+
+            <div id="stats-by-discipline" class="flex flex-col gap-3">
+                <!-- Grupos por disciplina renderizados via JS -->
+            </div>
+        </div>
+
+        <div id="view-redacao" class="hidden flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
+            <div class="flex justify-between items-end flex-wrap gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Redação</h1>
+                    <p class="text-sm text-gray-500">Registre o tema e a nota de cada redação. A nota é sobre 20 pontos.</p>
+                </div>
+                <button onclick="openRedacaoModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nova Redação
+                </button>
+            </div>
+
+            <!-- Cards Resumo de Redação -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-purple-100 p-4 rounded-lg text-purple-600"><i class="fa-solid fa-pen-nib text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Redações Registradas</p>
+                        <p id="redacao-card-total" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-star text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Média das Notas</p>
+                        <p id="redacao-card-media" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div class="bg-green-100 p-4 rounded-lg text-green-600"><i class="fa-solid fa-percent text-xl"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500">Aproveitamento Médio</p>
+                        <p id="redacao-card-pct" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Evolução das Notas -->
+            <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    <h3 class="font-semibold text-gray-700">Evolução das Notas</h3>
+                </div>
+                <div class="relative h-64">
+                    <canvas id="chart-redacao-evolucao"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="flex items-center gap-2 p-6 pb-4">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <h3 class="font-semibold text-gray-700">Histórico de Redações</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <th class="p-3 font-semibold border-b border-gray-300">Tema</th>
+                                <th class="p-3 font-semibold border-b border-gray-300 text-center w-32">Nota (0-20)</th>
+                                <th class="p-3 font-semibold border-b border-gray-300 text-center w-24">%</th>
+                                <th class="p-3 font-semibold border-b border-gray-300 text-center w-24">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="redacao-table-body" class="divide-y divide-gray-200">
+                            <!-- Linhas renderizadas via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
@@ -307,23 +604,23 @@
             { bloco: 'Bloco II', disc: 'Legislação de Trânsito', ass: '2 Lei nº 5.970/1973', sub: '-' },
             { bloco: 'Bloco II', disc: 'Legislação de Trânsito', ass: '3 Resoluções do CONTRAN', sub: 'Resoluções listadas no edital (4/98 a 810/20)' },
             // Direito Administrativo
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.1 Centralização, descentralização, concentração' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.2 Adm direta e indireta / 1.3 Autarquias, fundações...' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '2 Ato administrativo', sub: '2.1 Conceito, requisitos, atributos, classificação e espécies' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.1 Legislação (Lei 8.112/90) e disposições constitucionais' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.2 Disposições doutrinárias (Cargo, emprego e função)' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.3 Carreira de PRF (Leis 9.654/98, 12.855/13, etc.)' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '4 Poderes administrativos', sub: '4.1 Hierárquico, disciplinar, regulamentar, polícia. 4.2 Uso e abuso' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '5 Licitação', sub: '5.1 a 5.5 Princípios, contratação direta, modalidades, tipos e procedimento' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '6 Controle da Administração Pública', sub: '6.1 Administrativo, 6.2 Judicial, 6.3 Legislativo' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '7 Responsabilidade civil do Estado', sub: '7.1 a 7.3 Responsabilidade por ato, omissão, requisitos e excludentes' },
-            { bloco: 'Bloco II', disc: 'Direito Administrativo', ass: '8 Regime jurídico-administrativo', sub: '8.1 Conceito / 8.2 Princípios expressos e implícitos' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.1 Centralização, descentralização, concentração' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '1 Noções de organização administrativa', sub: '1.2 Adm direta e indireta / 1.3 Autarquias, fundações...' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '2 Ato administrativo', sub: '2.1 Conceito, requisitos, atributos, classificação e espécies' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.1 Legislação (Lei 8.112/90) e disposições constitucionais' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.2 Disposições doutrinárias (Cargo, emprego e função)' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '3 Agentes públicos', sub: '3.3 Carreira de PRF (Leis 9.654/98, 12.855/13, etc.)' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '4 Poderes administrativos', sub: '4.1 Hierárquico, disciplinar, regulamentar, polícia. 4.2 Uso e abuso' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '5 Licitação', sub: '5.1 a 5.5 Princípios, contratação direta, modalidades, tipos e procedimento' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '6 Controle da Administração Pública', sub: '6.1 Administrativo, 6.2 Judicial, 6.3 Legislativo' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '7 Responsabilidade civil do Estado', sub: '7.1 a 7.3 Responsabilidade por ato, omissão, requisitos e excludentes' },
+            { bloco: 'Bloco III', disc: 'Direito Administrativo', ass: '8 Regime jurídico-administrativo', sub: '8.1 Conceito / 8.2 Princípios expressos e implícitos' },
             // Direito Constitucional
-            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '1 Poder constituinte', sub: 'Fundamentos, originário, derivado, reforma, revisão e emendas' },
-            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '2 Fundamentos constitucionais dos direitos e deveres', sub: 'Individuais, coletivos, sociais, nacionalidade, políticos, remédios' },
-            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '3 Poder Executivo', sub: 'Forma e sistema, chefia, atribuições, bens e competências da União' },
-            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '4 Defesa do Estado e instituições democráticas', sub: 'Forças Armadas, Segurança Pública e atribuições da PRF' },
-            { bloco: 'Bloco II', disc: 'Direito Constitucional', ass: '5 Ordem social', sub: 'Seguridade, meio ambiente, família, índio, etc.' },
+            { bloco: 'Bloco III', disc: 'Direito Constitucional', ass: '1 Poder constituinte', sub: 'Fundamentos, originário, derivado, reforma, revisão e emendas' },
+            { bloco: 'Bloco III', disc: 'Direito Constitucional', ass: '2 Fundamentos constitucionais dos direitos e deveres', sub: 'Individuais, coletivos, sociais, nacionalidade, políticos, remédios' },
+            { bloco: 'Bloco III', disc: 'Direito Constitucional', ass: '3 Poder Executivo', sub: 'Forma e sistema, chefia, atribuições, bens e competências da União' },
+            { bloco: 'Bloco III', disc: 'Direito Constitucional', ass: '4 Defesa do Estado e instituições democráticas', sub: 'Forças Armadas, Segurança Pública e atribuições da PRF' },
+            { bloco: 'Bloco III', disc: 'Direito Constitucional', ass: '5 Ordem social', sub: 'Seguridade, meio ambiente, família, índio, etc.' },
 
             // BLOCO III
             // Direito Penal
@@ -368,17 +665,40 @@
             subassunto: item.sub,
             status: 'Não iniciado', // 'Não iniciado', 'Em andamento', 'Concluído'
             horas: 0,
+            minutos: 0,
             revisoes: 0,
-            questoes: 0,
+            totalQuestoes: 0,
+            acertos: 0,
             percentual: 0, // calculado
             observacoes: ''
         }));
 
-        
+        // Metadados canônicos (bloco/disciplina/assunto/subassunto) do edital vigente,
+        // usados para corrigir dados antigos salvos localmente ou na nuvem que possam
+        // ter uma classificação de bloco/disciplina desatualizada (ex.: edital revisado).
+        const canonicalMeta = new Map(db.map(item => [item.id, {
+            bloco: item.bloco, disciplina: item.disciplina, assunto: item.assunto, subassunto: item.subassunto
+        }]));
+        function applyCanonicalMeta(arr) {
+            return arr.map(item => {
+                const meta = canonicalMeta.get(item.id);
+                return meta ? { ...item, ...meta } : item;
+            });
+        }
+
         let filteredDb = [];
         let sortCol = 'id';
         let sortAsc = true;
         let myCharts = {};
+        let filtersActive = false;
+        let collapsedDisciplinas = new Set(JSON.parse(localStorage.getItem('prf_edital_collapsed') || '[]'));
+        // IDs apagados pelo usuário — precisam "grudar" mesmo depois de sincronizar,
+        // senão um item removido localmente voltaria ao mesclar com a nuvem/outro dispositivo.
+        let deletedIds = new Set(JSON.parse(localStorage.getItem('prf_edital_deleted') || '[]'));
+
+        // ── Redação ──────────────────────────────────────────────────────
+        let redacoes = JSON.parse(localStorage.getItem('prf_redacoes_data') || '[]');
+        let redacoesDeletedIds = new Set(JSON.parse(localStorage.getItem('prf_redacoes_deleted') || '[]'));
 
         // ══════════════════════════════════════════════════════════════════
         // SINCRONIZAÇÃO NA NUVEM — projetada para NUNCA sobrescrever dados
@@ -398,8 +718,6 @@
         };
 
         let fbApp = null, fbAuth = null, fbDb = null, currentUser = null;
-        let _crossDeviceUnsubscribe = null;
-        let _syncDebounceTimer = null;
         let _pushInFlight = false;
         let _pushQueued = false;
 
@@ -414,12 +732,32 @@
         function _editalBackup() {
             try {
                 const slot = Math.floor(Date.now() / 1000) % 3;
-                localStorage.setItem(EDITAL_BACKUP_PREFIX + slot, JSON.stringify({ ts: new Date().toISOString(), data: db }));
+                localStorage.setItem(EDITAL_BACKUP_PREFIX + slot, JSON.stringify({ ts: new Date().toISOString(), data: db, redacoes }));
             } catch (e) { /* ignora falhas de quota */ }
         }
 
         // ── Merge item a item — nunca sobrescreve o array inteiro ──────────
-        function mergeEditalDb(localArr, cloudArr) {
+        // Garante que toda linha tenha os campos novos (totalQuestoes/acertos), mesmo
+        // vinda de um dispositivo com versão antiga (que tinha 'questoes', ou
+        // uma versão intermediária que tinha 'acertos'+'erros' separados).
+        function _normalizeRow(item) {
+            if (item.totalQuestoes === undefined) {
+                if (item.erros !== undefined) {
+                    // versão intermediária: acertos + erros separados
+                    item.totalQuestoes = (item.acertos||0) + (item.erros||0);
+                } else {
+                    // versão bem antiga: só existia 'questoes' (total, sem distinguir acerto/erro)
+                    item.totalQuestoes = item.questoes || 0;
+                    if (item.acertos === undefined) item.acertos = item.questoes || 0;
+                }
+            }
+            if (item.acertos === undefined) item.acertos = 0;
+            delete item.erros;
+            return item;
+        }
+
+        // Mescla genérica por id: quem editou por último (_ts) vence; tombstones excluem o item de vez.
+        function mergeById(localArr, cloudArr, deletedSet) {
             const cloudMap = new Map(cloudArr.map(r => [r.id, r]));
             const seenIds = new Set();
             const merged = localArr.map(localRow => {
@@ -434,18 +772,31 @@
             cloudArr.forEach(cloudRow => {
                 if (!seenIds.has(cloudRow.id)) merged.push(cloudRow);
             });
-            return merged;
+            // Remove qualquer item cujo id tenha sido apagado (localmente ou em outro dispositivo)
+            return merged.filter(row => !deletedSet.has(row.id));
+        }
+
+        function mergeEditalDb(localArr, cloudArr) {
+            return applyCanonicalMeta(mergeById(localArr, cloudArr, deletedIds).map(_normalizeRow));
         }
 
         async function _readCloudEdital(uid) {
             const doc = await fbDb.collection('users').doc(uid).collection('editalPRF').doc('data').get();
             if (!doc.exists || !Array.isArray(doc.data().items)) return null;
-            return doc.data().items;
+            const data = doc.data();
+            return {
+                items: data.items,
+                deletedIds: Array.isArray(data.deletedIds) ? data.deletedIds : [],
+                redacoes: Array.isArray(data.redacoes) ? data.redacoes : [],
+                redacoesDeletedIds: Array.isArray(data.redacoesDeletedIds) ? data.redacoesDeletedIds : []
+            };
         }
 
         async function _writeCloudEdital(uid, items) {
             await fbDb.collection('users').doc(uid).collection('editalPRF').doc('data').set({
-                items, updatedAt: new Date().toISOString()
+                items, deletedIds: [...deletedIds],
+                redacoes, redacoesDeletedIds: [...redacoesDeletedIds],
+                updatedAt: new Date().toISOString()
             });
         }
 
@@ -459,33 +810,41 @@
             _pushInFlight = true;
             _setSyncStatus('Sincronizando…', 'spinning');
             try {
-                const cloudItems = await _readCloudEdital(currentUser.uid);
+                const cloudData = await _readCloudEdital(currentUser.uid);
                 let resultDb;
-                if (!cloudItems) {
+                if (!cloudData) {
                     resultDb = db; // nuvem ainda não tem nada — sobe o que temos
                 } else {
-                    resultDb = mergeEditalDb(db, cloudItems);
+                    cloudData.deletedIds.forEach(id => deletedIds.add(id));
+                    localStorage.setItem('prf_edital_deleted', JSON.stringify([...deletedIds]));
+                    resultDb = mergeEditalDb(db, cloudData.items);
+
+                    cloudData.redacoesDeletedIds.forEach(id => redacoesDeletedIds.add(id));
+                    localStorage.setItem('prf_redacoes_deleted', JSON.stringify([...redacoesDeletedIds]));
+                    redacoes = mergeById(redacoes, cloudData.redacoes, redacoesDeletedIds);
+                    localStorage.setItem('prf_redacoes_data', JSON.stringify(redacoes));
+                    renderRedacoes();
+                    updateRedacaoCard();
                 }
                 db = resultDb;
                 localStorage.setItem('prf_edital_data', JSON.stringify(db));
                 await _writeCloudEdital(currentUser.uid, db);
                 _editalBackup();
+                // Atualiza TODAS as telas que dependem de `db`/`redacoes`, não só a
+                // que está visível agora — sem isso, Dashboard e Estatísticas
+                // ficavam com números desatualizados até o usuário trocar de aba.
                 applyFilters();
+                updateDashboard();
+                renderStats();
                 _setSyncStatus('Sincronizado ✓', 'ok');
                 if (showToastMsg) _showSyncToast(showToastMsg);
             } catch (e) {
                 console.error('[Edital] Erro ao sincronizar:', e);
-                _setSyncStatus('Erro — tentando de novo', 'error');
+                _setSyncStatus('Erro ao sincronizar', 'error');
             } finally {
                 _pushInFlight = false;
                 if (_pushQueued) { _pushQueued = false; _syncNow(); }
             }
-        }
-
-        function _scheduleSync() {
-            if (!currentUser) return;
-            clearTimeout(_syncDebounceTimer);
-            _syncDebounceTimer = setTimeout(() => _syncNow(), 2500);
         }
 
         function forceSyncNow() { _syncNow('Sincronização manual concluída.'); }
@@ -496,7 +855,16 @@
             if (el) el.innerText = text;
             if (icon) icon.className = mode === 'spinning'
                 ? 'fa-solid fa-rotate fa-spin'
-                : mode === 'error' ? 'fa-solid fa-triangle-exclamation text-yellow-300' : 'fa-solid fa-cloud-arrow-up';
+                : mode === 'error' ? 'fa-solid fa-triangle-exclamation text-yellow-300'
+                : mode === 'pending' ? 'fa-solid fa-cloud-arrow-up text-yellow-300'
+                : 'fa-solid fa-cloud-arrow-up';
+        }
+
+        // Sincronização é manual agora — isso avisa visualmente quando há
+        // mudanças locais ainda não enviadas para a nuvem, para o usuário
+        // saber que precisa clicar em "Sincronizar" antes de trocar de aparelho.
+        function _markUnsynced() {
+            if (currentUser) _setSyncStatus('Alterações não sincronizadas', 'pending');
         }
 
         function _showSyncToast(msg) {
@@ -505,25 +873,6 @@
             t.innerText = msg;
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 4000);
-        }
-
-        function _startEditalListener(uid) {
-            if (_crossDeviceUnsubscribe) { _crossDeviceUnsubscribe(); _crossDeviceUnsubscribe = null; }
-            _crossDeviceUnsubscribe = fbDb.collection('users').doc(uid).collection('editalPRF').doc('data')
-                .onSnapshot(async (doc) => {
-                    if (!doc.exists || !Array.isArray(doc.data().items)) return;
-                    if (doc.metadata.hasPendingWrites) return; // é a nossa própria escrita voltando, ignora
-                    const cloudItems = doc.data().items;
-                    const merged = mergeEditalDb(db, cloudItems);
-                    // Só re-renderiza/grava se algo de fato mudou
-                    if (JSON.stringify(merged) !== JSON.stringify(db)) {
-                        db = merged;
-                        localStorage.setItem('prf_edital_data', JSON.stringify(db));
-                        applyFilters();
-                        _editalBackup();
-                        _showSyncToast('☁ Progresso atualizado de outro dispositivo.');
-                    }
-                }, (err) => console.warn('[Edital] Listener error:', err.message));
         }
 
         // ── Autenticação ─────────────────────────────────────────────────
@@ -556,7 +905,6 @@
         }
 
         function doLogout() {
-            if (_crossDeviceUnsubscribe) { _crossDeviceUnsubscribe(); _crossDeviceUnsubscribe = null; }
             fbAuth.signOut();
         }
 
@@ -576,10 +924,12 @@
                     currentUser = { uid: user.uid, email: user.email };
                     _onLoggedInUI(user.email);
                     closeLoginModal();
-                    // Primeiro contato com a nuvem: SEMPRE mescla, nunca sobrescreve
-                    // cegamente em nenhuma direção.
-                    await _syncNow('Conectado — dados combinados com a nuvem.');
-                    _startEditalListener(user.uid);
+                    // Sincronização agora é 100% manual: só roda quando o
+                    // usuário clica no botão "Sincronizar". Isso evita o
+                    // aviso de erro aparecendo sozinho toda vez que a página
+                    // é aberta (sem tentativa automática, sem escuta em
+                    // tempo real de outros dispositivos).
+                    _setSyncStatus('Clique para sincronizar', 'idle');
                 } else {
                     currentUser = null;
                     _onLoggedOutUI();
@@ -594,23 +944,47 @@
             if (savedData) {
                 // Fazer merge inteligente para caso ganhemos novos itens no array bruto futuramente
                 const parsed = JSON.parse(savedData);
+                const baseIds = new Set(db.map(item => item.id));
                 db = db.map(item => {
                     const savedItem = parsed.find(p => p.id === item.id);
-                    return savedItem ? savedItem : item;
+                    if (!savedItem) return item;
+                    // Os metadados (bloco/disciplina/assunto/subassunto) sempre vêm da versão
+                    // atual do edital (seed acima) — assim, correções na classificação de
+                    // blocos/disciplinas são aplicadas mesmo para quem já tinha progresso salvo.
+                    // Apenas o progresso do usuário é trazido do que estava salvo.
+                    return {
+                        ...item,
+                        status: savedItem.status ?? item.status,
+                        horas: savedItem.horas ?? item.horas,
+                        minutos: savedItem.minutos ?? item.minutos,
+                        revisoes: savedItem.revisoes ?? item.revisoes,
+                        totalQuestoes: savedItem.totalQuestoes,
+                        acertos: savedItem.acertos,
+                        questoes: savedItem.questoes,
+                        erros: savedItem.erros,
+                        percentual: savedItem.percentual ?? item.percentual,
+                        observacoes: savedItem.observacoes ?? item.observacoes,
+                        _ts: savedItem._ts
+                    };
+                });
+                // Tópicos criados pelo usuário (ids que não existem na lista original do edital)
+                parsed.forEach(p => {
+                    if (!baseIds.has(p.id)) db.push(p);
                 });
             }
+            // Remove definitivamente qualquer item cujo id tenha sido apagado pelo usuário
+            db = db.filter(item => !deletedIds.has(item.id));
+            // Migração: versões antigas guardavam os dados de outra forma
+            // (campo único 'questoes', ou 'acertos'+'erros' separados).
+            // Convertemos para o formato atual sem perder o progresso já registrado.
+            db.forEach(item => _normalizeRow(item));
 
-            // Popula selects de filtro
-            const disciplinas = [...new Set(db.map(i => i.disciplina))].sort();
-            const filterSelect = document.getElementById('filter-disciplina');
-            disciplinas.forEach(d => {
-                let opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
-                filterSelect.appendChild(opt);
-            });
+            // Popula selects de filtro e datalist de disciplinas
+            refreshDisciplinaOptions();
 
             applyFilters();
+            updateRedacaoCard();
+            renderRedacoes();
             setTimeout(_editalBackup, 500);
             setInterval(_editalBackup, 5 * 60 * 1000);
         };
@@ -619,7 +993,7 @@
         function saveData() {
             localStorage.setItem('prf_edital_data', JSON.stringify(db));
             updateDashboard();
-            _scheduleSync();
+            _markUnsynced();
         }
 
         function resetData() {
@@ -633,13 +1007,19 @@
         function switchTab(tab) {
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-planilha').classList.add('hidden');
+            document.getElementById('view-estatisticas').classList.add('hidden');
+            document.getElementById('view-redacao').classList.add('hidden');
             document.getElementById('tab-dashboard').classList.remove('bg-blue-800');
             document.getElementById('tab-planilha').classList.remove('bg-blue-800');
+            document.getElementById('tab-estatisticas').classList.remove('bg-blue-800');
+            document.getElementById('tab-redacao').classList.remove('bg-blue-800');
 
             document.getElementById(`view-${tab}`).classList.remove('hidden');
             document.getElementById(`tab-${tab}`).classList.add('bg-blue-800');
             
             if(tab === 'dashboard') updateDashboard();
+            if(tab === 'estatisticas') renderStats();
+            if(tab === 'redacao') renderRedacoes();
         }
 
         // Filtros e Ordenação
@@ -647,6 +1027,8 @@
             const search = document.getElementById('search-input').value.toLowerCase();
             const disc = document.getElementById('filter-disciplina').value;
             const status = document.getElementById('filter-status').value;
+
+            filtersActive = search.length > 0 || disc !== 'Todas' || status !== 'Todos';
 
             filteredDb = db.filter(item => {
                 const matchSearch = item.assunto.toLowerCase().includes(search) || item.subassunto.toLowerCase().includes(search);
@@ -656,6 +1038,327 @@
             });
 
             doSort();
+        }
+
+        // Reconstrói o select de filtro e a datalist de disciplinas a partir do db atual
+        function refreshDisciplinaOptions() {
+            const disciplinas = [...new Set(db.map(i => i.disciplina))].filter(Boolean).sort();
+
+            const filterSelect = document.getElementById('filter-disciplina');
+            const currentValue = filterSelect.value;
+            filterSelect.innerHTML = '<option value="Todas">Todas as Disciplinas</option>';
+            disciplinas.forEach(d => {
+                let opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                filterSelect.appendChild(opt);
+            });
+            filterSelect.value = disciplinas.includes(currentValue) ? currentValue : 'Todas';
+
+            const datalist = document.getElementById('disciplinas-datalist');
+            datalist.innerHTML = '';
+            disciplinas.forEach(d => {
+                let opt = document.createElement('option');
+                opt.value = d;
+                datalist.appendChild(opt);
+            });
+        }
+
+        // Abre o modal de tópico. Sem id = criação; com id = edição.
+        function openTopicModal(id = null) {
+            document.getElementById('topic-modal-error').classList.add('hidden');
+            document.getElementById('topic-id').value = id ?? '';
+            if (id !== null) {
+                const item = db.find(i => i.id === id);
+                if (!item) return;
+                document.getElementById('topic-modal-title').innerHTML = '<i class="fa-solid fa-pen text-blue-600 mr-2"></i>Editar Tópico';
+                document.getElementById('topic-bloco').value = item.bloco;
+                document.getElementById('topic-disciplina').value = item.disciplina;
+                document.getElementById('topic-assunto').value = item.assunto;
+                document.getElementById('topic-subassunto').value = item.subassunto;
+            } else {
+                document.getElementById('topic-modal-title').innerHTML = '<i class="fa-solid fa-plus text-blue-600 mr-2"></i>Novo Tópico';
+                document.getElementById('topic-bloco').value = 'Bloco I';
+                document.getElementById('topic-disciplina').value = '';
+                document.getElementById('topic-assunto').value = '';
+                document.getElementById('topic-subassunto').value = '';
+            }
+            document.getElementById('topic-modal').classList.remove('hidden');
+        }
+
+        function closeTopicModal() {
+            document.getElementById('topic-modal').classList.add('hidden');
+        }
+
+        function saveTopicModal() {
+            const idRaw = document.getElementById('topic-id').value;
+            const bloco = document.getElementById('topic-bloco').value;
+            const disciplina = document.getElementById('topic-disciplina').value.trim();
+            const assunto = document.getElementById('topic-assunto').value.trim();
+            const subassunto = document.getElementById('topic-subassunto').value.trim() || '-';
+
+            if (!disciplina || !assunto) {
+                document.getElementById('topic-modal-error').classList.remove('hidden');
+                return;
+            }
+
+            if (idRaw !== '') {
+                // Edição
+                const index = db.findIndex(i => i.id === parseInt(idRaw));
+                if (index > -1) {
+                    db[index].bloco = bloco;
+                    db[index].disciplina = disciplina;
+                    db[index].assunto = assunto;
+                    db[index].subassunto = subassunto;
+                    db[index]._ts = Date.now();
+                }
+            } else {
+                // Criação
+                const newId = db.length ? Math.max(...db.map(i => i.id)) + 1 : 1;
+                db.push({
+                    id: newId,
+                    bloco, disciplina, assunto, subassunto,
+                    status: 'Não iniciado',
+                    horas: 0,
+                    minutos: 0,
+                    revisoes: 0,
+                    totalQuestoes: 0,
+                    acertos: 0,
+                    percentual: 0,
+                    observacoes: '',
+                    _ts: Date.now()
+                });
+            }
+
+            saveData();
+            refreshDisciplinaOptions();
+            applyFilters();
+            closeTopicModal();
+        }
+
+        function deleteTopic(id) {
+            const item = db.find(i => i.id === id);
+            if (!item) return;
+            if (!confirm(`Apagar o tópico "${item.assunto}" (${item.disciplina})? Essa ação não pode ser desfeita.`)) return;
+            db = db.filter(i => i.id !== id);
+            deletedIds.add(id);
+            localStorage.setItem('prf_edital_deleted', JSON.stringify([...deletedIds]));
+            saveData();
+            refreshDisciplinaOptions();
+            applyFilters();
+        }
+
+        function renameDisciplina(oldName) {
+            const newName = prompt('Novo nome para a disciplina:', oldName);
+            if (!newName || !newName.trim() || newName.trim() === oldName) return;
+            const trimmed = newName.trim();
+            db.forEach(item => {
+                if (item.disciplina === oldName) {
+                    item.disciplina = trimmed;
+                    item._ts = Date.now();
+                }
+            });
+            saveData();
+            refreshDisciplinaOptions();
+            applyFilters();
+        }
+
+        function deleteDisciplina(name) {
+            const count = db.filter(i => i.disciplina === name).length;
+            if (!confirm(`Apagar a disciplina "${name}" e todos os seus ${count} tópico${count > 1 ? 's' : ''}? Essa ação não pode ser desfeita.`)) return;
+            db.filter(i => i.disciplina === name).forEach(i => deletedIds.add(i.id));
+            localStorage.setItem('prf_edital_deleted', JSON.stringify([...deletedIds]));
+            db = db.filter(i => i.disciplina !== name);
+            saveData();
+            refreshDisciplinaOptions();
+            applyFilters();
+        }
+
+        // ── Redação ──────────────────────────────────────────────────────
+        function saveRedacoesData() {
+            localStorage.setItem('prf_redacoes_data', JSON.stringify(redacoes));
+            updateRedacaoCard();
+            _markUnsynced();
+        }
+
+        function computeRedacaoStats() {
+            const count = redacoes.length;
+            if (count === 0) return { count: 0, media: null, pct: null };
+            const soma = redacoes.reduce((acc, r) => acc + (r.nota || 0), 0);
+            const media = soma / count;
+            const pct = Math.round((media / 20) * 100);
+            return { count, media, pct };
+        }
+
+        function updateRedacaoCard() {
+            const elMain = document.getElementById('card-redacao');
+            const elSub = document.getElementById('card-redacao-sub');
+            if (!elMain) return; // dashboard ainda não renderizado
+            const { count, media, pct } = computeRedacaoStats();
+            if (count === 0) {
+                elMain.innerText = '-';
+                elSub.innerText = 'Nenhuma redação registrada';
+            } else {
+                elMain.innerText = `${pct}%`;
+                elSub.innerText = `Média: ${media.toFixed(1)} / 20 (${count} redaç${count > 1 ? 'ões' : 'ão'})`;
+            }
+        }
+
+        function _escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function renderRedacoes() {
+            const tbody = document.getElementById('redacao-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (redacoes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-sm text-gray-400">Nenhuma redação registrada ainda.</td></tr>`;
+            } else {
+                [...redacoes].sort((a, b) => (b._ts || 0) - (a._ts || 0)).forEach(r => {
+                    const pct = Math.round(((r.nota || 0) / 20) * 100);
+                    const color = pct >= 70 ? 'text-green-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-600';
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-blue-50 transition-colors';
+                    tr.innerHTML = `
+                        <td class="p-3 border-b border-gray-200 text-gray-800 font-medium break-words max-w-xs">${_escapeHtml(r.tema)}</td>
+                        <td class="p-3 border-b border-gray-200 text-center whitespace-nowrap">${(r.nota||0).toFixed(2).replace(/\.?0+$/, '') || '0'} / 20</td>
+                        <td class="p-3 border-b border-gray-200 text-center font-bold ${color}">${pct}%</td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openRedacaoModal(${r.id})" class="text-gray-400 hover:text-blue-600 transition" title="Editar redação"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteRedacao(${r.id})" class="text-gray-400 hover:text-red-600 transition" title="Apagar redação"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            const { count, media, pct } = computeRedacaoStats();
+            document.getElementById('redacao-card-total').innerText = count;
+            document.getElementById('redacao-card-media').innerText = count === 0 ? '-' : `${media.toFixed(1)} / 20`;
+            document.getElementById('redacao-card-pct').innerText = count === 0 ? '-' : `${pct}%`;
+
+            renderRedacaoEvolucaoChart();
+        }
+
+        function renderRedacaoEvolucaoChart() {
+            const canvas = document.getElementById('chart-redacao-evolucao');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (myCharts.redacaoEvol) myCharts.redacaoEvol.destroy();
+
+            const ordered = [...redacoes].sort((a, b) => (a._ts || 0) - (b._ts || 0));
+            const labels = ordered.length ? ordered.map((r, i) => `#${i + 1}`) : ['—'];
+            const data = ordered.length ? ordered.map(r => r.nota || 0) : [0];
+            const tooltipTemas = ordered.map(r => r.tema);
+
+            const lineGradient = ctx.createLinearGradient(0, 0, 0, 256);
+            lineGradient.addColorStop(0, 'rgba(168, 85, 247, 0.35)');
+            lineGradient.addColorStop(1, 'rgba(168, 85, 247, 0.02)');
+
+            myCharts.redacaoEvol = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Nota',
+                        data,
+                        borderColor: '#9333ea',
+                        backgroundColor: lineGradient,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#9333ea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    scales: {
+                        y: { beginAtZero: true, max: 20, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b', padding: 10, cornerRadius: 8,
+                            callbacks: {
+                                title: items => tooltipTemas[items[0].dataIndex] || '',
+                                label: ctx => `Nota: ${ctx.parsed.y} / 20`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function openRedacaoModal(id = null) {
+            document.getElementById('redacao-modal-error').classList.add('hidden');
+            document.getElementById('redacao-id').value = id ?? '';
+            if (id !== null) {
+                const r = redacoes.find(x => x.id === id);
+                if (!r) return;
+                document.getElementById('redacao-modal-title').innerHTML = '<i class="fa-solid fa-pen text-purple-600 mr-2"></i>Editar Redação';
+                document.getElementById('redacao-tema').value = r.tema;
+                document.getElementById('redacao-nota').value = r.nota;
+            } else {
+                document.getElementById('redacao-modal-title').innerHTML = '<i class="fa-solid fa-pen-nib text-purple-600 mr-2"></i>Nova Redação';
+                document.getElementById('redacao-tema').value = '';
+                document.getElementById('redacao-nota').value = '';
+            }
+            document.getElementById('redacao-modal').classList.remove('hidden');
+        }
+
+        function closeRedacaoModal() {
+            document.getElementById('redacao-modal').classList.add('hidden');
+        }
+
+        function saveRedacaoModal() {
+            const idRaw = document.getElementById('redacao-id').value;
+            const tema = document.getElementById('redacao-tema').value.trim();
+            const notaRaw = document.getElementById('redacao-nota').value;
+            const nota = parseFloat(notaRaw);
+
+            if (!tema || notaRaw === '' || isNaN(nota) || nota < 0 || nota > 20) {
+                document.getElementById('redacao-modal-error').classList.remove('hidden');
+                return;
+            }
+
+            if (idRaw !== '') {
+                const index = redacoes.findIndex(r => r.id === parseInt(idRaw));
+                if (index > -1) {
+                    redacoes[index].tema = tema;
+                    redacoes[index].nota = nota;
+                    redacoes[index]._ts = Date.now();
+                }
+            } else {
+                const newId = redacoes.length ? Math.max(...redacoes.map(r => r.id)) + 1 : 1;
+                redacoes.push({ id: newId, tema, nota, _ts: Date.now() });
+            }
+
+            saveRedacoesData();
+            renderRedacoes();
+            closeRedacaoModal();
+        }
+
+        function deleteRedacao(id) {
+            const r = redacoes.find(x => x.id === id);
+            if (!r) return;
+            if (!confirm(`Apagar a redação "${r.tema}"? Essa ação não pode ser desfeita.`)) return;
+            redacoes = redacoes.filter(x => x.id !== id);
+            redacoesDeletedIds.add(id);
+            localStorage.setItem('prf_redacoes_deleted', JSON.stringify([...redacoesDeletedIds]));
+            saveRedacoesData();
+            renderRedacoes();
         }
 
         function setSort(col) {
@@ -690,68 +1393,171 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
 
+            if (filteredDb.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="p-8 text-center text-sm text-gray-400">Nenhum resultado encontrado.</td></tr>`;
+                return;
+            }
+
+            // Agrupar por disciplina, preservando a ordem de aparição em filteredDb
+            // (que já reflete a ordenação/filtro atuais) para que os tópicos de
+            // uma mesma disciplina fiquem sempre juntos, navegáveis por toggle.
+            const groupOrder = [];
+            const groups = {};
             filteredDb.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                // Colorir linha baseado no status
-                let rowColor = 'status-nao-iniciado';
-                if (item.status === 'Em andamento') rowColor = 'status-em-andamento';
-                if (item.status === 'Concluído') rowColor = 'status-concluido';
-                tr.className = `hover:bg-blue-50 transition-colors ${rowColor}`;
+                if (!groups[item.disciplina]) {
+                    groups[item.disciplina] = { bloco: item.bloco, items: [] };
+                    groupOrder.push(item.disciplina);
+                }
+                groups[item.disciplina].items.push(item);
+            });
 
-                // Calcular Percentual based on status (Não iniciado = 0, Em andamento = 50, Concluído = 100)
-                let pctValue = 0;
-                if(item.status === 'Em andamento') pctValue = 50;
-                if(item.status === 'Concluído') pctValue = 100;
-                item.percentual = pctValue; // Sync object
+            groupOrder.forEach(disc => {
+                const g = groups[disc];
+                const total = g.items.length;
+                const concluidos = g.items.filter(i => i.status === 'Concluído').length;
+                const emAndamento = g.items.filter(i => i.status === 'Em andamento').length;
+                const groupPct = Math.round(((concluidos + emAndamento * 0.5) / total) * 100);
+                // Enquanto há busca/filtro ativo, ignoramos o estado de recolhido
+                // para não esconder resultados que o usuário está procurando.
+                const isCollapsed = !filtersActive && collapsedDisciplinas.has(disc);
+                const barColor = groupPct === 100 ? 'bg-green-500' : groupPct > 0 ? 'bg-yellow-500' : 'bg-gray-400';
 
-                tr.innerHTML = `
-                    <td class="p-3 border-b border-gray-200">
-                        <span class="block text-xs font-semibold text-gray-500">${item.bloco}</span>
-                        <span class="font-medium text-gray-800">${item.disciplina}</span>
-                    </td>
-                    <td class="p-3 border-b border-gray-200 text-gray-700">${item.assunto}</td>
-                    <td class="p-3 border-b border-gray-200 text-gray-600 text-xs">${item.subassunto}</td>
-                    <td class="p-3 border-b border-gray-200">
-                        <select onchange="updateRow(${item.id}, 'status', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-sm focus:ring-blue-500">
-                            <option value="Não iniciado" ${item.status === 'Não iniciado' ? 'selected' : ''}>Não iniciado</option>
-                            <option value="Em andamento" ${item.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
-                            <option value="Concluído" ${item.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
-                        </select>
-                    </td>
-                    <td class="p-3 border-b border-gray-200 text-center">
-                        <input type="number" min="0" step="0.5" onchange="updateRow(${item.id}, 'horas', parseFloat(this.value)||0)" value="${item.horas}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                    </td>
-                    <td class="p-3 border-b border-gray-200 text-center">
-                        <input type="number" min="0" onchange="updateRow(${item.id}, 'revisoes', parseInt(this.value)||0)" value="${item.revisoes}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                    </td>
-                    <td class="p-3 border-b border-gray-200 text-center">
-                        <input type="number" min="0" onchange="updateRow(${item.id}, 'questoes', parseInt(this.value)||0)" value="${item.questoes}" class="w-20 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                    </td>
-                    <td class="p-3 border-b border-gray-200">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold w-8 text-right">${pctValue}%</span>
-                            <div class="w-16 bg-gray-200 rounded-full h-2">
-                                <div class="bg-${pctValue===100?'green':pctValue>0?'yellow':'gray'}-500 h-2 rounded-full" style="width: ${pctValue}%"></div>
+                const headerTr = document.createElement('tr');
+                headerTr.className = 'bg-slate-100 hover:bg-slate-200 cursor-pointer transition-colors select-none';
+                headerTr.onclick = () => toggleDiscGroup(disc);
+                headerTr.innerHTML = `
+                    <td colspan="13" class="p-3 border-b border-gray-300">
+                        <div class="flex items-center justify-between gap-4 flex-wrap">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-chevron-${isCollapsed ? 'right' : 'down'} text-gray-500 text-xs w-3 transition-transform"></i>
+                                <span class="text-xs font-semibold text-gray-500">${g.bloco}</span>
+                                <span class="font-bold text-gray-800">${disc}</span>
+                                <span class="text-xs text-gray-400">(${total} tópico${total > 1 ? 's' : ''})</span>
+                                <button onclick="event.stopPropagation(); renameDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-blue-600 transition text-xs" title="Renomear disciplina"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="event.stopPropagation(); deleteDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-red-600 transition text-xs" title="Apagar disciplina inteira"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-gray-600">${groupPct}%</span>
+                                <div class="w-24 bg-gray-300 rounded-full h-1.5">
+                                    <div class="${barColor} h-1.5 rounded-full" style="width: ${groupPct}%"></div>
+                                </div>
                             </div>
                         </div>
                     </td>
-                    <td class="p-3 border-b border-gray-200">
-                        <input type="text" onchange="updateRow(${item.id}, 'observacoes', this.value)" value="${item.observacoes}" placeholder="Notas..." class="w-full bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 focus:outline-none p-1 text-sm">
-                    </td>
                 `;
-                tbody.appendChild(tr);
+                tbody.appendChild(headerTr);
+
+                if (isCollapsed) return;
+
+                g.items.forEach(item => {
+                    const tr = document.createElement('tr');
+
+                    // Colorir linha baseado no status
+                    let rowColor = 'status-nao-iniciado';
+                    if (item.status === 'Em andamento') rowColor = 'status-em-andamento';
+                    if (item.status === 'Concluído') rowColor = 'status-concluido';
+                    tr.className = `hover:bg-blue-50 transition-colors ${rowColor}`;
+
+                    // Calcular Percentual based on status (Não iniciado = 0, Em andamento = 50, Concluído = 100)
+                    let pctValue = 0;
+                    if(item.status === 'Em andamento') pctValue = 50;
+                    if(item.status === 'Concluído') pctValue = 100;
+                    item.percentual = pctValue; // Sync object
+
+                    tr.innerHTML = `
+                        <td class="p-3 border-b border-gray-200">
+                            <span class="block text-xs font-semibold text-gray-500">${item.bloco}</span>
+                            <span class="font-medium text-gray-800">${item.disciplina}</span>
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-gray-700">${item.assunto}</td>
+                        <td class="p-3 border-b border-gray-200 text-gray-600 text-xs">${item.subassunto}</td>
+                        <td class="p-3 border-b border-gray-200">
+                            <select onchange="updateRow(${item.id}, 'status', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-sm focus:ring-blue-500">
+                                <option value="Não iniciado" ${item.status === 'Não iniciado' ? 'selected' : ''}>Não iniciado</option>
+                                <option value="Em andamento" ${item.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                                <option value="Concluído" ${item.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                            </select>
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <input type="number" min="0" step="1" onchange="updateRow(${item.id}, 'horas', parseFloat(this.value)||0)" value="${item.horas}" class="w-14 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <input type="number" min="0" max="59" step="1" onchange="updateRow(${item.id}, 'minutos', Math.min(59, Math.max(0, parseInt(this.value)||0)))" value="${item.minutos||0}" class="w-14 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <input type="number" min="0" onchange="updateRow(${item.id}, 'revisoes', parseInt(this.value)||0)" value="${item.revisoes}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <input type="number" min="0" onchange="updateRow(${item.id}, 'totalQuestoes', Math.max(0, parseInt(this.value)||0))" value="${item.totalQuestoes||0}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <input type="number" min="0" onchange="updateRow(${item.id}, 'acertos', parseInt(this.value)||0)" value="${item.acertos||0}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm text-green-700">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            ${(() => {
+                                const q = item.totalQuestoes||0;
+                                if (q === 0) return '<span class="text-xs text-gray-400">-</span>';
+                                const ap = Math.round((item.acertos||0) / q * 100);
+                                const color = ap >= 70 ? 'text-green-600' : ap >= 50 ? 'text-yellow-600' : 'text-red-600';
+                                return `<span class="text-xs font-bold ${color}">${ap}%</span>`;
+                            })()}
+                        </td>
+                        <td class="p-3 border-b border-gray-200">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold w-8 text-right">${pctValue}%</span>
+                                <div class="w-16 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-${pctValue===100?'green':pctValue>0?'yellow':'gray'}-500 h-2 rounded-full" style="width: ${pctValue}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 border-b border-gray-200">
+                            <input type="text" onchange="updateRow(${item.id}, 'observacoes', this.value)" value="${item.observacoes}" placeholder="Notas..." class="w-full bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 focus:outline-none p-1 text-sm">
+                        </td>
+                        <td class="p-3 border-b border-gray-200 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openTopicModal(${item.id})" class="text-gray-400 hover:text-blue-600 transition" title="Editar tópico"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteTopic(${item.id})" class="text-gray-400 hover:text-red-600 transition" title="Apagar tópico"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
+        }
+
+        function toggleDiscGroup(disc) {
+            if (collapsedDisciplinas.has(disc)) collapsedDisciplinas.delete(disc);
+            else collapsedDisciplinas.add(disc);
+            localStorage.setItem('prf_edital_collapsed', JSON.stringify([...collapsedDisciplinas]));
+            renderTable();
+        }
+
+        function setAllGroupsCollapsed(collapse) {
+            if (collapse) {
+                const allDisc = [...new Set(db.map(i => i.disciplina))];
+                collapsedDisciplinas = new Set(allDisc);
+            } else {
+                collapsedDisciplinas = new Set();
+            }
+            localStorage.setItem('prf_edital_collapsed', JSON.stringify([...collapsedDisciplinas]));
+            renderTable();
         }
 
         function updateRow(id, field, value) {
             const index = db.findIndex(i => i.id === id);
             if(index > -1) {
                 db[index][field] = value;
+                // Acertos nunca pode passar do total de questões
+                if (field === 'acertos' && db[index].acertos > (db[index].totalQuestoes||0)) {
+                    db[index].acertos = db[index].totalQuestoes||0;
+                }
+                if (field === 'totalQuestoes' && (db[index].acertos||0) > value) {
+                    db[index].acertos = value;
+                }
                 db[index]._ts = Date.now(); // marca ESTA linha como editada agora (usado no merge)
                 saveData();
-                // Se mudou status, refaz a tabela para colorir e atualizar %
-                if(field === 'status') {
+                // Se mudou status, ou os campos de questões, refaz a tabela para atualizar visual
+                if(field === 'status' || field === 'totalQuestoes' || field === 'acertos') {
                     applyFilters(); 
                 }
             }
@@ -763,16 +1569,22 @@
             const inProgressTopics = db.filter(i => i.status === 'Em andamento').length;
             
             let totalHours = 0;
+            let totalMinutes = 0;
             let totalQuestions = 0;
-            let totalRevisions = 0;
+            let totalAcertos = 0;
+            let totalErros = 0;
 
             const discData = {};
             const blocoData = {'Bloco I': 0, 'Bloco II': 0, 'Bloco III': 0};
+            const horasPorDisciplina = {};
+            const questoesPorDisciplina = {};
 
             db.forEach(item => {
                 totalHours += item.horas;
-                totalQuestions += item.questoes;
-                totalRevisions += item.revisoes;
+                totalMinutes += (item.minutos||0);
+                totalAcertos += (item.acertos||0);
+                totalErros += Math.max(0, (item.totalQuestoes||0) - (item.acertos||0));
+                totalQuestions += (item.totalQuestoes||0);
 
                 // Agrupar por disciplina para progresso
                 if(!discData[item.disciplina]) discData[item.disciplina] = { total: 0, completed: 0, half: 0 };
@@ -782,9 +1594,20 @@
 
                 // Agrupar questões por bloco
                 if(blocoData[item.bloco] !== undefined) {
-                    blocoData[item.bloco] += item.questoes;
+                    blocoData[item.bloco] += (item.totalQuestoes||0);
                 }
+
+                // Agrupar horas de estudo por disciplina
+                const horasTotaisItem = (item.horas||0) + ((item.minutos||0) / 60);
+                horasPorDisciplina[item.disciplina] = (horasPorDisciplina[item.disciplina] || 0) + horasTotaisItem;
+
+                // Agrupar acertos/questões por disciplina (para % de aproveitamento)
+                if(!questoesPorDisciplina[item.disciplina]) questoesPorDisciplina[item.disciplina] = { total: 0, acertos: 0 };
+                questoesPorDisciplina[item.disciplina].total += (item.totalQuestoes||0);
+                questoesPorDisciplina[item.disciplina].acertos += (item.acertos||0);
             });
+
+            const naoIniciadoTopics = totalTopics - completedTopics - inProgressTopics;
 
             // Atualizar Cards e Barra Global
             // Regra: Concluído = 1, Em andamento = 0.5
@@ -796,9 +1619,13 @@
             if (globalPct === 100) { document.getElementById('global-progress-bar').className = "bg-green-500 h-4 rounded-full transition-all duration-500"; }
             
             document.getElementById('card-topics').innerText = `${completedTopics} / ${totalTopics}`;
-            document.getElementById('card-hours').innerText = `${totalHours}h`;
+            const horasFinais = totalHours + Math.floor(totalMinutes / 60);
+            const minutosFinais = totalMinutes % 60;
+            document.getElementById('card-hours').innerText = minutosFinais > 0 ? `${horasFinais}h ${minutosFinais}min` : `${horasFinais}h`;
             document.getElementById('card-questions').innerText = totalQuestions;
-            document.getElementById('card-revisions').innerText = totalRevisions;
+            document.getElementById('card-questions-sub').innerHTML = `<span class="text-green-600 font-medium">${totalAcertos} acertos</span> / <span class="text-red-600 font-medium">${totalErros} erros</span>`;
+            const aproveitamentoGeral = totalQuestions > 0 ? Math.round((totalAcertos / totalQuestions) * 100) : null;
+            document.getElementById('card-aproveitamento').innerText = aproveitamentoGeral === null ? '-' : `${aproveitamentoGeral}%`;
 
             // Preparar dados para o Gráfico de Progresso por Disciplina
             const labels = Object.keys(discData).sort();
@@ -807,14 +1634,31 @@
                 return Math.round(((d.completed + (d.half * 0.5)) / d.total) * 100);
             });
 
-            renderCharts(labels, progressDataset, blocoData);
+            // Preparar dados de aproveitamento (%) por disciplina, apenas quem já tem questões respondidas
+            const accLabels = Object.keys(questoesPorDisciplina).filter(l => questoesPorDisciplina[l].total > 0).sort();
+            const accDataset = accLabels.map(l => Math.round((questoesPorDisciplina[l].acertos / questoesPorDisciplina[l].total) * 100));
+
+            // Preparar dados de horas por disciplina, ordenados do maior para o menor
+            const hoursLabels = Object.keys(horasPorDisciplina).sort((a,b) => horasPorDisciplina[b] - horasPorDisciplina[a]);
+            const hoursDataset = hoursLabels.map(l => Math.round(horasPorDisciplina[l] * 10) / 10);
+
+            renderCharts(labels, progressDataset, blocoData, {
+                status: [completedTopics, inProgressTopics, naoIniciadoTopics],
+                accLabels, accDataset,
+                hoursLabels, hoursDataset
+            });
+            updateRedacaoCard();
         }
 
-        function renderCharts(discLabels, discProgressData, blocoData) {
-            // Chart Progresso por Disciplina
+        function renderCharts(discLabels, discProgressData, blocoData, extra) {
+            // Chart Progresso por Disciplina (barras com gradiente)
             const ctxProg = document.getElementById('chart-progress').getContext('2d');
             if(myCharts.prog) myCharts.prog.destroy();
-            
+
+            const progGradient = ctxProg.createLinearGradient(0, 0, 0, 288);
+            progGradient.addColorStop(0, 'rgba(59, 130, 246, 0.95)');
+            progGradient.addColorStop(1, 'rgba(96, 165, 250, 0.35)');
+
             myCharts.prog = new Chart(ctxProg, {
                 type: 'bar',
                 data: {
@@ -822,24 +1666,34 @@
                     datasets: [{
                         label: '% Concluído',
                         data: discProgressData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
+                        backgroundColor: progGradient,
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        maxBarThickness: 42,
+                        hoverBackgroundColor: 'rgba(37, 99, 235, 0.95)'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
                     scales: {
-                        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
-                        x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } }
+                        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+                        x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 }, grid: { display: false } }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b', padding: 10, cornerRadius: 8, displayColors: false,
+                            callbacks: { label: ctx => `${ctx.parsed.y}% concluído` }
+                        }
+                    }
                 }
             });
 
-            // Chart Questões por Bloco
+            // Chart Questões por Bloco (doughnut moderno)
             const ctxQuest = document.getElementById('chart-questions').getContext('2d');
             if(myCharts.quest) myCharts.quest.destroy();
 
@@ -850,29 +1704,326 @@
                     datasets: [{
                         data: [blocoData['Bloco I'], blocoData['Bloco II'], blocoData['Bloco III']],
                         backgroundColor: ['#3b82f6', '#eab308', '#22c55e'],
-                        borderWidth: 0
+                        hoverBackgroundColor: ['#2563eb', '#ca8a04', '#16a34a'],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '68%',
+                    animation: { animateRotate: true, duration: 800 },
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
+                    }
+                }
+            });
+
+            // Chart Status dos Tópicos (doughnut — mais claro que polar area para poucas categorias)
+            const ctxStatus = document.getElementById('chart-status').getContext('2d');
+            if(myCharts.status) myCharts.status.destroy();
+
+            myCharts.status = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Concluído', 'Em andamento', 'Não iniciado'],
+                    datasets: [{
+                        data: extra.status,
+                        backgroundColor: ['#22c55e', '#eab308', '#cbd5e1'],
+                        hoverBackgroundColor: ['#16a34a', '#ca8a04', '#94a3b8'],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    animation: { animateRotate: true, duration: 800 },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 11 } } },
+                        tooltip: {
+                            backgroundColor: '#1e293b', padding: 10, cornerRadius: 8,
+                            callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed} tópico${ctx.parsed === 1 ? '' : 's'}` }
+                        }
+                    }
+                }
+            });
+
+            // Chart Aproveitamento por Disciplina (radar)
+            const ctxRadar = document.getElementById('chart-radar').getContext('2d');
+            if(myCharts.radar) myCharts.radar.destroy();
+
+            myCharts.radar = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: extra.accLabels.length ? extra.accLabels : ['Sem dados'],
+                    datasets: [{
+                        label: '% Acerto',
+                        data: extra.accDataset.length ? extra.accDataset : [0],
+                        backgroundColor: 'rgba(139, 92, 246, 0.25)',
+                        borderColor: 'rgba(124, 58, 237, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(124, 58, 237, 1)',
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    scales: {
+                        r: {
+                            beginAtZero: true, max: 100,
+                            ticks: { stepSize: 25, callback: v => v + '%', backdropColor: 'transparent', font: { size: 9 } },
+                            grid: { color: '#e2e8f0' },
+                            pointLabels: { font: { size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8, callbacks: { label: ctx => `${ctx.formattedValue}% de acerto` } }
+                    }
+                }
+            });
+
+            // Chart Horas de Estudo por Disciplina (barras horizontais com gradiente)
+            const ctxHours = document.getElementById('chart-hours').getContext('2d');
+            if(myCharts.hours) myCharts.hours.destroy();
+
+            const hoursGradient = ctxHours.createLinearGradient(0, 0, 260, 0);
+            hoursGradient.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+            hoursGradient.addColorStop(1, 'rgba(8, 145, 178, 0.95)');
+
+            myCharts.hours = new Chart(ctxHours, {
+                type: 'bar',
+                data: {
+                    labels: extra.hoursLabels.length ? extra.hoursLabels : ['Sem dados'],
+                    datasets: [{
+                        label: 'Horas estudadas',
+                        data: extra.hoursDataset.length ? extra.hoursDataset : [0],
+                        backgroundColor: hoursGradient,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 22
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + 'h' } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8, callbacks: { label: ctx => `${ctx.parsed.x}h estudadas` } }
                     }
                 }
             });
         }
 
+        // ── Aba de Estatísticas: desempenho por disciplina/assunto/subassunto ──
+        function renderStats() {
+            let totalAcertos = 0, totalQ = 0;
+            db.forEach(i => { totalAcertos += (i.acertos||0); totalQ += (i.totalQuestoes||0); });
+            const globalPct = totalQ > 0 ? Math.round((totalAcertos / totalQ) * 100) : null;
+
+            document.getElementById('stats-card-total').innerText = totalQ;
+            document.getElementById('stats-card-acertos').innerText = totalAcertos;
+            document.getElementById('stats-card-erros').innerText = totalQ - totalAcertos;
+            document.getElementById('stats-card-aproveitamento').innerText = globalPct === null ? '-' : `${globalPct}%`;
+
+            // Dados completos (sem filtro de busca) para os gráficos
+            const fullGroups = {};
+            db.forEach(item => {
+                if (!fullGroups[item.disciplina]) fullGroups[item.disciplina] = { acertos: 0, total: 0 };
+                fullGroups[item.disciplina].acertos += (item.acertos||0);
+                fullGroups[item.disciplina].total += (item.totalQuestoes||0);
+            });
+            renderStatsCharts(fullGroups, totalAcertos, totalQ - totalAcertos);
+
+            // Agrupar por disciplina
+            const search = (document.getElementById('stats-search-input').value || '').toLowerCase();
+            const groups = {};
+            db.forEach(item => {
+                if (search && !item.disciplina.toLowerCase().includes(search)) return;
+                if (!groups[item.disciplina]) groups[item.disciplina] = { bloco: item.bloco, items: [], acertos: 0, total: 0 };
+                groups[item.disciplina].items.push(item);
+                groups[item.disciplina].acertos += (item.acertos||0);
+                groups[item.disciplina].total += (item.totalQuestoes||0);
+            });
+
+            const container = document.getElementById('stats-by-discipline');
+            container.innerHTML = '';
+
+            const discNames = Object.keys(groups).sort();
+            if (discNames.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-400 text-center py-8">Nenhuma disciplina encontrada.</p>`;
+                return;
+            }
+
+            discNames.forEach((disc, idx) => {
+                const g = groups[disc];
+                const totQ = g.total;
+                const pct = totQ > 0 ? Math.round((g.acertos / totQ) * 100) : null;
+                const barColor = pct === null ? 'bg-gray-300' : pct >= 70 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+                const pctTextColor = pct === null ? 'text-gray-400' : pct >= 70 ? 'text-green-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-600';
+                const groupId = `grp-${idx}`;
+
+                const rowsHtml = g.items.map(item => {
+                    const iq = item.totalQuestoes||0;
+                    const ipct = iq > 0 ? Math.round((item.acertos||0) / iq * 100) : null;
+                    const iColor = ipct === null ? 'text-gray-400' : ipct >= 70 ? 'text-green-600' : ipct >= 50 ? 'text-yellow-600' : 'text-red-600';
+                    return `
+                        <tr class="border-t border-gray-100">
+                            <td class="p-2 text-xs text-gray-700">${item.assunto}</td>
+                            <td class="p-2 text-xs text-gray-500">${item.subassunto}</td>
+                            <td class="p-2 text-xs text-center text-gray-600">${iq}</td>
+                            <td class="p-2 text-xs text-center text-green-600 font-medium">${item.acertos||0}</td>
+                            <td class="p-2 text-xs text-center font-bold ${iColor}">${ipct === null ? '-' : ipct + '%'}</td>
+                        </tr>`;
+                }).join('');
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden';
+                wrapper.innerHTML = `
+                    <button onclick="toggleStatsGroup('${groupId}')" class="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition text-left">
+                        <div class="flex items-center gap-3">
+                            <i id="chev-${groupId}" class="fa-solid fa-chevron-right text-gray-400 text-xs transition-transform"></i>
+                            <div>
+                                <span class="font-semibold text-gray-800">${disc}</span>
+                                <span class="text-xs text-gray-400 ml-2">${g.bloco} · ${g.items.length} tópicos</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-gray-500 hidden sm:inline">${g.acertos} <i class="fa-solid fa-check text-green-500"></i> de ${totQ} questões</span>
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="${barColor} h-2 rounded-full" style="width:${pct||0}%"></div>
+                            </div>
+                            <span class="text-sm font-bold w-12 text-right ${pctTextColor}">${pct === null ? '-' : pct + '%'}</span>
+                        </div>
+                    </button>
+                    <div id="body-${groupId}" class="hidden border-t border-gray-100 overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500">
+                                    <th class="p-2 text-xs font-medium">Assunto</th>
+                                    <th class="p-2 text-xs font-medium">Subassunto</th>
+                                    <th class="p-2 text-xs font-medium text-center">Total</th>
+                                    <th class="p-2 text-xs font-medium text-center">Acertos</th>
+                                    <th class="p-2 text-xs font-medium text-center">% Acerto</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        function renderStatsCharts(fullGroups, acertosTotal, errosTotal) {
+            // Ranking de aproveitamento por disciplina (apenas quem tem questões)
+            const ranked = Object.keys(fullGroups)
+                .map(disc => ({ disc, total: fullGroups[disc].total, acertos: fullGroups[disc].acertos, pct: fullGroups[disc].total > 0 ? Math.round((fullGroups[disc].acertos / fullGroups[disc].total) * 100) : null }))
+                .filter(x => x.pct !== null)
+                .sort((a, b) => b.pct - a.pct);
+
+            const rankLabels = ranked.length ? ranked.map(x => x.disc) : ['Sem dados'];
+            const rankData = ranked.length ? ranked.map(x => x.pct) : [0];
+            const rankColors = ranked.length ? ranked.map(x => x.pct >= 70 ? 'rgba(34,197,94,0.8)' : x.pct >= 50 ? 'rgba(234,179,8,0.8)' : 'rgba(239,68,68,0.8)') : ['rgba(148,163,184,0.5)'];
+            const rankBorders = ranked.length ? ranked.map(x => x.pct >= 70 ? '#16a34a' : x.pct >= 50 ? '#ca8a04' : '#dc2626') : ['#94a3b8'];
+
+            const ctxRank = document.getElementById('chart-stats-ranking').getContext('2d');
+            if (myCharts.statsRanking) myCharts.statsRanking.destroy();
+
+            myCharts.statsRanking = new Chart(ctxRank, {
+                type: 'bar',
+                data: {
+                    labels: rankLabels,
+                    datasets: [{
+                        label: '% de acerto',
+                        data: rankData,
+                        backgroundColor: rankColors,
+                        borderColor: rankBorders,
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    scales: {
+                        x: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8, callbacks: { label: ctx => `${ctx.parsed.x}% de acerto` } }
+                    }
+                }
+            });
+
+            // Donut Acertos vs Erros
+            const ctxDonut = document.getElementById('chart-stats-donut').getContext('2d');
+            if (myCharts.statsDonut) myCharts.statsDonut.destroy();
+
+            myCharts.statsDonut = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Acertos', 'Erros'],
+                    datasets: [{
+                        data: [acertosTotal, errosTotal],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        hoverBackgroundColor: ['#16a34a', '#dc2626'],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    animation: { animateRotate: true, duration: 800 },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } },
+                        tooltip: { backgroundColor: '#1e293b', padding: 10, cornerRadius: 8 }
+                    }
+                }
+            });
+        }
+
+        function toggleStatsGroup(id) {
+            const body = document.getElementById(`body-${id}`);
+            const chev = document.getElementById(`chev-${id}`);
+            body.classList.toggle('hidden');
+            chev.classList.toggle('rotate-90');
+        }
+
         function exportToCSV() {
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM para acentos no Excel
             // Cabeçalho
-            csvContent += "Bloco;Disciplina;Assunto;Subassunto;Status;Horas Estudadas;Revisoes;Questoes Resolvidas;Percentual (%);Observacoes\n";
+            csvContent += "Bloco;Disciplina;Assunto;Subassunto;Status;Horas Estudadas;Minutos Estudados;Revisoes;Total Questoes;Acertos;Erros;% Acerto;% Conclusao;Observacoes\n";
             
             // Linhas
             db.forEach(row => {
                 // Limpar quebras de linha nas observações
                 const obs = row.observacoes.replace(/\r?\n|\r/g, " ");
-                let rowString = `${row.bloco};${row.disciplina};"${row.assunto}";"${row.subassunto}";${row.status};${row.horas};${row.revisoes};${row.questoes};${row.percentual};"${obs}"`;
+                const tot = row.totalQuestoes||0, ac = row.acertos||0, er = Math.max(0, tot-ac);
+                const pctAcerto = tot > 0 ? Math.round((ac/tot)*100) : '';
+                let rowString = `${row.bloco};${row.disciplina};"${row.assunto}";"${row.subassunto}";${row.status};${row.horas};${row.minutos||0};${row.revisoes};${tot};${ac};${er};${pctAcerto};${row.percentual};"${obs}"`;
                 csvContent += rowString + "\n";
             });
 
@@ -887,7 +2038,7 @@
         }
 
         function exportBackup() {
-            const dataStr = JSON.stringify(db);
+            const dataStr = JSON.stringify({ items: db, redacoes });
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
             const exportFileDefaultName = 'backup_edital_prf.json';
             const linkElement = document.createElement('a');
@@ -905,11 +2056,18 @@
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    // Verificação básica se é o arquivo correto
-                    if (Array.isArray(importedData) && importedData.length > 0 && importedData[0].hasOwnProperty('disciplina')) {
-                        db = importedData;
+                    // Formato novo: { items: [...], redacoes: [...] }. Formato antigo: array puro (só items).
+                    const importedItems = Array.isArray(importedData) ? importedData : importedData.items;
+                    const importedRedacoes = Array.isArray(importedData) ? null : importedData.redacoes;
+                    if (Array.isArray(importedItems) && importedItems.length > 0 && importedItems[0].hasOwnProperty('disciplina')) {
+                        const importTs = Date.now();
+                        db = importedItems.map(item => ({ ...item, _ts: importTs }));
+                        if (Array.isArray(importedRedacoes)) redacoes = importedRedacoes.map(r => ({ ...r, _ts: importTs }));
                         saveData();
+                        saveRedacoesData();
                         applyFilters();
+                        renderRedacoes();
+                        renderStats();
                         switchTab('dashboard');
                         alert('Backup importado com sucesso!');
                     } else {
