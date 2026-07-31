@@ -48,32 +48,40 @@
         ::-webkit-scrollbar-thumb { background: #b0c0e0; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #5170ac; }
 
-        .status-nao-iniciado { background-color: #ffffff; }
-        .status-em-andamento { background-color: #fef9c3; }
-        .status-concluido { background-color: #dcfce3; }
-        
-        th { position: sticky; top: 0; background-color: #0d1626; color: white; z-index: 10; cursor: pointer;}
+        .status-nao-iniciado { background-color: #ffffff; box-shadow: inset 3px 0 0 0 #e2e8f0; }
+        .status-em-andamento { background-color: #fefbe8; box-shadow: inset 3px 0 0 0 #d4a017; }
+        .status-concluido { background-color: #f0fdf5; box-shadow: inset 3px 0 0 0 #22c55e; }
+
+        th { position: sticky; top: 0; background-color: #0d1626; color: white; z-index: 10; cursor: pointer; letter-spacing: 0.02em; }
+        th:first-child { border-top-left-radius: 0.75rem; }
+        th:last-child { border-top-right-radius: 0.75rem; }
         th:hover { background-color: #16243b; }
+
+        .table-container { border-radius: 0.75rem; }
 
         .chart-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
         .chart-card:hover { transform: translateY(-2px); }
+
+        /* Toolbar / filtros da planilha */
+        .toolbar-input { transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+        .toolbar-input:focus { box-shadow: 0 0 0 3px rgba(57,90,138,0.15); }
     </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col">
 
-    <nav class="bg-blue-900 text-white shadow-lg">
+    <nav class="bg-gradient-to-r from-blue-950 to-blue-900 text-white shadow-lg border-b border-blue-800/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-shield-halved text-2xl text-yellow-400"></i>
                     <span class="font-bold text-xl tracking-wider">PROJETO PRF</span>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-800 hover:bg-blue-700 transition">Dashboard</button>
-                    <button onclick="switchTab('planilha')" id="tab-planilha" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Edital Verticalizado</button>
-                    <button onclick="switchTab('estatisticas')" id="tab-estatisticas" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Estatísticas</button>
-                    <button onclick="switchTab('redacao')" id="tab-redacao" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">Redação</button>
-                    <div class="w-px h-6 bg-blue-700"></div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3.5 py-2 rounded-lg text-sm font-medium bg-yellow-500 text-blue-950 hover:bg-yellow-400 transition shadow-sm">Dashboard</button>
+                    <button onclick="switchTab('planilha')" id="tab-planilha" class="px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition">Edital Verticalizado</button>
+                    <button onclick="switchTab('estatisticas')" id="tab-estatisticas" class="px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition">Estatísticas</button>
+                    <button onclick="switchTab('redacao')" id="tab-redacao" class="px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition">Redação</button>
+                    <div class="w-px h-6 bg-blue-700 mx-1"></div>
                     <div id="sync-logged-out" class="flex items-center gap-2">
                         <button onclick="openLoginModal()" class="px-3 py-2 rounded-md text-sm font-medium bg-yellow-500 hover:bg-yellow-400 text-blue-950 transition flex items-center gap-2">
                             <i class="fa-solid fa-cloud"></i> Ativar Sincronização
@@ -181,16 +189,16 @@
     <div id="view-dashboard" class="flex-1 flex flex-col gap-6 overflow-y-auto pb-10">
             <!-- Header Dashboard -->
             <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-800">Visão Geral dos Estudos</h1>
+                <h1 class="text-2xl font-bold text-blue-950 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-yellow-500 text-xl"></i> Visão Geral dos Estudos</h1>
                 <div class="flex gap-2 flex-wrap justify-end">
                     <input type="file" id="import-file" class="hidden" accept=".json" onchange="importBackup(event)">
-                    <button onclick="document.getElementById('import-file').click()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2" title="Importar progresso de outro dispositivo">
+                    <button onclick="document.getElementById('import-file').click()" class="bg-blue-950 hover:bg-blue-900 text-yellow-400 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2 border border-blue-800" title="Importar progresso de outro dispositivo">
                         <i class="fa-solid fa-upload"></i> Importar Backup
                     </button>
-                    <button onclick="exportBackup()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2" title="Salvar progresso para usar em outro dispositivo">
+                    <button onclick="exportBackup()" class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2 border border-blue-800" title="Salvar progresso para usar em outro dispositivo">
                         <i class="fa-solid fa-download"></i> Exportar Backup
                     </button>
-                    <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2">
+                    <button onclick="exportToCSV()" class="bg-yellow-500 hover:bg-yellow-400 text-blue-950 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2 font-medium">
                         <i class="fa-solid fa-file-excel"></i> Excel
                     </button>
                     <button onclick="resetData()" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg shadow transition text-sm flex items-center gap-2">
@@ -200,72 +208,72 @@
             </div>
 
             <!-- Progresso Geral Barra -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="bg-gradient-to-r from-blue-950 to-blue-900 p-6 rounded-xl shadow-md border border-blue-800/60">
                 <div class="flex justify-between mb-2">
-                    <span class="font-semibold text-gray-600 uppercase text-sm">Progresso Global do Edital</span>
-                    <span id="global-percentage-text" class="font-bold text-blue-600">0%</span>
+                    <span class="font-semibold text-blue-200 uppercase text-sm tracking-wide">Progresso Global do Edital</span>
+                    <span id="global-percentage-text" class="font-bold text-yellow-400">0%</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-4">
-                    <div id="global-progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full bg-blue-950/70 rounded-full h-4 border border-blue-800/40">
+                    <div id="global-progress-bar" class="bg-gradient-to-r from-yellow-600 to-yellow-400 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
 
             <!-- Cards Resumo -->
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-blue-100 p-4 rounded-lg text-blue-600"><i class="fa-solid fa-book-open text-xl"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-950 p-6 rounded-xl shadow-md border border-blue-800/50 flex items-center gap-4">
+                    <div class="bg-yellow-500/15 p-4 rounded-lg text-yellow-400 border border-yellow-500/20"><i class="fa-solid fa-book-open text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Tópicos Concluídos</p>
-                        <p id="card-topics" class="text-2xl font-bold text-gray-800">0 / 0</p>
+                        <p class="text-sm text-blue-300">Tópicos Concluídos</p>
+                        <p id="card-topics" class="text-2xl font-bold text-white">0 / 0</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-clock text-xl"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-950 p-6 rounded-xl shadow-md border border-blue-800/50 flex items-center gap-4">
+                    <div class="bg-yellow-500/15 p-4 rounded-lg text-yellow-400 border border-yellow-500/20"><i class="fa-solid fa-clock text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Horas Estudadas</p>
-                        <p id="card-hours" class="text-2xl font-bold text-gray-800">0h</p>
+                        <p class="text-sm text-blue-300">Horas Estudadas</p>
+                        <p id="card-hours" class="text-2xl font-bold text-white">0h</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-green-100 p-4 rounded-lg text-green-600"><i class="fa-solid fa-check-double text-xl"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-950 p-6 rounded-xl shadow-md border border-blue-800/50 flex items-center gap-4">
+                    <div class="bg-yellow-500/15 p-4 rounded-lg text-yellow-400 border border-yellow-500/20"><i class="fa-solid fa-check-double text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Questões Resolvidas</p>
-                        <p id="card-questions" class="text-2xl font-bold text-gray-800">0</p>
-                        <p id="card-questions-sub" class="text-xs text-gray-400"><span class="text-green-600 font-medium">0 acertos</span> / <span class="text-red-600 font-medium">0 erros</span></p>
+                        <p class="text-sm text-blue-300">Questões Resolvidas</p>
+                        <p id="card-questions" class="text-2xl font-bold text-white">0</p>
+                        <p id="card-questions-sub" class="text-xs text-blue-300"><span class="text-emerald-400 font-medium">0 acertos</span> / <span class="text-red-400 font-medium">0 erros</span></p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-yellow-100 p-4 rounded-lg text-yellow-600"><i class="fa-solid fa-percent text-xl"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-950 p-6 rounded-xl shadow-md border border-blue-800/50 flex items-center gap-4">
+                    <div class="bg-yellow-500/15 p-4 rounded-lg text-yellow-400 border border-yellow-500/20"><i class="fa-solid fa-percent text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Aproveitamento Geral</p>
-                        <p id="card-aproveitamento" class="text-2xl font-bold text-gray-800">-</p>
+                        <p class="text-sm text-blue-300">Aproveitamento Geral</p>
+                        <p id="card-aproveitamento" class="text-2xl font-bold text-white">-</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div class="bg-purple-100 p-4 rounded-lg text-purple-600"><i class="fa-solid fa-pen-nib text-xl"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-950 p-6 rounded-xl shadow-md border border-blue-800/50 flex items-center gap-4">
+                    <div class="bg-yellow-500/15 p-4 rounded-lg text-yellow-400 border border-yellow-500/20"><i class="fa-solid fa-pen-nib text-xl"></i></div>
                     <div>
-                        <p class="text-sm text-gray-500">Nota da Redação</p>
-                        <p id="card-redacao" class="text-2xl font-bold text-gray-800">-</p>
-                        <p id="card-redacao-sub" class="text-xs text-gray-400"></p>
+                        <p class="text-sm text-blue-300">Nota da Redação</p>
+                        <p id="card-redacao" class="text-2xl font-bold text-white">-</p>
+                        <p id="card-redacao-sub" class="text-xs text-blue-300"></p>
                     </div>
                 </div>
             </div>
 
             <!-- Gráficos -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
+                <div class="chart-card bg-blue-50 p-6 rounded-xl shadow-sm border-t-4 border-blue-900 border-x border-b border-blue-100 lg:col-span-2 hover:shadow-md transition-shadow duration-300">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <h3 class="font-semibold text-gray-700">Progresso por Disciplina (%)</h3>
+                        <span class="w-2 h-2 rounded-full bg-blue-900"></span>
+                        <h3 class="font-semibold text-blue-950">Progresso por Disciplina (%)</h3>
                     </div>
                     <div class="relative h-72">
                         <canvas id="chart-progress"></canvas>
                     </div>
                 </div>
-                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div class="chart-card bg-blue-50 p-6 rounded-xl shadow-sm border-t-4 border-yellow-500 border-x border-b border-blue-100 hover:shadow-md transition-shadow duration-300">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        <h3 class="font-semibold text-gray-700">Questões por Bloco</h3>
+                        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        <h3 class="font-semibold text-blue-950">Questões por Bloco</h3>
                     </div>
                     <div class="relative h-64 flex justify-center">
                         <canvas id="chart-questions"></canvas>
@@ -275,28 +283,28 @@
 
             <!-- Gráficos adicionais: status, aproveitamento e horas -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div class="chart-card bg-blue-50 p-6 rounded-xl shadow-sm border-t-4 border-blue-900 border-x border-b border-blue-100 hover:shadow-md transition-shadow duration-300">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <h3 class="font-semibold text-gray-700">Status dos Tópicos</h3>
+                        <span class="w-2 h-2 rounded-full bg-blue-900"></span>
+                        <h3 class="font-semibold text-blue-950">Status dos Tópicos</h3>
                     </div>
                     <div class="relative h-64 flex justify-center">
                         <canvas id="chart-status"></canvas>
                     </div>
                 </div>
-                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div class="chart-card bg-blue-50 p-6 rounded-xl shadow-sm border-t-4 border-yellow-500 border-x border-b border-blue-100 hover:shadow-md transition-shadow duration-300">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2 h-2 rounded-full bg-violet-500"></span>
-                        <h3 class="font-semibold text-gray-700">Aproveitamento por Disciplina</h3>
+                        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                        <h3 class="font-semibold text-blue-950">Aproveitamento por Disciplina</h3>
                     </div>
                     <div class="relative h-64 flex justify-center">
                         <canvas id="chart-radar"></canvas>
                     </div>
                 </div>
-                <div class="chart-card bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div class="chart-card bg-blue-50 p-6 rounded-xl shadow-sm border-t-4 border-blue-900 border-x border-b border-blue-100 hover:shadow-md transition-shadow duration-300">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
-                        <h3 class="font-semibold text-gray-700">Horas de Estudo por Disciplina</h3>
+                        <span class="w-2 h-2 rounded-full bg-blue-900"></span>
+                        <h3 class="font-semibold text-blue-950">Horas de Estudo por Disciplina</h3>
                     </div>
                     <div class="relative h-64">
                         <canvas id="chart-hours"></canvas>
@@ -308,35 +316,35 @@
         <div id="view-planilha" class="hidden flex-1 flex flex-col h-full">
             <div class="flex justify-between items-end mb-4 gap-4 flex-wrap">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Edital Verticalizado</h1>
-                    <p class="text-sm text-gray-500">Atualize seu progresso diretamente nas linhas.</p>
+                    <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-layer-group text-blue-600 text-xl"></i> Edital Verticalizado</h1>
+                    <p class="text-sm text-gray-500">Atualize seu progresso diretamente nas linhas. Clique nos cabeçalhos para expandir ou recolher.</p>
                 </div>
-                <div class="flex gap-3 flex-1 sm:flex-none flex-wrap">
-                    <button onclick="openTopicModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
+                <div class="flex gap-2.5 flex-1 sm:flex-none flex-wrap items-center bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+                    <button onclick="openTopicModal()" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2 shadow-sm">
                         <i class="fa-solid fa-plus"></i> Novo Tópico
                     </button>
                     <div class="relative">
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="search-input" placeholder="Buscar assunto..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64" oninput="applyFilters()">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="search-input" placeholder="Buscar assunto..." class="toolbar-input pl-9 pr-4 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:border-blue-500 w-full sm:w-56 text-sm" oninput="applyFilters()">
                     </div>
-                    <select id="filter-disciplina" class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="applyFilters()">
+                    <select id="filter-disciplina" class="toolbar-input border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 text-sm" onchange="applyFilters()">
                         <option value="Todas">Todas as Disciplinas</option>
                         <!-- Options generated via JS -->
                     </select>
-                    <select id="filter-status" class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="applyFilters()">
+                    <select id="filter-status" class="toolbar-input border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 text-sm" onchange="applyFilters()">
                         <option value="Todos">Todos os Status</option>
                         <option value="Não iniciado">Não iniciado</option>
                         <option value="Em andamento">Em andamento</option>
                         <option value="Concluído">Concluído</option>
                     </select>
-                    <div class="flex gap-1">
-                        <button onclick="setAllGroupsCollapsed(false)" class="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition" title="Expandir todas as disciplinas"><i class="fa-solid fa-angles-down"></i></button>
-                        <button onclick="setAllGroupsCollapsed(true)" class="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 transition" title="Recolher todas as disciplinas"><i class="fa-solid fa-angles-up"></i></button>
+                    <div class="flex gap-1 border-l border-gray-200 pl-2.5">
+                        <button onclick="setAllGroupsCollapsed(false)" class="w-9 h-9 flex items-center justify-center rounded-lg text-sm bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-600 transition" title="Expandir tudo (disciplinas e assuntos)"><i class="fa-solid fa-angles-down"></i></button>
+                        <button onclick="setAllGroupsCollapsed(true)" class="w-9 h-9 flex items-center justify-center rounded-lg text-sm bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-600 transition" title="Recolher tudo (disciplinas e assuntos)"><i class="fa-solid fa-angles-up"></i></button>
                     </div>
                 </div>
             </div>
 
-            <div class="table-container bg-white rounded-xl shadow-sm border border-gray-200 flex-1 relative">
+            <div class="table-container bg-white rounded-xl shadow-md border border-gray-200 flex-1 relative">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr>
@@ -692,6 +700,8 @@
         let myCharts = {};
         let filtersActive = false;
         let collapsedDisciplinas = new Set(JSON.parse(localStorage.getItem('prf_edital_collapsed') || '[]'));
+        // Sub-baralhos: chave composta "disciplina::assunto" para colapsar cada assunto individualmente.
+        let collapsedAssuntos = new Set(JSON.parse(localStorage.getItem('prf_edital_collapsed_assuntos') || '[]'));
         // IDs apagados pelo usuário — precisam "grudar" mesmo depois de sincronizar,
         // senão um item removido localmente voltaria ao mesclar com a nuvem/outro dispositivo.
         let deletedIds = new Set(JSON.parse(localStorage.getItem('prf_edital_deleted') || '[]'));
@@ -1022,13 +1032,16 @@
             document.getElementById('view-planilha').classList.add('hidden');
             document.getElementById('view-estatisticas').classList.add('hidden');
             document.getElementById('view-redacao').classList.add('hidden');
-            document.getElementById('tab-dashboard').classList.remove('bg-blue-800');
-            document.getElementById('tab-planilha').classList.remove('bg-blue-800');
-            document.getElementById('tab-estatisticas').classList.remove('bg-blue-800');
-            document.getElementById('tab-redacao').classList.remove('bg-blue-800');
+            ['dashboard','planilha','estatisticas','redacao'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                btn.classList.remove('bg-yellow-500', 'text-blue-950', 'hover:bg-yellow-400', 'shadow-sm');
+                btn.classList.add('hover:bg-white/10');
+            });
 
             document.getElementById(`view-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('bg-blue-800');
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.remove('hover:bg-white/10');
+            activeBtn.classList.add('bg-yellow-500', 'text-blue-950', 'hover:bg-yellow-400', 'shadow-sm');
             
             if(tab === 'dashboard') updateDashboard();
             if(tab === 'estatisticas') renderStats();
@@ -1436,23 +1449,23 @@
                 const barColor = groupPct === 100 ? 'bg-green-500' : groupPct > 0 ? 'bg-yellow-500' : 'bg-gray-400';
 
                 const headerTr = document.createElement('tr');
-                headerTr.className = 'bg-slate-100 hover:bg-slate-200 cursor-pointer transition-colors select-none';
+                headerTr.className = 'bg-gradient-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 cursor-pointer transition-colors select-none';
                 headerTr.onclick = () => toggleDiscGroup(disc);
                 headerTr.innerHTML = `
-                    <td colspan="13" class="p-3 border-b border-gray-300">
+                    <td colspan="13" class="p-3.5">
                         <div class="flex items-center justify-between gap-4 flex-wrap">
                             <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-chevron-${isCollapsed ? 'right' : 'down'} text-gray-500 text-xs w-3 transition-transform"></i>
-                                <span class="text-xs font-semibold text-gray-500">${g.bloco}</span>
-                                <span class="font-bold text-gray-800">${disc}</span>
-                                <span class="text-xs text-gray-400">(${total} tópico${total > 1 ? 's' : ''})</span>
-                                <button onclick="event.stopPropagation(); renameDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-blue-600 transition text-xs" title="Renomear disciplina"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="event.stopPropagation(); deleteDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-red-600 transition text-xs" title="Apagar disciplina inteira"><i class="fa-solid fa-trash-can"></i></button>
+                                <i class="fa-solid fa-chevron-${isCollapsed ? 'right' : 'down'} text-yellow-400 text-xs w-3 transition-transform"></i>
+                                <span class="text-[11px] font-bold uppercase tracking-wide text-blue-300">${g.bloco}</span>
+                                <span class="font-bold text-white">${disc}</span>
+                                <span class="text-xs text-blue-300">(${total} tópico${total > 1 ? 's' : ''})</span>
+                                <button onclick="event.stopPropagation(); renameDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-blue-300 hover:text-yellow-400 transition text-xs" title="Renomear disciplina"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="event.stopPropagation(); deleteDisciplina('${disc.replace(/'/g, "\\'")}')" class="text-blue-300 hover:text-red-400 transition text-xs" title="Apagar disciplina inteira"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-semibold text-gray-600">${groupPct}%</span>
-                                <div class="w-24 bg-gray-300 rounded-full h-1.5">
-                                    <div class="${barColor} h-1.5 rounded-full" style="width: ${groupPct}%"></div>
+                                <span class="text-xs font-semibold text-yellow-400">${groupPct}%</span>
+                                <div class="w-24 bg-blue-950/60 rounded-full h-1.5">
+                                    <div class="${barColor} h-1.5 rounded-full transition-all duration-500" style="width: ${groupPct}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -1462,78 +1475,123 @@
 
                 if (isCollapsed) return;
 
+                // Sub-baralhos: agrupar os tópicos da disciplina por Assunto, preservando a ordem.
+                const subGroupOrder = [];
+                const subGroups = {};
                 g.items.forEach(item => {
-                    const tr = document.createElement('tr');
+                    const key = item.assunto || '(Sem assunto)';
+                    if (!subGroups[key]) { subGroups[key] = []; subGroupOrder.push(key); }
+                    subGroups[key].push(item);
+                });
 
-                    // Colorir linha baseado no status
-                    let rowColor = 'status-nao-iniciado';
-                    if (item.status === 'Em andamento') rowColor = 'status-em-andamento';
-                    if (item.status === 'Concluído') rowColor = 'status-concluido';
-                    tr.className = `hover:bg-blue-50 transition-colors ${rowColor}`;
+                subGroupOrder.forEach(assunto => {
+                    const subItems = subGroups[assunto];
+                    const subTotal = subItems.length;
+                    const subConcluidos = subItems.filter(i => i.status === 'Concluído').length;
+                    const subEmAndamento = subItems.filter(i => i.status === 'Em andamento').length;
+                    const subPct = Math.round(((subConcluidos + subEmAndamento * 0.5) / subTotal) * 100);
+                    const subKey = `${disc}::${assunto}`;
+                    const subCollapsed = !filtersActive && collapsedAssuntos.has(subKey);
+                    const subBarColor = subPct === 100 ? 'bg-green-500' : subPct > 0 ? 'bg-yellow-500' : 'bg-gray-400';
+                    const subKeyEsc = subKey.replace(/'/g, "\\'");
 
-                    // Calcular Percentual based on status (Não iniciado = 0, Em andamento = 50, Concluído = 100)
-                    let pctValue = 0;
-                    if(item.status === 'Em andamento') pctValue = 50;
-                    if(item.status === 'Concluído') pctValue = 100;
-                    item.percentual = pctValue; // Sync object
-
-                    tr.innerHTML = `
-                        <td class="p-3 border-b border-gray-200">
-                            <span class="block text-xs font-semibold text-gray-500">${item.bloco}</span>
-                            <span class="font-medium text-gray-800">${item.disciplina}</span>
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-gray-700">${item.assunto}</td>
-                        <td class="p-3 border-b border-gray-200 text-gray-600 text-xs">${item.subassunto}</td>
-                        <td class="p-3 border-b border-gray-200">
-                            <select onchange="updateRow(${item.id}, 'status', this.value)" class="w-full bg-white border border-gray-300 rounded p-1 text-sm focus:ring-blue-500">
-                                <option value="Não iniciado" ${item.status === 'Não iniciado' ? 'selected' : ''}>Não iniciado</option>
-                                <option value="Em andamento" ${item.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
-                                <option value="Concluído" ${item.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
-                            </select>
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <input type="number" min="0" step="1" onchange="updateRow(${item.id}, 'horas', parseFloat(this.value)||0)" value="${item.horas}" class="w-14 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <input type="number" min="0" max="59" step="1" onchange="updateRow(${item.id}, 'minutos', Math.min(59, Math.max(0, parseInt(this.value)||0)))" value="${item.minutos||0}" class="w-14 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <input type="number" min="0" onchange="updateRow(${item.id}, 'revisoes', parseInt(this.value)||0)" value="${item.revisoes}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <input type="number" min="0" onchange="updateRow(${item.id}, 'totalQuestoes', Math.max(0, parseInt(this.value)||0))" value="${item.totalQuestoes||0}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <input type="number" min="0" onchange="updateRow(${item.id}, 'acertos', parseInt(this.value)||0)" value="${item.acertos||0}" class="w-16 bg-white border border-gray-300 rounded p-1 text-center text-sm text-green-700">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            ${(() => {
-                                const q = item.totalQuestoes||0;
-                                if (q === 0) return '<span class="text-xs text-gray-400">-</span>';
-                                const ap = Math.round((item.acertos||0) / q * 100);
-                                const color = ap >= 70 ? 'text-green-600' : ap >= 50 ? 'text-yellow-600' : 'text-red-600';
-                                return `<span class="text-xs font-bold ${color}">${ap}%</span>`;
-                            })()}
-                        </td>
-                        <td class="p-3 border-b border-gray-200">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold w-8 text-right">${pctValue}%</span>
-                                <div class="w-16 bg-gray-200 rounded-full h-2">
-                                    <div class="bg-${pctValue===100?'green':pctValue>0?'yellow':'gray'}-500 h-2 rounded-full" style="width: ${pctValue}%"></div>
+                    const subTr = document.createElement('tr');
+                    subTr.className = 'bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors select-none border-b border-gray-200';
+                    subTr.onclick = () => toggleAssuntoGroup(subKey);
+                    subTr.innerHTML = `
+                        <td colspan="13" class="py-2 pl-9 pr-3">
+                            <div class="flex items-center justify-between gap-4 flex-wrap">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-chevron-${subCollapsed ? 'right' : 'down'} text-gray-400 text-[10px] w-3 transition-transform"></i>
+                                    <span class="font-semibold text-gray-700 text-sm">${assunto}</span>
+                                    ${subTotal > 1 ? `<span class="text-xs text-gray-400">(${subTotal} subtópicos)</span>` : ''}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold text-gray-500">${subPct}%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-1.5">
+                                        <div class="${subBarColor} h-1.5 rounded-full transition-all duration-500" style="width: ${subPct}%"></div>
+                                    </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="p-3 border-b border-gray-200">
-                            <input type="text" onchange="updateRow(${item.id}, 'observacoes', this.value)" value="${item.observacoes}" placeholder="Notas..." class="w-full bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 focus:outline-none p-1 text-sm">
-                        </td>
-                        <td class="p-3 border-b border-gray-200 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="openTopicModal(${item.id})" class="text-gray-400 hover:text-blue-600 transition" title="Editar tópico"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="deleteTopic(${item.id})" class="text-gray-400 hover:text-red-600 transition" title="Apagar tópico"><i class="fa-solid fa-trash-can"></i></button>
-                            </div>
-                        </td>
                     `;
-                    tbody.appendChild(tr);
+                    tbody.appendChild(subTr);
+
+                    if (subCollapsed) return;
+
+                    subItems.forEach(item => {
+                        const tr = document.createElement('tr');
+
+                        // Colorir linha baseado no status
+                        let rowColor = 'status-nao-iniciado';
+                        if (item.status === 'Em andamento') rowColor = 'status-em-andamento';
+                        if (item.status === 'Concluído') rowColor = 'status-concluido';
+                        tr.className = `hover:bg-blue-50 transition-colors ${rowColor}`;
+
+                        // Calcular Percentual based on status (Não iniciado = 0, Em andamento = 50, Concluído = 100)
+                        let pctValue = 0;
+                        if(item.status === 'Em andamento') pctValue = 50;
+                        if(item.status === 'Concluído') pctValue = 100;
+                        item.percentual = pctValue; // Sync object
+
+                        tr.innerHTML = `
+                            <td class="p-3 border-b border-gray-200 pl-9">
+                                <span class="block text-xs font-semibold text-gray-500">${item.bloco}</span>
+                                <span class="font-medium text-gray-800">${item.disciplina}</span>
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-gray-700">${item.assunto}</td>
+                            <td class="p-3 border-b border-gray-200 text-gray-600 text-xs">${item.subassunto}</td>
+                            <td class="p-3 border-b border-gray-200">
+                                <select onchange="updateRow(${item.id}, 'status', this.value)" class="w-full bg-white border border-gray-300 rounded-lg p-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="Não iniciado" ${item.status === 'Não iniciado' ? 'selected' : ''}>Não iniciado</option>
+                                    <option value="Em andamento" ${item.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                                    <option value="Concluído" ${item.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                                </select>
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <input type="number" min="0" step="1" onchange="updateRow(${item.id}, 'horas', parseFloat(this.value)||0)" value="${item.horas}" class="w-14 bg-white border border-gray-300 rounded-lg p-1.5 text-center text-sm">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <input type="number" min="0" max="59" step="1" onchange="updateRow(${item.id}, 'minutos', Math.min(59, Math.max(0, parseInt(this.value)||0)))" value="${item.minutos||0}" class="w-14 bg-white border border-gray-300 rounded-lg p-1.5 text-center text-sm">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <input type="number" min="0" onchange="updateRow(${item.id}, 'revisoes', parseInt(this.value)||0)" value="${item.revisoes}" class="w-16 bg-white border border-gray-300 rounded-lg p-1.5 text-center text-sm">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <input type="number" min="0" onchange="updateRow(${item.id}, 'totalQuestoes', Math.max(0, parseInt(this.value)||0))" value="${item.totalQuestoes||0}" class="w-16 bg-white border border-gray-300 rounded-lg p-1.5 text-center text-sm">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <input type="number" min="0" onchange="updateRow(${item.id}, 'acertos', parseInt(this.value)||0)" value="${item.acertos||0}" class="w-16 bg-white border border-gray-300 rounded-lg p-1.5 text-center text-sm text-green-700">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                ${(() => {
+                                    const q = item.totalQuestoes||0;
+                                    if (q === 0) return '<span class="text-xs text-gray-400">-</span>';
+                                    const ap = Math.round((item.acertos||0) / q * 100);
+                                    const color = ap >= 70 ? 'text-green-600' : ap >= 50 ? 'text-yellow-600' : 'text-red-600';
+                                    return `<span class="text-xs font-bold ${color}">${ap}%</span>`;
+                                })()}
+                            </td>
+                            <td class="p-3 border-b border-gray-200">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold w-8 text-right">${pctValue}%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-${pctValue===100?'green':pctValue>0?'yellow':'gray'}-500 h-2 rounded-full transition-all duration-500" style="width: ${pctValue}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3 border-b border-gray-200">
+                                <input type="text" onchange="updateRow(${item.id}, 'observacoes', this.value)" value="${item.observacoes}" placeholder="Notas..." class="w-full bg-transparent border-b border-dashed border-gray-400 focus:border-blue-500 focus:outline-none p-1 text-sm">
+                            </td>
+                            <td class="p-3 border-b border-gray-200 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="openTopicModal(${item.id})" class="text-gray-400 hover:text-blue-600 transition" title="Editar tópico"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteTopic(${item.id})" class="text-gray-400 hover:text-red-600 transition" title="Apagar tópico"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
                 });
             });
         }
@@ -1545,14 +1603,26 @@
             renderTable();
         }
 
+        // Sub-baralhos: colapsa/expande um Assunto específico dentro de uma Disciplina.
+        function toggleAssuntoGroup(subKey) {
+            if (collapsedAssuntos.has(subKey)) collapsedAssuntos.delete(subKey);
+            else collapsedAssuntos.add(subKey);
+            localStorage.setItem('prf_edital_collapsed_assuntos', JSON.stringify([...collapsedAssuntos]));
+            renderTable();
+        }
+
         function setAllGroupsCollapsed(collapse) {
             if (collapse) {
                 const allDisc = [...new Set(db.map(i => i.disciplina))];
                 collapsedDisciplinas = new Set(allDisc);
+                const allSub = [...new Set(db.map(i => `${i.disciplina}::${i.assunto || '(Sem assunto)'}`))];
+                collapsedAssuntos = new Set(allSub);
             } else {
                 collapsedDisciplinas = new Set();
+                collapsedAssuntos = new Set();
             }
             localStorage.setItem('prf_edital_collapsed', JSON.stringify([...collapsedDisciplinas]));
+            localStorage.setItem('prf_edital_collapsed_assuntos', JSON.stringify([...collapsedAssuntos]));
             renderTable();
         }
 
