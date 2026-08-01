@@ -2807,11 +2807,21 @@
         // (status, qCorrect, qTotal) de tudo que já existia fica intocado.
         function importEditalVerticalizadoCompleto() {
             if (!Array.isArray(studyDb.syllabus)) studyDb.syllabus = [];
-            let disciplinasNovas = 0, topicosNovos = 0;
+            // AUDITORIA (exclusão que "voltava sozinha"): esta função
+            // ignorava completamente studyDb.tombstones. Resultado: se você
+            // apagava uma disciplina ou assunto do edital oficial e depois
+            // clicava em "Importar Edital Verticalizado" de novo (para
+            // pegar algo novo que faltava), o item que você tinha apagado
+            // de propósito reaparecia — porque a função só olhava se ele
+            // "existia hoje no array", nunca se tinha sido excluído.
+            const tombSubj = (studyDb.tombstones && studyDb.tombstones.syllabusSubjects) || {};
+            const tombTop  = (studyDb.tombstones && studyDb.tombstones.syllabusTopics)   || {};
+            let disciplinasNovas = 0, topicosNovos = 0, disciplinasIgnoradas = 0, topicosIgnorados = 0;
 
             EDITAL_VERTICALIZADO_PRF.forEach(fonteDisc => {
                 let alvo = studyDb.syllabus.find(d => d.subject === fonteDisc.subject);
                 if (!alvo) {
+                    if (tombSubj[fonteDisc.subject]) { disciplinasIgnoradas++; return; } // apagada de propósito — não ressuscita
                     alvo = { id: _newId(), subject: fonteDisc.subject, topics: [] };
                     studyDb.syllabus.push(alvo);
                     disciplinasNovas++;
@@ -2820,6 +2830,8 @@
                 fonteDisc.topics.forEach(fonteTopico => {
                     const jaExiste = alvo.topics.some(t => t.name === fonteTopico.name);
                     if (!jaExiste) {
+                        const topKey = `${fonteDisc.subject}||${fonteTopico.name}`;
+                        if (tombTop[topKey]) { topicosIgnorados++; return; } // apagado de propósito — não ressuscita
                         alvo.topics.push({ ...fonteTopico, id: _newId() }); // cópia, nunca a mesma referência
                         topicosNovos++;
                     }
@@ -2827,7 +2839,10 @@
             });
 
             if (disciplinasNovas === 0 && topicosNovos === 0) {
-                showAlert('Seu edital já está completo — nenhum item novo para importar.');
+                const nota = (disciplinasIgnoradas || topicosIgnorados)
+                    ? ' (itens que você apagou antes continuam apagados, como esperado.)'
+                    : '';
+                showAlert('Seu edital já está completo — nenhum item novo para importar.' + nota);
                 return;
             }
 
@@ -4120,7 +4135,23 @@
                     `;
                 });
 
-                if (rowsCount > 0) {
+                // AUDITORIA (matéria "sumia" com o filtro Ocultar Estudados):
+                // antes, só o bloco da disciplina inteira era desenhado
+                // quando sobrava pelo menos 1 tópico visível (rowsCount > 0).
+                // Com "Ocultar estudados" marcado, uma disciplina 100%
+                // concluída ficava com rowsCount = 0 e o bloco inteiro
+                // desaparecia do acordeão — junto com os botões de apagar
+                // registros, renomear e excluir do cabeçalho. Justamente as
+                // disciplinas mais "prontas" (as que o usuário mais quer
+                // renomear/arquivar) ficavam inacessíveis enquanto esse
+                // filtro, muito comum, estivesse ligado — parecendo que
+                // "editar/apagar matéria" simplesmente não funcionava.
+                // Agora o cabeçalho da disciplina sempre aparece; só a
+                // tabela de tópicos fica vazia, com um aviso explicando por quê.
+                {
+                    const _bodyHtml = rowsCount > 0
+                        ? `<table class="w-full text-left text-sm"><tbody class="divide-y divide-blue-950">${topicsRowsHtml}</tbody></table>`
+                        : `<p class="text-xs text-gray-500 italic px-5 py-4">Todos os tópicos desta disciplina estão estudados e ocultos pelo filtro "Ocultar estudados". Desmarque o filtro para editá-los.</p>`;
                     _accHtmlParts.push(`
                         <div class="bg-card-dark rounded-2xl border border-blue-900 overflow-hidden shadow" id="subject-block-${sIdx}">
                             <div class="px-5 py-4 prf-blue flex justify-between items-center border-b border-blue-900 cursor-pointer" onclick="toggleSubjectBlock(${sIdx})">
@@ -4153,9 +4184,7 @@
                                 </div>
                             </div>
                             <div class="overflow-x-auto" id="subject-body-${sIdx}">
-                                <table class="w-full text-left text-sm">
-                                    <tbody class="divide-y divide-blue-950">${topicsRowsHtml}</tbody>
-                                </table>
+                                ${_bodyHtml}
                             </div>
                         </div>
                     `);
@@ -4179,9 +4208,64 @@
                 if (subj) {
                     const key = subj.id || subj.subject;
                     studyDb.tombstones.syllabusSubjects[key] = new Date().toISOString();
+                    // AUDITORIA (exclusão que não "pega"): a lápide era
+                    // gravada só pelo id (aleatório) quando a matéria tinha
+                    // um. Isso funciona para a mesclagem com a nuvem (que
+                    // conhece esse id), mas a importação do Edital Oficial
+                    // volta a criar a disciplina com um id NOVO — e nunca
+                    // vai bater com esse id antigo. Gravando também pelo
+                    // nome, a importação consegue reconhecer "essa matéria
+                    // foi apagada de propósito" e não recriá-la.
+                    if (subj.subject) studyDb.tombstones.syllabusSubjects[subj.subject] = new Date().toISOString();
                 }
                 studyDb.syllabus.splice(sIdx, 1);
+
+                // AUDITORIA (Ciclo de Estudos corrompido ao apagar matéria):
+                // o Ciclo guarda a disciplina de cada etapa como texto solto,
+                // sem vínculo real com o Edital. Apagar a matéria aqui não
+                // removia as etapas do Ciclo que apontavam pra ela — elas
+                // ficavam "fantasmas". Ao abrir "Configurar Ciclo", o
+                // <select> daquela etapa não tinha mais a opção com o nome
+                // antigo (já não existe no Edital) e o navegador selecionava
+                // silenciosamente a PRIMEIRA disciplina da lista. Se o
+                // usuário salvasse o Ciclo depois — mesmo só pra ajustar
+                // OUTRA etapa — essa etapa fantasma virava, sem aviso
+                // nenhum, uma etapa de uma matéria completamente diferente.
+                // Agora, ao apagar a matéria, as etapas dela somem do Ciclo
+                // junto, em vez de ficarem soltas e sujeitas a essa troca
+                // silenciosa depois.
+                let etapasRemovidas = 0;
+                if (subj && Array.isArray(studyDb.studyCycle)) {
+                    etapasRemovidas = studyDb.studyCycle.filter(c => c.subject === subj.subject).length;
+                    if (etapasRemovidas > 0) {
+                        studyDb.studyCycle = studyDb.studyCycle.filter(c => c.subject !== subj.subject);
+                        if (studyDb.currentCycleStep >= studyDb.studyCycle.length) studyDb.currentCycleStep = 0;
+                    }
+                }
+
+                // AUDITORIA (mesma causa do Ciclo): o Cronograma Semanal
+                // também guarda a disciplina de cada item como texto solto.
+                // Aqui a troca silenciosa não acontece (cada <select> grava
+                // direto no onchange), mas o item ficava travado apontando
+                // pra uma matéria que não existe mais — some da tela mas o
+                // dado por trás continuava lá pra sempre. Remove junto.
+                let itensSemanaRemovidos = 0;
+                if (subj && Array.isArray(studyDb.weeklySchedule)) {
+                    studyDb.weeklySchedule.forEach(dayObj => {
+                        if (!Array.isArray(dayObj.items)) return;
+                        const antes = dayObj.items.length;
+                        dayObj.items = dayObj.items.filter(it => it.subject !== subj.subject);
+                        itensSemanaRemovidos += (antes - dayObj.items.length);
+                    });
+                }
+
                 saveDatabase(); renderAllTabs();
+                if (etapasRemovidas > 0 || itensSemanaRemovidos > 0) {
+                    const partes = [];
+                    if (etapasRemovidas > 0) partes.push(`${etapasRemovidas} etapa(s) do Ciclo de Estudos`);
+                    if (itensSemanaRemovidos > 0) partes.push(`${itensSemanaRemovidos} item(ns) do Cronograma Semanal`);
+                    showAlert(`Matéria removida. ${partes.join(' e ')} que usavam essa matéria também foram removidos, pra evitar referências fantasmas.`);
+                }
             });
         }
         function deleteTopic(sIdx, tIdx) {
@@ -4193,6 +4277,12 @@
                 if (subj && top) {
                     const key = top.id || `${subj.subject}||${top.name}`;
                     studyDb.tombstones.syllabusTopics[key] = new Date().toISOString();
+                    // AUDITORIA (mesma causa do tombstone de disciplina):
+                    // garante que a chave por nome também fica registrada,
+                    // mesmo quando o tópico já tinha id — é essa chave que
+                    // a reimportação do Edital Oficial consegue reconhecer.
+                    const nameKey = `${subj.subject}||${top.name}`;
+                    studyDb.tombstones.syllabusTopics[nameKey] = new Date().toISOString();
                 }
                 studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
                 saveDatabase(); renderAllTabs();
@@ -4295,6 +4385,17 @@
             let targetSub = sel;
             if (sel === 'NEW_SUBJECT') {
                 targetSub = newSub;
+                // AUDITORIA (criação quebrada): o campo "Nome da Nova
+                // Disciplina" nunca teve validação. Selecionando "+ Criar
+                // Nova Disciplina..." e deixando o nome em branco, o botão
+                // "Adicionar" passava pelo <form> (só o campo do tópico era
+                // required) e criava uma disciplina com subject: "" — uma
+                // matéria fantasma sem título, que depois confundia
+                // qualquer edição/exclusão feita nela.
+                if (!targetSub) {
+                    showAlert('Digite o nome da nova disciplina.');
+                    return;
+                }
                 if (!studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase())) {
                     studyDb.syllabus.push({ id: _newId(), subject: targetSub, topics: [] });
                     studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
@@ -4332,6 +4433,21 @@
             const val = document.getElementById('modal-rename-subject-input').value.trim();
             if (val) {
                 const old = studyDb.syllabus[idx].subject;
+                // AUDITORIA (duplicidade ao renomear): antes era possível
+                // renomear uma disciplina para um nome que outra já tinha.
+                // Isso criava duas entradas idênticas no array — os <select>
+                // passavam a ter duas <option> com o mesmo value (o navegador
+                // só reconhece a primeira), e a chave "disciplina||tópico"
+                // usada por Histórico, Resumos, lápides de exclusão e
+                // mesclagem com a nuvem ficava ambígua entre as duas. Por
+                // isso "editar direito" parecia quebrado depois de renomear.
+                const duplicated = studyDb.syllabus.some((s, i) =>
+                    String(i) !== String(idx) && s.subject.trim().toLowerCase() === val.toLowerCase()
+                );
+                if (duplicated) {
+                    showAlert(`Já existe uma disciplina chamada "${val}". Escolha outro nome, ou apague uma das duas antes de unificar.`);
+                    return;
+                }
                 studyDb.syllabus[idx].subject = val;
                 studyDb.studyCycle.forEach(c => { if(c.subject === old) c.subject = val; });
                 // AUDITORIA (sincronização): antes, renomear uma disciplina só
@@ -4361,6 +4477,18 @@
             if (val) {
                 const subj = studyDb.syllabus[sIdx].subject;
                 const old  = studyDb.syllabus[sIdx].topics[tIdx].name;
+                // AUDITORIA (duplicidade ao renomear): mesmo problema do
+                // renomear de disciplina, mas em nível de tópico — sem essa
+                // checagem dava para renomear um assunto para o nome de
+                // outro já existente na mesma disciplina, ambiguando a
+                // chave "disciplina||tópico".
+                const duplicatedTopic = studyDb.syllabus[sIdx].topics.some((t, i) =>
+                    String(i) !== String(tIdx) && t.name.trim().toLowerCase() === val.toLowerCase()
+                );
+                if (duplicatedTopic) {
+                    showAlert(`"${subj}" já tem um assunto chamado "${val}". Escolha outro nome.`);
+                    return;
+                }
                 studyDb.syllabus[sIdx].topics[tIdx].name = val;
                 // AUDITORIA (sincronização): sem isto, sessões do Histórico e
                 // Resumos vinculados ao nome antigo do tópico ficavam
@@ -4716,6 +4844,18 @@
             studyDb.studyCycle.forEach((item, idx) => {
                 let opts = '';
                 studyDb.syllabus.forEach(s => opts += `<option value="${s.subject}" ${s.subject===item.subject?'selected':''}>${s.subject}</option>`);
+                // AUDITORIA (troca silenciosa de matéria): se a etapa aponta
+                // para uma disciplina que não existe mais no Edital (matéria
+                // apagada, ou dado antigo trazido de outro aparelho), essa
+                // disciplina não aparecia entre as <option>. O <select> HTML
+                // então escolhia sozinho a PRIMEIRA opção da lista — sem
+                // avisar ninguém — e "Salvar Ciclo" gravava essa etapa como
+                // pertencendo a uma matéria diferente da que o usuário via
+                // na tela. Agora a matéria "órfã" aparece como opção extra,
+                // marcada, em vez de ser trocada às cegas.
+                if (item.subject && !studyDb.syllabus.some(s => s.subject === item.subject)) {
+                    opts = `<option value="${item.subject}" selected>${item.subject} (fora do Edital atual)</option>` + opts;
+                }
                 list.innerHTML += `
                     <div class="flex items-center gap-2 bg-blue-950 p-2 rounded-xl border border-blue-900" id="cycle-row-${idx}">
                         <select class="cycle-sub flex-grow bg-input-dark text-white text-xs rounded p-1">${opts}</select>
