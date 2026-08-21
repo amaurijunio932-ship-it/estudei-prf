@@ -2938,6 +2938,73 @@
             return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         }
 
+        // AUDITORIA (matérias/assuntos duplicados): junta disciplinas com o
+        // mesmo nome (e assuntos com o mesmo nome dentro delas) em uma única
+        // cópia. Usada tanto no reparo local quanto — crucialmente — nos DOIS
+        // lados (nuvem e local) dentro de _mergeStudyDbs, antes de comparar
+        // qualquer coisa. Sem isso, uma duplicata que já ficou salva na nuvem
+        // antes da correção do merge "ressuscitava" a cada sincronização,
+        // porque o merge lia a lista da nuvem crua (com a duplicata) e criava
+        // uma linha de resultado para CADA cópia encontrada lá. Nunca soma
+        // questões ao juntar (dobraria a contagem) — fica com o registro mais
+        // completo: o de updatedAt mais recente ou, na falta disso, o de mais
+        // questões registradas / status mais avançado.
+        function _mergeDuplicateTopics(t1, t2) {
+            if (t1.updatedAt || t2.updatedAt) {
+                const t1Time = new Date(t1.updatedAt || 0).getTime();
+                const t2Time = new Date(t2.updatedAt || 0).getTime();
+                return t1Time >= t2Time ? t1 : t2;
+            }
+            const q1 = t1.qTotal || 0, q2 = t2.qTotal || 0;
+            if (q1 !== q2) return q1 > q2 ? t1 : t2;
+            const order = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
+            return order.indexOf(t1.status) >= order.indexOf(t2.status) ? t1 : t2;
+        }
+        function _dedupSyllabus(syllabusArr) {
+            let changed = false;
+            const arr = Array.isArray(syllabusArr) ? syllabusArr : [];
+            const subjByName = {};
+            const dedupedSubjects = [];
+            arr.forEach(sub => {
+                if (!Array.isArray(sub.topics)) sub.topics = [];
+                const key = (sub.subject || '').trim().toLowerCase();
+                if (!subjByName[key]) {
+                    subjByName[key] = sub;
+                    dedupedSubjects.push(sub);
+                } else {
+                    changed = true;
+                    const alvo = subjByName[key];
+                    sub.topics.forEach(t => {
+                        const existing = alvo.topics.find(x => (x.name||'').trim().toLowerCase() === (t.name||'').trim().toLowerCase());
+                        if (existing) {
+                            Object.assign(existing, _mergeDuplicateTopics(existing, t));
+                        } else {
+                            alvo.topics.push(t);
+                        }
+                    });
+                }
+            });
+            if (dedupedSubjects.length !== arr.length) changed = true;
+
+            dedupedSubjects.forEach(sub => {
+                const topByName = {};
+                const dedupedTopics = [];
+                (sub.topics || []).forEach(t => {
+                    const key = (t.name || '').trim().toLowerCase();
+                    if (!topByName[key]) {
+                        topByName[key] = t;
+                        dedupedTopics.push(t);
+                    } else {
+                        changed = true;
+                        Object.assign(topByName[key], _mergeDuplicateTopics(topByName[key], t));
+                    }
+                });
+                if (dedupedTopics.length !== sub.topics.length) changed = true;
+                sub.topics = dedupedTopics;
+            });
+            return { syllabus: dedupedSubjects, changed };
+        }
+
         // === STORAGE: usa window.storage (Artifacts) com fallback para localStorage ===
         const STORAGE_KEY = 'estudei_prf_database';
 
@@ -9267,6 +9334,17 @@ function renderHistoryTab() {
             // valor de questões e o status mais avançado, para não perder progresso
             // feito offline em outro dispositivo sem essa marcação.
             const STATUS_ORDER = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
+
+            // AUDITORIA (duplicatas ressuscitando a cada sync): dedupa os dois
+            // lados ANTES de comparar. Se a nuvem ainda tem uma disciplina
+            // duplicada salva de antes da correção, sem isso o .map() abaixo
+            // criaria uma linha de resultado pra cada cópia encontrada na
+            // nuvem — mesmo com o lado local já limpo.
+            const localDedup = _dedupSyllabus(JSON.parse(JSON.stringify(localDb.syllabus || [])));
+            const cloudDedup = _dedupSyllabus(JSON.parse(JSON.stringify(cloudDb.syllabus || [])));
+            localDb = { ...localDb, syllabus: localDedup.syllabus };
+            cloudDb = { ...cloudDb, syllabus: cloudDedup.syllabus };
+
             const localSylMap = {};     // por nome (compatibilidade com dados antigos sem id)
             const localSylMapById = {}; // por id (preferido — sobrevive a renomear)
             (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; if (s.id) localSylMapById[s.id] = s; });
@@ -9452,59 +9530,15 @@ function renderHistoryTab() {
             // (evitaria dobrar questões já contadas), em vez disso fica com o
             // registro mais completo — o que tem updatedAt mais recente ou,
             // na falta disso, o que tem mais questões registradas.
-            function _mergeDuplicateTopics(t1, t2) {
-                if (t1.updatedAt || t2.updatedAt) {
-                    const t1Time = new Date(t1.updatedAt || 0).getTime();
-                    const t2Time = new Date(t2.updatedAt || 0).getTime();
-                    return t1Time >= t2Time ? t1 : t2;
-                }
-                const q1 = t1.qTotal || 0, q2 = t2.qTotal || 0;
-                if (q1 !== q2) return q1 > q2 ? t1 : t2;
-                const order = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
-                return order.indexOf(t1.status) >= order.indexOf(t2.status) ? t1 : t2;
-            }
-            {
-                const subjByName = {};
-                const dedupedSubjects = [];
-                studyDb.syllabus.forEach(sub => {
-                    const key = (sub.subject || '').trim().toLowerCase();
-                    if (!subjByName[key]) {
-                        subjByName[key] = sub;
-                        dedupedSubjects.push(sub);
-                    } else {
-                        // Disciplina duplicada → junta os tópicos na primeira ocorrência
-                        repaired = true;
-                        const alvo = subjByName[key];
-                        (sub.topics || []).forEach(t => {
-                            const existing = alvo.topics.find(x => (x.name||'').trim().toLowerCase() === (t.name||'').trim().toLowerCase());
-                            if (existing) {
-                                const vencedor = _mergeDuplicateTopics(existing, t);
-                                Object.assign(existing, vencedor);
-                            } else {
-                                alvo.topics.push(t);
-                            }
-                        });
-                    }
-                });
-                if (dedupedSubjects.length !== studyDb.syllabus.length) { studyDb.syllabus = dedupedSubjects; repaired = true; }
-
-                studyDb.syllabus.forEach(sub => {
-                    const topByName = {};
-                    const dedupedTopics = [];
-                    (sub.topics || []).forEach(t => {
-                        const key = (t.name || '').trim().toLowerCase();
-                        if (!topByName[key]) {
-                            topByName[key] = t;
-                            dedupedTopics.push(t);
-                        } else {
-                            repaired = true;
-                            const vencedor = _mergeDuplicateTopics(topByName[key], t);
-                            Object.assign(topByName[key], vencedor);
-                        }
-                    });
-                    if (dedupedTopics.length !== sub.topics.length) { sub.topics = dedupedTopics; repaired = true; }
-                });
-            }
+            // Extraída para o escopo global (função `_dedupSyllabus`, logo
+            // abaixo) porque tanto o reparo local quanto a mesclagem com a
+            // nuvem (`_mergeStudyDbs`) precisam dela: se só o lado local for
+            // limpo, uma cópia duplicada que já ficou salva na nuvem antes
+            // dessa correção volta a ressuscitar a duplicata a cada sync,
+            // porque o merge antigo lia a lista da nuvem "crua".
+            const dedupResult = _dedupSyllabus(studyDb.syllabus);
+            studyDb.syllabus = dedupResult.syllabus;
+            if (dedupResult.changed) repaired = true;
 
             // AUDITORIA (ordem numérica e alfabética): garante, sempre que o
             // banco é validado, que as disciplinas do Edital fiquem em ordem
