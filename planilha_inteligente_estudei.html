@@ -3867,6 +3867,22 @@
         let _editalActiveFilter = 'all';
 
         function renderSyllabusTab() {
+            // AUDITORIA (auto-correção de ordem): a mesclagem com a nuvem, o
+            // import do edital oficial e as edições manuais já reordenam o
+            // array — mas dados salvos ANTES dessas correções (ou trazidos de
+            // uma sincronização antiga) podem continuar fora de ordem no seu
+            // navegador. Reordenar aqui, toda vez que a aba do Edital é
+            // desenhada, garante que a ordem numérica/alfabética apareça
+            // corretamente mesmo para dados legados, sem exigir nenhuma ação
+            // manual (reimportar, editar, etc.).
+            if (Array.isArray(studyDb.syllabus)) {
+                studyDb.syllabus.sort((a, b) => (a.subject||'').localeCompare(b.subject||'', undefined, { numeric: true, sensitivity: 'base' }));
+                studyDb.syllabus.forEach(sub => {
+                    if (Array.isArray(sub.topics)) {
+                        sub.topics.sort((a, b) => (a.name||'').localeCompare(b.name||'', undefined, { numeric: true, sensitivity: 'base' }));
+                    }
+                });
+            }
             const filterContainer = document.getElementById('edital-subject-filters');
             if (filterContainer) {
                 filterContainer.className = 'relative';
@@ -4260,11 +4276,46 @@
                 }
 
                 saveDatabase(); renderAllTabs();
-                if (etapasRemovidas > 0 || itensSemanaRemovidos > 0) {
-                    const partes = [];
-                    if (etapasRemovidas > 0) partes.push(`${etapasRemovidas} etapa(s) do Ciclo de Estudos`);
-                    if (itensSemanaRemovidos > 0) partes.push(`${itensSemanaRemovidos} item(ns) do Cronograma Semanal`);
+                const partes = [];
+                if (etapasRemovidas > 0) partes.push(`${etapasRemovidas} etapa(s) do Ciclo de Estudos`);
+                if (itensSemanaRemovidos > 0) partes.push(`${itensSemanaRemovidos} item(ns) do Cronograma Semanal`);
+                if (partes.length > 0) {
                     showAlert(`Matéria removida. ${partes.join(' e ')} que usavam essa matéria também foram removidos, pra evitar referências fantasmas.`);
+                }
+
+                // AUDITORIA ("não consigo apagar, está vinculada ao
+                // histórico"): apagar a matéria aqui só a remove do Edital —
+                // de propósito, as sessões dela no Histórico continuam
+                // existindo, pra não zerar suas estatísticas por acidente.
+                // Só que isso faz o nome da matéria continuar aparecendo em
+                // telas que puxam nomes tanto do Edital quanto do Histórico
+                // (banco de tópicos ao lançar sessão manual, filtros), dando
+                // a impressão de que "não apagou de verdade". Agora, se
+                // existem sessões do Histórico com essa matéria, pergunta
+                // explicitamente se você quer apagá-las também — em vez de
+                // decidir isso silenciosamente dos dois jeitos.
+                if (subj && Array.isArray(studyDb.history)) {
+                    const sessoesLigadas = studyDb.history.filter(h => h.subject === subj.subject);
+                    if (sessoesLigadas.length > 0) {
+                        setTimeout(() => {
+                            showConfirm(
+                                `"${subj.subject}" ainda tem ${sessoesLigadas.length} sessão(ões) no Histórico ` +
+                                `(por isso o nome pode continuar aparecendo em outras telas). Apagar essas sessões também? ` +
+                                `Isso reduz suas estatísticas de tempo/questões — não dá pra desfazer.`,
+                                () => {
+                                    if (!studyDb.tombstones.history) studyDb.tombstones.history = {};
+                                    const agora = new Date().toISOString();
+                                    studyDb.history = studyDb.history.filter(h => {
+                                        if (h.subject !== subj.subject) return true;
+                                        if (h.id) studyDb.tombstones.history[h.id] = agora;
+                                        return false;
+                                    });
+                                    saveDatabase(); renderAllTabs();
+                                    showAlert(`${sessoesLigadas.length} sessão(ões) do Histórico apagada(s).`);
+                                }
+                            );
+                        }, 300);
+                    }
                 }
             });
         }
@@ -4286,6 +4337,33 @@
                 }
                 studyDb.syllabus[sIdx].topics.splice(tIdx, 1);
                 saveDatabase(); renderAllTabs();
+
+                // Mesmo caso do deleteSubject: apagar o assunto não apaga as
+                // sessões do Histórico vinculadas a ele (por design). Avisa e
+                // oferece apagar junto, se for isso que você quer.
+                if (subj && top && Array.isArray(studyDb.history)) {
+                    const sessoesLigadas = studyDb.history.filter(h => h.subject === subj.subject && h.topic === top.name);
+                    if (sessoesLigadas.length > 0) {
+                        setTimeout(() => {
+                            showConfirm(
+                                `"${top.name}" ainda tem ${sessoesLigadas.length} sessão(ões) no Histórico ` +
+                                `(por isso o nome pode continuar aparecendo em outras telas). Apagar essas sessões também? ` +
+                                `Isso reduz suas estatísticas de tempo/questões — não dá pra desfazer.`,
+                                () => {
+                                    if (!studyDb.tombstones.history) studyDb.tombstones.history = {};
+                                    const agora = new Date().toISOString();
+                                    studyDb.history = studyDb.history.filter(h => {
+                                        if (!(h.subject === subj.subject && h.topic === top.name)) return true;
+                                        if (h.id) studyDb.tombstones.history[h.id] = agora;
+                                        return false;
+                                    });
+                                    saveDatabase(); renderAllTabs();
+                                    showAlert(`${sessoesLigadas.length} sessão(ões) do Histórico apagada(s).`);
+                                }
+                            );
+                        }, 300);
+                    }
+                }
             });
         }
 
@@ -9193,21 +9271,33 @@ function renderHistoryTab() {
             const localSylMapById = {}; // por id (preferido — sobrevive a renomear)
             (localDb.syllabus || []).forEach(s => { localSylMap[s.subject] = s; if (s.id) localSylMapById[s.id] = s; });
 
-            const _subjKey = s => s.id || s.subject;
-            const _topKey  = (subjName, t) => t.id || `${subjName}||${t.name}`;
+            // AUDITORIA (matéria/assunto duplicado após sincronizar entre
+            // dispositivos): o critério antigo de "é o mesmo item?" priorizava
+            // o id sempre que ele existia dos dois lados — mas dois
+            // dispositivos podiam gerar ids ALEATÓRIOS diferentes para o
+            // "mesmo" assunto (ex.: adicionado offline nos dois, ou criado
+            // pelo import do Edital Oficial em momentos diferentes). Resultado:
+            // o merge via id não batia, e o merge via nome só era tentado
+            // quando um dos dois lados não tinha id nenhum — então o item
+            // "só local" era empilhado de novo, duplicando a linha inteira
+            // (mesmo nome, mesmos dados) na tela. Agora dois itens são
+            // considerados "o mesmo" se o id bate OU se o nome bate — nunca
+            // duplica por causa de um id gerado de forma diferente.
+            const _sameSubject = (a, b) => (!!a.id && !!b.id && a.id === b.id) || (a.subject === b.subject);
+            const _sameTopic   = (a, b) => (!!a.id && !!b.id && a.id === b.id) || (a.name === b.name);
+            const _subjTomb = s => (s.id && mergedTombSubj[s.id]) || mergedTombSubj[s.subject];
+            const _topTomb  = (subjName, t) => (t.id && mergedTombTop[t.id]) || mergedTombTop[`${subjName}||${t.name}`];
 
             merged.syllabus = (cloudDb.syllabus || [])
-                .filter(cloudSubj => !mergedTombSubj[cloudSubj.id] && !mergedTombSubj[cloudSubj.subject]) // matéria apagada → não ressuscita
+                .filter(cloudSubj => !_subjTomb(cloudSubj)) // matéria apagada → não ressuscita
                 .map(cloudSubj => {
-                const localSubj = (cloudSubj.id && localSylMapById[cloudSubj.id]) || localSylMap[cloudSubj.subject];
+                const localSubj = (localDb.syllabus || []).find(s => _sameSubject(s, cloudSubj));
                 if (!localSubj) return cloudSubj;
 
                 const mergedTopics = (cloudSubj.topics || [])
-                    .filter(cloudT => !mergedTombTop[_topKey(cloudSubj.subject, cloudT)]) // assunto apagado → não ressuscita
+                    .filter(cloudT => !_topTomb(cloudSubj.subject, cloudT)) // assunto apagado → não ressuscita
                     .map(cloudT => {
-                    const localT = (localSubj.topics || []).find(t =>
-                        (cloudT.id && t.id === cloudT.id) || (!cloudT.id && t.name === cloudT.name)
-                    );
+                    const localT = (localSubj.topics || []).find(t => _sameTopic(t, cloudT));
                     if (!localT) return cloudT;
 
                     if (cloudT.updatedAt || localT.updatedAt) {
@@ -9233,16 +9323,31 @@ function renderHistoryTab() {
 
                 // Tópicos que existem só no local (adicionados offline, OU renomeados —
                 // pelo id/nome não batem mais com nenhum tópico do lado da nuvem) → adiciona
-                const cloudTopicKeys = new Set((cloudSubj.topics || []).map(t => _topKey(cloudSubj.subject, t)));
-                const localOnlyTopics = (localSubj.topics || []).filter(t => !cloudTopicKeys.has(_topKey(cloudSubj.subject, t)));
+                const localOnlyTopics = (localSubj.topics || []).filter(t =>
+                    !(cloudSubj.topics || []).some(cloudT => _sameTopic(t, cloudT))
+                );
 
                 return { ...cloudSubj, id: cloudSubj.id || localSubj.id, topics: [...mergedTopics, ...localOnlyTopics] };
             });
 
             // Disciplinas que existem só no local (adicionadas offline, OU renomeadas) → adiciona
-            const cloudSubjKeys = new Set((cloudDb.syllabus || []).map(_subjKey));
-            (localDb.syllabus || []).filter(s => !cloudSubjKeys.has(_subjKey(s)))
+            (localDb.syllabus || []).filter(s => !(cloudDb.syllabus || []).some(cloudSubj => _sameSubject(s, cloudSubj)))
                 .forEach(s => merged.syllabus.push(s));
+
+            // AUDITORIA (ordem numérica quebrando a cada sync): os passos acima
+            // juntam disciplinas/tópicos só-locais no FINAL do array, sem
+            // reordenar depois. O resto do código sempre reordena após somar
+            // itens (importar edital, adicionar, renomear) — mas aqui, na
+            // mesclagem com a nuvem, isso nunca acontecia. Resultado: a cada
+            // sincronização entre dispositivos a ordem voltava a embaralhar,
+            // mesmo em telas que pareciam "corrigidas". Reordena aqui também,
+            // com o mesmo critério usado em todo o resto do app.
+            merged.syllabus.sort((a, b) => (a.subject||'').localeCompare(b.subject||'', undefined, { numeric: true, sensitivity: 'base' }));
+            merged.syllabus.forEach(sub => {
+                if (Array.isArray(sub.topics)) {
+                    sub.topics.sort((a, b) => (a.name||'').localeCompare(b.name||'', undefined, { numeric: true, sensitivity: 'base' }));
+                }
+            });
 
             // ── 5. CICLO DE ESTUDOS: usa local (o utilizador activo prevalece) ──
             merged.studyCycle      = localDb.studyCycle      || cloudDb.studyCycle      || [];
@@ -9338,6 +9443,68 @@ function renderHistoryTab() {
                     if (!t.id) { t.id = _stableId(sub.subject + '||' + t.name); repaired = true; }
                 });
             });
+
+            // AUDITORIA (matérias/assuntos duplicados por bug de sincronização
+            // já corrigido): remove duplicatas que JÁ ficaram salvas antes da
+            // correção do merge (mesmo nome de disciplina duas vezes, ou mesmo
+            // assunto duas vezes dentro da mesma disciplina). Ao juntar duas
+            // cópias do "mesmo" item, nunca descarta dado: soma nunca é usada
+            // (evitaria dobrar questões já contadas), em vez disso fica com o
+            // registro mais completo — o que tem updatedAt mais recente ou,
+            // na falta disso, o que tem mais questões registradas.
+            function _mergeDuplicateTopics(t1, t2) {
+                if (t1.updatedAt || t2.updatedAt) {
+                    const t1Time = new Date(t1.updatedAt || 0).getTime();
+                    const t2Time = new Date(t2.updatedAt || 0).getTime();
+                    return t1Time >= t2Time ? t1 : t2;
+                }
+                const q1 = t1.qTotal || 0, q2 = t2.qTotal || 0;
+                if (q1 !== q2) return q1 > q2 ? t1 : t2;
+                const order = ['Não Estudado', 'Teoria Vista', 'Questões Feitas', 'Revisado'];
+                return order.indexOf(t1.status) >= order.indexOf(t2.status) ? t1 : t2;
+            }
+            {
+                const subjByName = {};
+                const dedupedSubjects = [];
+                studyDb.syllabus.forEach(sub => {
+                    const key = (sub.subject || '').trim().toLowerCase();
+                    if (!subjByName[key]) {
+                        subjByName[key] = sub;
+                        dedupedSubjects.push(sub);
+                    } else {
+                        // Disciplina duplicada → junta os tópicos na primeira ocorrência
+                        repaired = true;
+                        const alvo = subjByName[key];
+                        (sub.topics || []).forEach(t => {
+                            const existing = alvo.topics.find(x => (x.name||'').trim().toLowerCase() === (t.name||'').trim().toLowerCase());
+                            if (existing) {
+                                const vencedor = _mergeDuplicateTopics(existing, t);
+                                Object.assign(existing, vencedor);
+                            } else {
+                                alvo.topics.push(t);
+                            }
+                        });
+                    }
+                });
+                if (dedupedSubjects.length !== studyDb.syllabus.length) { studyDb.syllabus = dedupedSubjects; repaired = true; }
+
+                studyDb.syllabus.forEach(sub => {
+                    const topByName = {};
+                    const dedupedTopics = [];
+                    (sub.topics || []).forEach(t => {
+                        const key = (t.name || '').trim().toLowerCase();
+                        if (!topByName[key]) {
+                            topByName[key] = t;
+                            dedupedTopics.push(t);
+                        } else {
+                            repaired = true;
+                            const vencedor = _mergeDuplicateTopics(topByName[key], t);
+                            Object.assign(topByName[key], vencedor);
+                        }
+                    });
+                    if (dedupedTopics.length !== sub.topics.length) { sub.topics = dedupedTopics; repaired = true; }
+                });
+            }
 
             // AUDITORIA (ordem numérica e alfabética): garante, sempre que o
             // banco é validado, que as disciplinas do Edital fiquem em ordem
