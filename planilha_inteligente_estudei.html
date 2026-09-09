@@ -4626,6 +4626,11 @@
                     return;
                 }
                 studyDb.syllabus[idx].subject = val;
+                // Marca QUANDO a disciplina foi renomeada. Sem isto, a sincronização
+                // com a nuvem (_mergeStudyDbs) não tinha como saber que o nome local
+                // era mais novo que o da nuvem, e sempre devolvia o nome antigo no
+                // próximo sync — parecendo que a edição "não pegou".
+                studyDb.syllabus[idx].updatedAt = new Date().toISOString();
                 studyDb.studyCycle.forEach(c => { if(c.subject === old) c.subject = val; });
                 // AUDITORIA (sincronização): antes, renomear uma disciplina só
                 // atualizava o Ciclo de Estudos. Histórico e Resumos guardam o
@@ -4667,6 +4672,10 @@
                     return;
                 }
                 studyDb.syllabus[sIdx].topics[tIdx].name = val;
+                // Marca QUANDO o tópico foi renomeado (mesma razão da disciplina,
+                // acima): sem isso o merge com a nuvem não sabia que o nome local
+                // era o mais recente e devolvia o nome antigo no próximo sync.
+                studyDb.syllabus[sIdx].topics[tIdx].updatedAt = new Date().toISOString();
                 // AUDITORIA (sincronização): sem isto, sessões do Histórico e
                 // Resumos vinculados ao nome antigo do tópico ficavam
                 // "órfãos" — o Histórico continuava mostrando o nome velho, e
@@ -4927,11 +4936,14 @@
         function resetCycleProgress() {
             studyDb.studyCycle.forEach(c => c.status = "A Fazer");
             studyDb.currentCycleStep = 0;
+            studyDb.studyCycleUpdatedAt = new Date().toISOString();
             saveDatabase(); renderAllTabs();
         }
 
         function startSpecificCycleStep(idx) {
-            studyDb.currentCycleStep = idx; saveDatabase(); renderStudyCycleTab(); startNextCycleSubject();
+            studyDb.currentCycleStep = idx;
+            studyDb.studyCycleUpdatedAt = new Date().toISOString();
+            saveDatabase(); renderStudyCycleTab(); startNextCycleSubject();
         }
 
         // Marca como concluída a etapa do ciclo correspondente à matéria estudada,
@@ -4964,6 +4976,7 @@
             if (idx === -1) return;
 
             cycle[idx].status = "Concluído";
+            studyDb.studyCycleUpdatedAt = new Date().toISOString();
 
             // Avança o ponteiro para o próximo passo ainda pendente (circular)
             let next = (idx + 1) % cycle.length;
@@ -5071,6 +5084,7 @@
                 });
             }
             studyDb.studyCycle = newCycle; studyDb.currentCycleStep = 0;
+            studyDb.studyCycleUpdatedAt = new Date().toISOString();
             saveDatabase(); closeConfigureCycleModal(); renderAllTabs(); showAlert("Ciclo Salvo!");
         }
 
@@ -6716,6 +6730,12 @@ function renderHistoryTab() {
             studyDb.history[idx].qTotal   = appliedQTotal;
             studyDb.history[idx].qCorrect = appliedQCorrect;
             studyDb.history[idx].notes    = notes;
+            // Marca QUANDO esta sessão foi editada. O merge com a nuvem
+            // (_mergeStudyDbs) usa este carimbo para decidir qual versão é mais
+            // nova quando o mesmo registro existe nos dois lados — sem ele, a
+            // versão da nuvem (antiga) sempre vencia, e a data editada "renascia"
+            // sozinha logo depois de salvar.
+            studyDb.history[idx].lastEdited = new Date().toISOString();
 
             saveDatabase();
             renderAllTabs();
@@ -9318,9 +9338,31 @@ function renderHistoryTab() {
             // Itens com uma lápide (excluídos de propósito em qualquer dispositivo)
             // ficam de fora, em vez de serem "ressuscitados" só por existirem
             // ainda no outro lado.
-            const cloudHistIds = new Set((cloudDb.history || []).map(h => String(h.id)));
-            const localOnlyHist = (localDb.history || []).filter(h => !cloudHistIds.has(String(h.id)));
-            merged.history = [...(cloudDb.history || []), ...localOnlyHist]
+            // CORREÇÃO (edição de histórico "renascendo" depois do sync): antes,
+            // para qualquer sessão que existisse dos dois lados (mesmo id), a
+            // versão da NUVEM sempre vencia incondicionalmente — mesmo que você
+            // tivesse acabado de editar a data/disciplina/questões localmente.
+            // Resultado: a edição sumia sozinha assim que o auto-sync rodava.
+            // Agora, quando os dois lados têm a mesma sessão, compara-se
+            // `lastEdited` e fica com a versão editada mais recentemente —
+            // igual já era feito para os Resumos.
+            const cloudHistMap = {};
+            (cloudDb.history || []).forEach(h => { cloudHistMap[String(h.id)] = h; });
+            const mergedHistArr = [];
+            (localDb.history || []).forEach(h => {
+                const key = String(h.id);
+                const c = cloudHistMap[key];
+                if (c) {
+                    const cTime = new Date(c.lastEdited || 0).getTime();
+                    const lTime = new Date(h.lastEdited || 0).getTime();
+                    mergedHistArr.push(lTime >= cTime ? h : c);
+                    delete cloudHistMap[key];
+                } else {
+                    mergedHistArr.push(h); // só no local (offline) → mantém
+                }
+            });
+            Object.values(cloudHistMap).forEach(c => mergedHistArr.push(c)); // só na nuvem → mantém
+            merged.history = mergedHistArr
                 .filter(h => !mergedTombHist[h.id] && !mergedTombHist[String(h.id)]);
             merged.history.sort((a, b) => String(a.date||'').localeCompare(String(b.date||'')));
 
@@ -9439,7 +9481,26 @@ function renderHistoryTab() {
                     !(cloudSubj.topics || []).some(cloudT => _sameTopic(t, cloudT))
                 );
 
-                return { ...cloudSubj, id: cloudSubj.id || localSubj.id, topics: [...mergedTopics, ...localOnlyTopics] };
+                // Nome da disciplina: mesma lógica de "quem editou por último vence"
+                // usada nos tópicos, acima. Sem isto, `subject` vinha sempre de
+                // `cloudSubj` (linha de baixo era só um spread), então renomear uma
+                // disciplina "voltava ao normal" assim que o auto-sync rodava.
+                let subjName = cloudSubj.subject;
+                if (cloudSubj.updatedAt || localSubj.updatedAt) {
+                    const cTime = new Date(cloudSubj.updatedAt || 0).getTime();
+                    const lTime = new Date(localSubj.updatedAt || 0).getTime();
+                    subjName = lTime >= cTime ? localSubj.subject : cloudSubj.subject;
+                }
+
+                return {
+                    ...cloudSubj,
+                    subject: subjName,
+                    updatedAt: (new Date(localSubj.updatedAt || 0).getTime() >= new Date(cloudSubj.updatedAt || 0).getTime())
+                        ? localSubj.updatedAt
+                        : cloudSubj.updatedAt,
+                    id: cloudSubj.id || localSubj.id,
+                    topics: [...mergedTopics, ...localOnlyTopics]
+                };
             });
 
             // Disciplinas que existem só no local (adicionadas offline, OU renomeadas) → adiciona
@@ -9461,9 +9522,28 @@ function renderHistoryTab() {
                 }
             });
 
-            // ── 5. CICLO DE ESTUDOS: usa local (o utilizador activo prevalece) ──
-            merged.studyCycle      = localDb.studyCycle      || cloudDb.studyCycle      || [];
-            merged.currentCycleStep = localDb.currentCycleStep ?? cloudDb.currentCycleStep ?? 0;
+            // ── 5. CICLO DE ESTUDOS ──
+            // CORREÇÃO (progresso divergindo entre aparelhos — ex: 40% no PC e
+            // 0% no celular): antes, esta linha sempre mantinha o ciclo LOCAL,
+            // incondicionalmente. Como um array vazio/padrão de fábrica também é
+            // "verdadeiro" em JavaScript, um celular novo (ainda com o ciclo
+            // padrão, 0% concluído) NUNCA adotava o progresso salvo na nuvem —
+            // o merge achava que já tinha um ciclo local e parava por aí. Agora
+            // só se usa o ciclo local sem comparar quando nenhum dos dois lados
+            // tem `studyCycleUpdatedAt` (dado antigo); havendo o carimbo dos
+            // dois lados (ou só de um), vence quem foi editado/avançado mais
+            // recentemente — igual já era feito com o Edital e o Histórico.
+            if (localDb.studyCycleUpdatedAt || cloudDb.studyCycleUpdatedAt) {
+                const cTime = new Date(cloudDb.studyCycleUpdatedAt || 0).getTime();
+                const lTime = new Date(localDb.studyCycleUpdatedAt || 0).getTime();
+                const localWins = lTime >= cTime;
+                merged.studyCycle       = (localWins ? localDb.studyCycle : cloudDb.studyCycle) || [];
+                merged.currentCycleStep = (localWins ? localDb.currentCycleStep : cloudDb.currentCycleStep) ?? 0;
+                merged.studyCycleUpdatedAt = localWins ? localDb.studyCycleUpdatedAt : cloudDb.studyCycleUpdatedAt;
+            } else {
+                merged.studyCycle      = localDb.studyCycle      || cloudDb.studyCycle      || [];
+                merged.currentCycleStep = localDb.currentCycleStep ?? cloudDb.currentCycleStep ?? 0;
+            }
 
             // ── 5b. CRONOGRAMA SEMANAL: mesma regra do ciclo — é configuração,
             // não dado incremental, então usa local (quem editou por último
