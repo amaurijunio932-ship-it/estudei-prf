@@ -668,6 +668,7 @@
                 </button>
                 <button onclick="switchTab('cronometro')" id="tab-cronometro" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
                     <i class="fa-solid fa-stopwatch mr-1"></i> Estudar Agora
+                    <span id="tab-cronometro-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-blue-950" style="animation: timerPulse 2s infinite;" title="Cronômetro/Pomodoro ativo"></span>
                 </button>
                 <button onclick="switchTab('resumos')" id="tab-resumos" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
                     <i class="fa-solid fa-book-bookmark mr-1"></i> Meus Resumos
@@ -3719,6 +3720,9 @@
         // ── FIM: Proteção contra perda de dados ──────────────────────────────
 
         // === NAVEGAÇÃO ===
+        const ACTIVE_TAB_KEY = 'estudei_active_tab';
+        const VALID_TABS = ['dashboard', 'edital', 'ciclo', 'cronometro', 'historico', 'resumos'];
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative");
@@ -3731,11 +3735,39 @@
             
             renderAllTabs();
             if (tabId === 'resumos') requestAnimationFrame(_updateEditorScrollFades);
+
+            // Lembra qual aba estava aberta, para o navegador (principalmente no
+            // mobile) conseguir voltar direto pra ela depois de uma recarga
+            // involuntária em segundo plano — sem isso, o app "esquecia" que o
+            // usuário estava no cronômetro e caía no Painel Principal.
+            try { localStorage.setItem(ACTIVE_TAB_KEY, tabId); } catch(e) {}
         }
 
         function checkUrlHash() {
             const hash = window.location.hash.substring(1);
-            if (['dashboard', 'edital', 'ciclo', 'cronometro', 'historico', 'resumos'].includes(hash)) switchTab(hash);
+            if (VALID_TABS.includes(hash)) switchTab(hash);
+        }
+
+        // Restaura a aba ativa na abertura da página. Prioridade: hash da URL
+        // (link direto) > última aba salva no localStorage (recarga do navegador).
+        function _restoreActiveTab() {
+            const hash = window.location.hash.substring(1);
+            if (VALID_TABS.includes(hash)) { switchTab(hash); return; }
+            try {
+                const saved = localStorage.getItem(ACTIVE_TAB_KEY);
+                if (saved && VALID_TABS.includes(saved)) { switchTab(saved); return; }
+            } catch(e) {}
+        }
+
+        // Mostra/esconde o indicador (bolinha pulsante) na aba "Estudar Agora"
+        // quando o cronômetro ou o pomodoro estão rodando — assim, mesmo que o
+        // usuário esteja em outra aba (ou o app tenha recarregado sozinho no
+        // Painel Principal), fica visível que o tempo continua contando de verdade.
+        function _updateCronometroTabBadge() {
+            const badge = document.getElementById('tab-cronometro-badge');
+            if (!badge) return;
+            const active = isTimerRunning || isTimerPaused || pomodoroRunning;
+            badge.classList.toggle('hidden', !active);
         }
 
         // (renderAllTabs "completo" está definido mais abaixo, perto do fim
@@ -5231,6 +5263,7 @@
             } else {
                 document.title = 'Estudei - Planilha Inteligente PRF';
             }
+            _updateCronometroTabBadge();
         }
 
         // --- Pomodoro (reescrito com timestamps — imune a suspensão do browser) ---
@@ -5445,6 +5478,7 @@
             if (bar) { bar.style.width = (pomodoroSecondsLeft / pomodoroTotalSeconds * 100) + '%'; bar.style.background = color; }
             if (label) label.innerHTML = isFocus ? `🎯 Foco (${pomodoroFocusMin}/${pomodoroBreakMin}min) — <span id="pomodoro-cycle-count">${pomodoroCycles}</span> ciclos` : `☕ Pausa — <span id="pomodoro-cycle-count">${pomodoroCycles}</span> ciclos`;
             if (cycles) cycles.innerText = pomodoroCycles;
+            _updateCronometroTabBadge();
         }
 
         // --- Modo Manual (registrar sessão sem o app) ---
@@ -10567,7 +10601,6 @@ function renderHistoryTab() {
             try { renderAllTabs(); } catch(e) { console.error('[Estudei] renderAllTabs:', e); }
             try { initCharts(); initStudyTypeChart(); } catch(e) { console.error('[Estudei] charts:', e); }
             try { initSessionDatePicker(); } catch(e) { console.error('[Estudei] datepicker:', e); }
-            checkUrlHash();
             cycleMotivationalQuote();
 
             // Esconde o overlay de carregamento assim que os dados locais
@@ -10601,6 +10634,15 @@ function renderHistoryTab() {
                     }
                 }
             } catch(e) { console.error('[Estudei] Restauração do cronômetro:', e); }
+
+            // ── RESTAURAR A ABA QUE ESTAVA ABERTA ──
+            // Importante rodar DEPOIS de restaurar cronômetro/pomodoro acima:
+            // se o navegador (principalmente no mobile) recarregou a página
+            // sozinho enquanto o cronômetro estava rodando em segundo plano,
+            // isso garante que o usuário volte direto pra aba "Estudar Agora"
+            // em vez de cair no Painel Principal achando que perdeu o tempo.
+            try { _restoreActiveTab(); } catch(e) { console.error('[Estudei] Restauração da aba ativa:', e); }
+            try { _updateCronometroTabBadge(); } catch(e) {}
 
             // 2. Sincronização com a nuvem: acontece em SEGUNDO PLANO, sem
             //    travar nada. O usuário já está usando a planilha normalmente.
