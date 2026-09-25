@@ -2472,43 +2472,62 @@
     </div>
 
     <!-- MIND MAP EDITOR MODAL -->
-    <div id="mindmap-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center" style="background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
-        <div class="flex flex-col rounded-2xl border border-blue-800 shadow-2xl overflow-hidden" style="width:96vw;max-width:1200px;height:90vh;background:#0a0f1e;">
+    <div id="mindmap-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center" style="background:rgba(4,7,18,0.88);backdrop-filter:blur(8px);">
+        <div id="mm-panel" class="flex flex-col overflow-hidden" style="width:96vw;max-width:1200px;height:90vh;background:linear-gradient(160deg,#0b1024 0%,#080c1c 55%,#070a17 100%);border-radius:24px;border:1px solid rgba(99,140,255,0.18);box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.02) inset;">
             <!-- Header -->
-            <div class="flex items-center justify-between px-5 py-3 border-b border-blue-900" style="background:#0d1530;">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-diagram-project text-yellow-400"></i>
-                    <span class="font-black text-white text-sm">Editor de Mapa Mental</span>
-                    <input id="mm-title" placeholder="Título do mapa..." value="Meu Mapa Mental"
-                        class="ml-4 bg-transparent border-b border-blue-700 text-white text-sm font-bold focus:outline-none focus:border-yellow-400 px-1 w-48">
+            <div id="mm-header" class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5" style="background:linear-gradient(90deg,rgba(59,90,220,0.16),rgba(139,92,246,0.10) 60%,transparent);border-bottom:1px solid rgba(99,140,255,0.14);">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,#facc15,#f59e0b);box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+                        <i class="fa-solid fa-diagram-project text-slate-900 text-sm"></i>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <span id="mm-header-label" class="font-black text-white text-xs uppercase tracking-wide opacity-60">Editor de Mapa Mental</span>
+                        <input id="mm-title" placeholder="Título do mapa..." value="Meu Mapa Mental"
+                            class="bg-transparent text-white text-sm font-black focus:outline-none px-0 w-56 max-w-full placeholder-gray-500">
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="mmAddChild(mmSelectedId)" title="Adicionar filho (Tab)" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> Nó</button>
-                    <button onclick="mmDeleteNode(mmSelectedId)" title="Excluir nó (Del)" class="px-3 py-1.5 bg-red-800/60 hover:bg-red-700 text-red-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-trash"></i></button>
-                    <button onclick="mmExportToEditor()" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 rounded-lg text-xs font-black transition flex items-center gap-1.5"><i class="fa-solid fa-file-import"></i> Inserir no Resumo</button>
-                    <button onclick="closeMindmapEditor()" class="w-8 h-8 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="mmAddChild(mmSelectedId)" title="Adicionar filho (Tab)" class="px-3.5 py-2 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-lg" style="background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 4px 12px rgba(37,99,235,0.3);"><i class="fa-solid fa-plus"></i> Nó</button>
+                    <button onclick="mmAddTextBox()" title="Adicionar caixa de texto" class="px-3.5 py-2 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-lg" style="background:linear-gradient(135deg,#64748b,#475569);box-shadow:0 4px 12px rgba(71,85,105,0.3);"><i class="fa-solid fa-note-sticky"></i> Texto</button>
+                    <button onclick="mmDeleteNode(mmSelectedId)" title="Excluir nó (Del)" class="w-9 h-9 rounded-xl transition flex items-center justify-center hover:-translate-y-0.5" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button onclick="toggleMmTheme()" id="mm-theme-btn" title="Alternar tema (dia/noite)" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-blue-800/40 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5"><i id="mm-theme-icon" class="fa-solid fa-sun text-yellow-400"></i><span id="mm-theme-label" class="hidden sm:inline">Modo Claro</span></button>
+                    <button onclick="toggleMmFullscreen()" id="mm-fullscreen-btn" title="Maximizar tela" class="w-9 h-9 rounded-xl transition flex items-center justify-center hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;"><i id="mm-fullscreen-icon" class="fa-solid fa-expand text-xs"></i></button>
+                    <button onclick="mmExportToEditor()" class="px-3.5 py-2 text-slate-900 rounded-xl text-xs font-black transition flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-lg" style="background:linear-gradient(135deg,#fde047,#f59e0b);box-shadow:0 4px 12px rgba(245,158,11,0.3);"><i class="fa-solid fa-file-import"></i> Inserir no Resumo</button>
+                    <button onclick="closeMindmapEditor()" class="w-9 h-9 rounded-xl flex items-center justify-center transition hover:-translate-y-0.5" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </div>
             <!-- Hint bar -->
-            <div class="flex flex-wrap items-center gap-3 px-4 py-2 text-[10px] text-gray-600 border-b border-blue-950" style="background:#080d1c;">
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Clique</kbd> selecionar</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">2× clique</kbd> editar</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Tab</kbd> filho</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Enter</kbd> irmão</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Del</kbd> excluir</span>
-                <span><kbd class="bg-white/5 text-gray-400 px-1 rounded">Arraste</kbd> mover</span>
-                <span class="flex items-center gap-1">Cor: <span id="mm-color-swatches" class="inline-flex gap-1 ml-1"></span></span>
-                <span class="flex items-center gap-1">Ícone: <span id="mm-emoji-swatches" class="inline-flex gap-1 ml-1 flex-wrap max-w-xs"></span></span>
+            <div class="flex flex-wrap items-center gap-2 px-4 py-2" style="background:rgba(3,6,16,0.6);border-bottom:1px solid rgba(99,140,255,0.1);">
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">Clique</kbd> selecionar</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">2× clique</kbd> editar</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">Tab</kbd> filho</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">Enter</kbd> irmão</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">Del</kbd> excluir</span>
+                <span class="flex items-center gap-1 text-[10px] text-gray-500 font-semibold"><kbd class="bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md border border-white/5">Arraste</kbd> mover</span>
+                <span class="w-px h-4 bg-white/10 mx-1"></span>
+                <span class="flex items-center gap-1.5 text-[10px] text-gray-500 font-semibold">Cor <span id="mm-color-swatches" class="inline-flex gap-1.5 ml-0.5"></span></span>
+                <span class="flex items-center gap-1.5 text-[10px] text-gray-500 font-semibold">Marca-texto <span id="mm-highlight-swatches" class="inline-flex gap-1.5 ml-0.5"></span></span>
+                <span class="flex items-center gap-1.5 text-[10px] text-gray-500 font-semibold">Ícone <span id="mm-emoji-swatches" class="inline-flex gap-1 ml-0.5 flex-wrap max-w-xs"></span></span>
             </div>
             <!-- Canvas -->
-            <div class="flex-1 relative overflow-hidden" id="mm-canvas-wrap">
+            <div class="flex-1 relative overflow-hidden" id="mm-canvas-wrap" style="background:radial-gradient(ellipse at 50% 40%,rgba(59,90,220,0.07),transparent 65%),#060913;">
                 <svg id="mm-svg" width="100%" height="100%" style="position:absolute;inset:0;cursor:default;">
                     <defs>
-                        <filter id="mm-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        <filter id="mm-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        <filter id="mm-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/></filter>
+                        <pattern id="mm-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+                            <circle id="mm-grid-dot" cx="1.5" cy="1.5" r="1.5" fill="rgba(148,163,184,0.12)"/>
+                        </pattern>
                     </defs>
-                    <g id="mm-links"></g>
-                    <g id="mm-nodes"></g>
+                    <g id="mm-pan-group">
+                        <rect x="-4000" y="-4000" width="8000" height="8000" fill="url(#mm-grid)" style="pointer-events:none;"/>
+                        <g id="mm-links"></g>
+                        <g id="mm-nodes"></g>
+                    </g>
                 </svg>
+                <div class="absolute bottom-4 right-4 flex flex-col gap-1.5">
+                    <button onclick="mmResetPan()" title="Centralizar mapa" class="w-9 h-9 rounded-xl flex items-center justify-center transition hover:-translate-y-0.5 text-gray-300 hover:text-white" style="background:rgba(15,23,42,0.85);border:1px solid rgba(99,140,255,0.2);backdrop-filter:blur(4px);box-shadow:0 4px 14px rgba(0,0,0,0.4);"><i class="fa-solid fa-crosshairs text-xs"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -4868,16 +4887,36 @@
             const tzNow = new Date(n.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
             const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-            let startISO = null, endISO = null;
+            // O ciclo de estudos representa o alvo de UMA semana. Para Mês/Total, projetamos
+            // esse alvo semanal proporcionalmente ao número de dias do período, em vez de
+            // comparar sempre a mesma "1 volta" do ciclo contra um acumulado maior.
+            let startISO = null, endISO = null, weekMultiplier = 1;
             if (period === 'semana') {
                 const dow = (tzNow.getDay() + 6) % 7;
                 const monday = new Date(tzNow); monday.setDate(tzNow.getDate() - dow);
                 const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
                 startISO = toISO(monday); endISO = toISO(sunday);
+                weekMultiplier = 1;
             } else if (period === 'mes') {
                 const first = new Date(tzNow.getFullYear(), tzNow.getMonth(), 1);
                 const last = new Date(tzNow.getFullYear(), tzNow.getMonth() + 1, 0);
                 startISO = toISO(first); endISO = toISO(last);
+                weekMultiplier = last.getDate() / 7; // dias do mês / 7
+            } else { // total
+                // Ponto de partida: primeiro registro no histórico (início real dos estudos).
+                let firstDate = null;
+                (studyDb.history || []).forEach(s => {
+                    if (s.date && (!firstDate || s.date < firstDate)) firstDate = s.date;
+                });
+                if (firstDate) {
+                    const [fy, fm, fd] = firstDate.split('-').map(Number);
+                    const firstDateObj = new Date(fy, fm - 1, fd);
+                    const diffDays = Math.max(1, Math.round((tzNow - firstDateObj) / 86400000) + 1);
+                    weekMultiplier = diffDays / 7;
+                } else {
+                    weekMultiplier = 1;
+                }
+                startISO = null; endISO = null; // considera todo o histórico
             }
 
             const planned = {};
@@ -4892,7 +4931,7 @@
 
             // Considera apenas matérias presentes no ciclo, para manter o gráfico focado no planejamento
             const subjects = Object.keys(planned).sort((a,b) => planned[b]-planned[a]);
-            const plannedVals = subjects.map(s => Math.round(planned[s]));
+            const plannedVals = subjects.map(s => Math.round(planned[s] * weekMultiplier));
             const actualVals = subjects.map(s => Math.round(actual[s] || 0));
 
             if (cyclePvaChart) { cyclePvaChart.destroy(); cyclePvaChart = null; }
@@ -8141,6 +8180,8 @@ function renderHistoryTab() {
         let mmDragging = null, mmDragOffX = 0, mmDragOffY = 0;
         let mmSvg, mmLinksG, mmNodesG, mmWrap, mmPanG;
         let mmPanX = 0, mmPanY = 0, mmIsPanning = false, mmPanStartX = 0, mmPanStartY = 0;
+        let mmIsLight = false;
+        let mmPointerMoved = false, mmPointerDownX = 0, mmPointerDownY = 0, mmWasSelectedOnDown = false;
         let mmLastClickId = null, mmLastClickTime = 0;
 
         function openMindmapEditor() {
@@ -8157,17 +8198,27 @@ function renderHistoryTab() {
             // color swatches
             const sw = document.getElementById('mm-color-swatches');
             sw.innerHTML = MM_COLORS.map(c =>
-                `<span onclick="mmSetColor('${c}')" style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${c};cursor:pointer;border:2px solid transparent;" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='transparent'"></span>`
+                `<span onclick="mmSetColor('${c}')" style="display:inline-block;width:15px;height:15px;border-radius:999px;background:${c};cursor:pointer;border:2px solid rgba(255,255,255,0.15);box-shadow:0 2px 6px rgba(0,0,0,0.35);transition:transform .15s,border-color .15s;" onmouseover="this.style.transform='scale(1.25)';this.style.borderColor='white'" onmouseout="this.style.transform='scale(1)';this.style.borderColor='rgba(255,255,255,0.15)'"></span>`
             ).join('');
+            // highlight (marca-texto) swatches
+            const hsw = document.getElementById('mm-highlight-swatches');
+            const MM_HL_COLORS = ['#fde047','#4ade80','#60a5fa','#f472b6'];
+            hsw.innerHTML = MM_HL_COLORS.map(c =>
+                `<span onclick="mmSetHighlight('${c}')" style="display:inline-block;width:15px;height:15px;border-radius:4px;background:${c};cursor:pointer;border:2px solid rgba(255,255,255,0.15);box-shadow:0 2px 6px rgba(0,0,0,0.35);transition:transform .15s,border-color .15s;" onmouseover="this.style.transform='scale(1.25)';this.style.borderColor='white'" onmouseout="this.style.transform='scale(1)';this.style.borderColor='rgba(255,255,255,0.15)'"></span>`
+            ).join('') + `<span onclick="mmSetHighlight(null)" title="Remover marca" style="display:inline-block;width:15px;height:15px;border-radius:4px;background:transparent;cursor:pointer;border:2px dashed rgba(255,255,255,0.35);"></span>`;
             // icon picker button
             const esw = document.getElementById('mm-emoji-swatches');
-            esw.innerHTML = `<button onclick="mmOpenIconPicker()" style="cursor:pointer;font-size:11px;background:#1e3a5f;color:#7dd3fc;border:1px solid #3b82f6;border-radius:6px;padding:2px 8px;font-weight:700;">🎨 Escolher ícone</button>`;
-            // SVG events
-            mmSvg.onmousedown = mmOnSvgMouseDown;
-            mmSvg.onmousemove = mmOnMouseMove;
-            mmSvg.onmouseup   = mmOnMouseUp;
-            mmSvg.addEventListener('mouseleave', mmOnMouseUp);
+            esw.innerHTML = `<button onclick="mmOpenIconPicker()" style="cursor:pointer;font-size:10.5px;background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(139,92,246,0.14));color:#93c5fd;border:1px solid rgba(99,140,255,0.3);border-radius:999px;padding:3px 10px;font-weight:700;transition:transform .15s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">🎨 Escolher ícone</button>`;
+            // SVG events (Pointer Events cobrem mouse, caneta E toque — funciona em PC, tablet e celular)
+            mmSvg.style.touchAction = 'none';
+            mmSvg.onpointerdown = mmOnSvgMouseDown;
+            mmSvg.onpointermove = mmOnMouseMove;
+            mmSvg.onpointerup   = mmOnMouseUp;
+            mmSvg.addEventListener('pointerleave', mmOnMouseUp);
+            mmSvg.addEventListener('pointercancel', mmOnMouseUp);
             document.addEventListener('keydown', mmOnKey);
+            // Aplica o tema atual (dia/noite) ao (re)abrir
+            applyMmTheme();
         }
 
         function closeMindmapEditor() {
@@ -8201,6 +8252,48 @@ function renderHistoryTab() {
             return id;
         }
 
+        // Quebra o texto de uma caixa de texto em linhas que cabem na largura da caixa
+        function mmWrapLines(label, maxWidth, fontSize) {
+            const charW = (fontSize||13) * 0.56;
+            const maxChars = Math.max(6, Math.floor(maxWidth / charW));
+            const words = (label || '').split(/\s+/).filter(Boolean);
+            const lines = [];
+            let cur = '';
+            words.forEach(w => {
+                const test = cur ? cur + ' ' + w : w;
+                if (test.length > maxChars && cur) { lines.push(cur); cur = w; }
+                else cur = test;
+            });
+            if (cur || !lines.length) lines.push(cur);
+            return lines;
+        }
+
+        // Clareia/escurece uma cor hex (percent: -1..1)
+        function mmShade(hex, percent) {            hex = (hex || '#3b82f6').replace('#','');
+            if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+            const num = parseInt(hex, 16);
+            let r = (num >> 16), g = (num >> 8) & 0x00FF, b = num & 0x0000FF;
+            const amt = Math.round(255 * percent);
+            r = Math.max(0, Math.min(255, r + amt));
+            g = Math.max(0, Math.min(255, g + amt));
+            b = Math.max(0, Math.min(255, b + amt));
+            return '#' + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
+        }
+
+        // Garante que existe um <linearGradient> para esta cor e devolve seu id
+        function mmEnsureGradient(defs, color) {
+            const gid = 'mm-grad-' + color.replace('#','');
+            if (!defs.querySelector('#' + gid)) {
+                const grad = document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+                grad.id = gid;
+                grad.setAttribute('x1','0%'); grad.setAttribute('y1','0%');
+                grad.setAttribute('x2','100%'); grad.setAttribute('y2','100%');
+                grad.innerHTML = `<stop offset="0%" stop-color="${mmShade(color,0.18)}"/><stop offset="100%" stop-color="${mmShade(color,-0.12)}"/>`;
+                defs.appendChild(grad);
+            }
+            return gid;
+        }
+
         function mmRender() {
             if (!mmLinksG) return;
             // Close any open edit field
@@ -8210,7 +8303,8 @@ function renderHistoryTab() {
             if (mmPanG) mmPanG.setAttribute('transform', `translate(${mmPanX},${mmPanY})`);
             mmLinksG.innerHTML = '';
             mmNodesG.innerHTML = '';
-            // Draw links (curved)
+            const defs = mmSvg.querySelector('defs');
+            // Draw links (curved, gradient stroke, soft shadow)
             mmLinks.forEach(lk => {
                 const from = mmNodes.find(n=>n.id===lk.from);
                 const to   = mmNodes.find(n=>n.id===lk.to);
@@ -8220,67 +8314,118 @@ function renderHistoryTab() {
                 path.setAttribute('d', `M${from.x},${from.y} C${mx},${from.y} ${mx},${to.y} ${to.x},${to.y}`);
                 path.setAttribute('fill','none');
                 path.setAttribute('stroke', to.color || '#3b82f6');
-                path.setAttribute('stroke-width','2.5');
+                path.setAttribute('stroke-width', '3');
                 path.setAttribute('stroke-linecap','round');
-                path.setAttribute('opacity','0.7');
+                path.setAttribute('opacity','0.55');
                 mmLinksG.appendChild(path);
             });
             // Draw nodes
             mmNodes.forEach(n => {
+                const gradId = mmEnsureGradient(defs, n.color);
                 const g = document.createElementNS('http://www.w3.org/2000/svg','g');
                 g.setAttribute('transform',`translate(${n.x},${n.y})`);
                 g.style.cursor = 'pointer';
+                const isSel = n.id === mmSelectedId;
 
-                // Measure text
-                const pad = n.isRoot ? 20 : 14;
-                const charW = (n.fontSize||13) * 0.6;
-                const rw = Math.max(60, n.label.length * charW + pad*2);
-                const rh = n.isRoot ? 44 : 32;
+                let rw, rh, lines = null;
+                if (n.isText) {
+                    rw = n.w || 220; rh = n.h || 110;
+                    lines = mmWrapLines(n.label, rw - 28, n.fontSize||13);
+                } else {
+                    const pad = n.isRoot ? 22 : 16;
+                    const charW = (n.fontSize||13) * 0.6;
+                    rw = Math.max(64, n.label.length * charW + pad*2);
+                    rh = n.isRoot ? 46 : 34;
+                }
+
+                // Anel de seleção (halo pontilhado por trás do nó)
+                if (isSel) {
+                    const ring = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                    ring.setAttribute('x', -rw/2 - 6); ring.setAttribute('y', -rh/2 - 6);
+                    ring.setAttribute('width', rw+12); ring.setAttribute('height', rh+12);
+                    ring.setAttribute('rx', (n.isRoot ? 24 : (n.isText ? 14 : 18)) + 6);
+                    ring.setAttribute('fill','none');
+                    ring.setAttribute('stroke', n.color);
+                    ring.setAttribute('stroke-width','1.5');
+                    ring.setAttribute('stroke-dasharray','4 4');
+                    ring.setAttribute('opacity','0.55');
+                    g.appendChild(ring);
+                }
 
                 const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
                 rect.setAttribute('x', -rw/2); rect.setAttribute('y', -rh/2);
                 rect.setAttribute('width', rw); rect.setAttribute('height', rh);
-                rect.setAttribute('rx', n.isRoot ? 22 : 16);
-                rect.setAttribute('fill', n.isRoot ? n.color : 'rgba(13,21,48,0.9)');
+                rect.setAttribute('rx', n.isRoot ? 22 : (n.isText ? 14 : 16));
+                if (n.isText) {
+                    rect.setAttribute('fill', mmIsLight ? 'rgba(255,255,255,0.96)' : 'rgba(15,23,42,0.88)');
+                    rect.setAttribute('stroke-dasharray', '6 4');
+                } else {
+                    rect.setAttribute('fill', n.isRoot ? `url(#${gradId})` : (mmIsLight ? 'rgba(255,255,255,0.94)' : 'rgba(15,23,42,0.72)'));
+                }
                 rect.setAttribute('stroke', n.color);
-                rect.setAttribute('stroke-width', n.isRoot ? 3 : 2);
-                if (n.id === mmSelectedId) {
-                    rect.setAttribute('filter','url(#mm-glow)');
-                    rect.setAttribute('stroke-width', n.isRoot ? 4 : 3);
+                rect.setAttribute('stroke-width', n.isRoot ? 0 : (isSel ? 2.5 : 1.5));
+                rect.setAttribute('filter', isSel ? 'url(#mm-glow)' : 'url(#mm-shadow)');
+                g.appendChild(rect);
+
+                // Marca-texto: faixa de destaque atrás do texto (independente da cor do nó)
+                if (n.highlight) {
+                    const hl = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                    hl.setAttribute('x', -rw/2 + 4); hl.setAttribute('y', -rh/2 + 4);
+                    hl.setAttribute('width', rw - 8); hl.setAttribute('height', rh - 8);
+                    hl.setAttribute('rx', n.isRoot ? 18 : (n.isText ? 10 : 12));
+                    hl.setAttribute('fill', n.highlight);
+                    hl.setAttribute('opacity', mmIsLight ? '0.45' : '0.3');
+                    hl.setAttribute('pointer-events','none');
+                    g.appendChild(hl);
                 }
 
-                const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-                text.setAttribute('text-anchor','middle');
-                text.setAttribute('dominant-baseline','middle');
-                text.setAttribute('fill', n.isRoot ? '#0f172a' : n.color);
-                text.setAttribute('font-size', n.fontSize||13);
-                text.setAttribute('font-weight', n.isRoot ? '900' : '700');
-                text.setAttribute('font-family', 'system-ui, sans-serif');
-                text.setAttribute('pointer-events','none');
-                text.textContent = n.label;
+                const textColor = n.isRoot ? '#0f172a' : (mmIsLight ? '#1e293b' : '#e2e8f0');
+                if (n.isText) {
+                    const lineH = (n.fontSize||13) * 1.35;
+                    const startY = -((lines.length-1) * lineH) / 2;
+                    lines.forEach((ln, i) => {
+                        const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+                        t.setAttribute('x', -rw/2 + 14);
+                        t.setAttribute('y', startY + i*lineH);
+                        t.setAttribute('text-anchor','start');
+                        t.setAttribute('dominant-baseline','middle');
+                        t.setAttribute('fill', textColor);
+                        t.setAttribute('font-size', n.fontSize||13);
+                        t.setAttribute('font-weight','600');
+                        t.setAttribute('font-family','system-ui, sans-serif');
+                        t.setAttribute('pointer-events','none');
+                        t.textContent = ln;
+                        g.appendChild(t);
+                    });
+                } else {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    text.setAttribute('text-anchor','middle');
+                    text.setAttribute('dominant-baseline','middle');
+                    text.setAttribute('fill', textColor);
+                    text.setAttribute('font-size', n.fontSize||13);
+                    text.setAttribute('font-weight', n.isRoot ? '900' : '700');
+                    text.setAttribute('font-family', 'system-ui, sans-serif');
+                    text.setAttribute('pointer-events','none');
+                    text.textContent = n.label;
+                    g.appendChild(text);
+                }
 
-                g.appendChild(rect); g.appendChild(text);
-                g.addEventListener('mousedown', e => { e.stopPropagation(); mmStartDrag(e, n); });
+                g.addEventListener('pointerdown', e => { e.stopPropagation(); mmStartDrag(e, n); });
+                g.addEventListener('dblclick', e => { e.stopPropagation(); e.preventDefault(); mmSelect(n.id); mmStartEdit(n); });
                 mmNodesG.appendChild(g);
             });
         }
 
         function mmStartDrag(e, n) {
-            const now = Date.now();
-            const isDbl = (now - mmLastClickTime < 300 && mmLastClickId === n.id);
-            mmLastClickTime = now;
-            mmLastClickId = n.id;
-
-            if (isDbl) {
-                // Double click detected before DOM is rebuilt — edit immediately
-                mmLastClickId = null;
-                mmSelect(n.id);
-                mmStartEdit(n);
-                return; // don't start dragging
-            }
-
+            // Se o nó já estava selecionado e o usuário tocou/clicou de novo sem arrastar,
+            // trata como "editar" — funciona em PC (clique), tablet e celular (toque),
+            // sem depender de duplo-clique (que não é confiável em telas de toque).
+            mmWasSelectedOnDown = (mmSelectedId === n.id);
             mmSelect(n.id);
             mmDragging = n;
+            mmPointerMoved = false;
+            mmPointerDownX = e.clientX;
+            mmPointerDownY = e.clientY;
             const svgRect = mmSvg.getBoundingClientRect();
             mmDragOffX = e.clientX - svgRect.left - n.x - mmPanX;
             mmDragOffY = e.clientY - svgRect.top  - n.y - mmPanY;
@@ -8300,10 +8445,16 @@ function renderHistoryTab() {
 
         function mmOnMouseMove(e) {
             if (mmDragging) {
-                const svgRect = mmSvg.getBoundingClientRect();
-                mmDragging.x = e.clientX - svgRect.left - mmDragOffX - mmPanX;
-                mmDragging.y = e.clientY - svgRect.top  - mmDragOffY - mmPanY;
-                mmRender();
+                // Só considera "arraste" de verdade após passar de um pequeno limiar —
+                // evita que um leve tremor do dedo/mouse atrapalhe o toque-para-editar.
+                const dx = e.clientX - mmPointerDownX, dy = e.clientY - mmPointerDownY;
+                if (!mmPointerMoved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) mmPointerMoved = true;
+                if (mmPointerMoved) {
+                    const svgRect = mmSvg.getBoundingClientRect();
+                    mmDragging.x = e.clientX - svgRect.left - mmDragOffX - mmPanX;
+                    mmDragging.y = e.clientY - svgRect.top  - mmDragOffY - mmPanY;
+                    mmRender();
+                }
             } else if (mmIsPanning) {
                 mmPanX = e.clientX - mmPanStartX;
                 mmPanY = e.clientY - mmPanStartY;
@@ -8312,6 +8463,10 @@ function renderHistoryTab() {
         }
 
         function mmOnMouseUp() {
+            // Segundo toque/clique no mesmo nó, sem arrastar → abre a edição do campo
+            if (mmDragging && !mmPointerMoved && mmWasSelectedOnDown && !mmEditingId) {
+                mmStartEdit(mmDragging);
+            }
             mmDragging = null;
             mmIsPanning = false;
             if (mmSvg) mmSvg.style.cursor = 'default';
@@ -8328,13 +8483,56 @@ function renderHistoryTab() {
             if (old) old.remove();
 
             mmEditingId = n.id;
+            const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+            fo.id = 'mm-edit-fo';
+
+            if (n.isText) {
+                // Caixa de texto: área multilinha, mesmo tamanho da caixa
+                const rw = n.w || 220, rh = n.h || 110;
+                fo.setAttribute('x', n.x + mmPanX - rw / 2);
+                fo.setAttribute('y', n.y + mmPanY - rh / 2);
+                fo.setAttribute('width',  rw);
+                fo.setAttribute('height', rh);
+
+                const ta = document.createElement('textarea');
+                ta.value = (n.label === 'Clique duas vezes para escrever...') ? '' : n.label;
+                ta.placeholder = 'Escreva aqui...';
+                ta.style.cssText = `
+                    display:block; width:100%; height:100%; box-sizing:border-box; resize:none;
+                    text-align:left; font-weight:600; font-size:${n.fontSize || 13}px; line-height:1.35;
+                    font-family:system-ui, sans-serif;
+                    background:${mmIsLight ? '#ffffff' : '#0f172a'};
+                    color:${mmIsLight ? '#1e293b' : '#f1f5f9'};
+                    border:none; border-radius:14px;
+                    outline:2.5px dashed ${n.color};
+                    box-shadow:0 8px 28px rgba(0,0,0,0.6);
+                    padding:10px 12px; cursor:text;
+                `;
+                fo.appendChild(ta);
+                mmSvg.appendChild(fo);
+                requestAnimationFrame(() => { ta.focus(); });
+
+                const finish = () => {
+                    n.label = ta.value.trim() || 'Clique duas vezes para escrever...';
+                    fo.remove();
+                    mmEditingId = null;
+                    mmRender();
+                };
+                ta.addEventListener('blur', finish);
+                ta.addEventListener('keydown', e => {
+                    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ta.removeEventListener('blur', finish); finish(); }
+                    // Enter quebra linha normalmente; Ctrl/Cmd+Enter finaliza
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); ta.removeEventListener('blur', finish); finish(); }
+                    e.stopPropagation();
+                });
+                return;
+            }
+
             const charW = (n.fontSize || 13) * 0.62;
             const rw = Math.max(140, n.label.length * charW + 50);
             const rh = 38;
 
             // Use foreignObject INSIDE the SVG (outside pan group so coords are absolute SVG space)
-            const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-            fo.id = 'mm-edit-fo';
             // Position in SVG space = node data coords + pan offset
             fo.setAttribute('x',      n.x + mmPanX - rw / 2);
             fo.setAttribute('y',      n.y + mmPanY - rh / 2);
@@ -8346,11 +8544,11 @@ function renderHistoryTab() {
             inp.style.cssText = `
                 display:block; width:100%; height:${rh}px; box-sizing:border-box;
                 text-align:center; font-weight:700; font-size:${n.fontSize || 13}px;
-                background:${n.isRoot ? n.color : '#1e3a5f'};
-                color:${n.isRoot ? '#0f172a' : '#fff'};
-                border:none; border-radius:10px;
-                outline:3px solid ${n.color};
-                box-shadow:0 4px 24px rgba(0,0,0,0.8);
+                background:${n.isRoot ? n.color : (mmIsLight ? '#f1f5f9' : '#16213f')};
+                color:${n.isRoot ? '#0f172a' : (mmIsLight ? '#1e293b' : '#fff')};
+                border:none; border-radius:12px;
+                outline:2.5px solid ${n.color};
+                box-shadow:0 8px 28px rgba(0,0,0,0.6);
                 padding:0 10px; cursor:text;
             `;
             fo.appendChild(inp);
@@ -8368,7 +8566,12 @@ function renderHistoryTab() {
             };
             inp.addEventListener('blur',    finish);
             inp.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); inp.removeEventListener('blur', finish); finish(); }
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    inp.removeEventListener('blur', finish);
+                    finish();
+                }
             });
         }
 
@@ -8413,6 +8616,97 @@ function renderHistoryTab() {
             mmSelect(null);
         }
 
+        function toggleMmFullscreen() {
+            const panel = document.getElementById('mm-panel');
+            if (!panel) return;
+            const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!isFs) {
+                const req = panel.requestFullscreen || panel.webkitRequestFullscreen;
+                if (req) req.call(panel).catch(()=>{});
+            } else {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                if (exit) exit.call(document).catch ? exit.call(document).catch(()=>{}) : exit.call(document);
+            }
+        }
+        window.toggleMmFullscreen = toggleMmFullscreen;
+        ['fullscreenchange','webkitfullscreenchange'].forEach(ev => {
+            document.addEventListener(ev, () => {
+                const icon = document.getElementById('mm-fullscreen-icon');
+                const panel = document.getElementById('mm-panel');
+                if (!icon || !panel) return;
+                const isFs = (document.fullscreenElement || document.webkitFullscreenElement) === panel;
+                icon.className = isFs ? 'fa-solid fa-compress text-xs' : 'fa-solid fa-expand text-xs';
+                if (isFs) {
+                    panel.style.width = '100vw'; panel.style.height = '100vh';
+                    panel.style.maxWidth = 'none'; panel.style.borderRadius = '0';
+                } else {
+                    panel.style.width = '96vw'; panel.style.height = '90vh';
+                    panel.style.maxWidth = '1200px'; panel.style.borderRadius = '24px';
+                }
+            });
+        });
+
+        function toggleMmTheme() {
+            mmIsLight = !mmIsLight;
+            applyMmTheme();
+        }
+        window.toggleMmTheme = toggleMmTheme;
+
+        function applyMmTheme() {
+            const panel  = document.getElementById('mm-panel');
+            const header = document.getElementById('mm-header');
+            const label  = document.getElementById('mm-header-label');
+            const title  = document.getElementById('mm-title');
+            const wrap   = document.getElementById('mm-canvas-wrap');
+            const dot    = document.getElementById('mm-grid-dot');
+            const icon   = document.getElementById('mm-theme-icon');
+            const btmLbl = document.getElementById('mm-theme-label');
+            if (!panel) return;
+            if (mmIsLight) {
+                panel.style.background  = 'linear-gradient(160deg,#ffffff 0%,#f1f5f9 55%,#e2e8f0 100%)';
+                header.style.background = 'linear-gradient(90deg,rgba(59,90,220,0.08),rgba(139,92,246,0.05) 60%,transparent)';
+                if (label) { label.classList.remove('text-white'); label.style.color = '#0f172a'; }
+                if (title) title.style.color = '#0f172a';
+                wrap.style.background = 'radial-gradient(ellipse at 50% 40%,rgba(59,90,220,0.06),transparent 65%),#f8fafc';
+                if (dot) dot.setAttribute('fill','rgba(71,85,105,0.22)');
+                if (icon)   icon.className = 'fa-solid fa-moon text-blue-500';
+                if (btmLbl) btmLbl.innerText = 'Modo Escuro';
+            } else {
+                panel.style.background  = 'linear-gradient(160deg,#0b1024 0%,#080c1c 55%,#070a17 100%)';
+                header.style.background = 'linear-gradient(90deg,rgba(59,90,220,0.16),rgba(139,92,246,0.10) 60%,transparent)';
+                if (label) { label.style.color = ''; label.classList.add('text-white'); }
+                if (title) title.style.color = '';
+                wrap.style.background = 'radial-gradient(ellipse at 50% 40%,rgba(59,90,220,0.07),transparent 65%),#060913';
+                if (dot) dot.setAttribute('fill','rgba(148,163,184,0.12)');
+                if (icon)   icon.className = 'fa-solid fa-sun text-yellow-400';
+                if (btmLbl) btmLbl.innerText = 'Modo Claro';
+            }
+            mmRender();
+        }
+        window.applyMmTheme = applyMmTheme;
+
+        function mmAddTextBox() {
+            const wrapEl = mmWrap;
+            const cx = (wrapEl ? wrapEl.clientWidth/2 : 400) - mmPanX;
+            const cy = (wrapEl ? wrapEl.clientHeight/2 : 300) - mmPanY;
+            const id = mmNextId++;
+            mmNodes.push({id, parentId: null, label: 'Clique duas vezes para escrever...',
+                x: cx, y: cy, color: '#64748b', fontSize: 13, isRoot: false,
+                isText: true, w: 220, h: 110, highlight: null});
+            mmSelect(id);
+            mmRender();
+            return id;
+        }
+        window.mmAddTextBox = mmAddTextBox;
+
+        function mmSetHighlight(color) {
+            const n = mmNodes.find(n=>n.id===mmSelectedId);
+            if (!n) { showAlert('Selecione um nó primeiro!'); return; }
+            n.highlight = (n.highlight === color) ? null : color;
+            mmRender();
+        }
+        window.mmSetHighlight = mmSetHighlight;
+
         function mmSetColor(color) {
             const n = mmNodes.find(n=>n.id===mmSelectedId);
             if (!n) return;
@@ -8445,9 +8739,13 @@ function renderHistoryTab() {
             // Get bounding box of all nodes
             let minX=9999,minY=9999,maxX=-9999,maxY=-9999;
             mmNodes.forEach(n=>{
-                const charW=(n.fontSize||13)*0.62;
-                const rw=Math.max(60,n.label.length*charW+28);
-                const rh=n.isRoot?44:32;
+                let rw, rh;
+                if (n.isText) { rw = n.w||220; rh = n.h||110; }
+                else {
+                    const charW=(n.fontSize||13)*0.62;
+                    rw=Math.max(60,n.label.length*charW+28);
+                    rh=n.isRoot?44:32;
+                }
                 minX=Math.min(minX,n.x-rw/2-10);
                 minY=Math.min(minY,n.y-rh/2-10);
                 maxX=Math.max(maxX,n.x+rw/2+10);
@@ -8455,24 +8753,50 @@ function renderHistoryTab() {
             });
             const pad=40, vw=maxX-minX+pad*2, vh=maxY-minY+pad*2;
             // Rebuild SVG as a self-contained string (no live references)
-            let linksSVG='', nodesSVG='';
+            let linksSVG='', nodesSVG='', gradDefs='', gradIds={};
             mmLinks.forEach(lk=>{
                 const from=mmNodes.find(n=>n.id===lk.from), to=mmNodes.find(n=>n.id===lk.to);
                 if(!from||!to) return;
                 const mx=(from.x+to.x)/2;
-                linksSVG+=`<path d="M${from.x},${from.y} C${mx},${from.y} ${mx},${to.y} ${to.x},${to.y}" fill="none" stroke="${to.color||'#3b82f6'}" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>`;
+                linksSVG+=`<path d="M${from.x},${from.y} C${mx},${from.y} ${mx},${to.y} ${to.x},${to.y}" fill="none" stroke="${to.color||'#3b82f6'}" stroke-width="3" stroke-linecap="round" opacity="0.55"/>`;
             });
             mmNodes.forEach(n=>{
+                const esc = (n.label||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+                if (n.isText) {
+                    const rw = n.w||220, rh = n.h||110, rx = 14;
+                    const lines = mmWrapLines(n.label, rw-28, n.fontSize||13);
+                    const lineH = (n.fontSize||13)*1.35;
+                    const startY = -((lines.length-1)*lineH)/2;
+                    let hlRect = '';
+                    if (n.highlight) hlRect = `<rect x="${-rw/2+4}" y="${-rh/2+4}" width="${rw-8}" height="${rh-8}" rx="10" fill="${n.highlight}" opacity="0.3"/>`;
+                    const tspans = lines.map((ln,i)=>`<text x="${-rw/2+14}" y="${startY+i*lineH}" text-anchor="start" dominant-baseline="middle" fill="#e2e8f0" font-size="${n.fontSize||13}" font-weight="600" font-family="system-ui,sans-serif">${ln.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`).join('');
+                    nodesSVG+=`<g transform="translate(${n.x},${n.y})">
+  <rect x="${-rw/2}" y="${-rh/2}" width="${rw}" height="${rh}" rx="${rx}" fill="rgba(15,23,42,0.88)" stroke="${n.color}" stroke-width="1.5" stroke-dasharray="6 4" filter="url(#mmx-shadow)"/>
+  ${hlRect}${tspans}
+</g>`;
+                    return;
+                }
                 const charW=(n.fontSize||13)*0.62;
-                const rw=Math.max(60,n.label.length*charW+28);
-                const rh=n.isRoot?44:32;
+                const rw=Math.max(64,n.label.length*charW+32);
+                const rh=n.isRoot?46:34;
                 const rx=n.isRoot?22:16;
-                const fill=n.isRoot?n.color:'rgba(13,21,48,0.95)';
-                const textColor=n.isRoot?'#0f172a':n.color;
-                const sw=n.isRoot?3:2;
+                const textColor=n.isRoot?'#0f172a':'#e2e8f0';
+                const sw=n.isRoot?0:1.5;
+                let fill;
+                if (n.isRoot) {
+                    if (!gradIds[n.color]) {
+                        const gid = 'mmx-grad-' + n.color.replace('#','');
+                        gradDefs += `<linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${mmShade(n.color,0.18)}"/><stop offset="100%" stop-color="${mmShade(n.color,-0.12)}"/></linearGradient>`;
+                        gradIds[n.color] = gid;
+                    }
+                    fill = `url(#${gradIds[n.color]})`;
+                } else {
+                    fill = 'rgba(15,23,42,0.72)';
+                }
+                const hlRect = n.highlight ? `<rect x="${-rw/2+4}" y="${-rh/2+4}" width="${rw-8}" height="${rh-8}" rx="${n.isRoot?18:12}" fill="${n.highlight}" opacity="0.3"/>` : '';
                 nodesSVG+=`<g transform="translate(${n.x},${n.y})">
-  <rect x="${-rw/2}" y="${-rh/2}" width="${rw}" height="${rh}" rx="${rx}" fill="${fill}" stroke="${n.color}" stroke-width="${sw}"/>
-  <text text-anchor="middle" dominant-baseline="middle" fill="${textColor}" font-size="${n.fontSize||13}" font-weight="${n.isRoot?900:700}" font-family="system-ui,sans-serif">${n.label.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>
+  <rect x="${-rw/2}" y="${-rh/2}" width="${rw}" height="${rh}" rx="${rx}" fill="${fill}" stroke="${n.color}" stroke-width="${sw}" filter="url(#mmx-shadow)"/>
+  ${hlRect}<text text-anchor="middle" dominant-baseline="middle" fill="${textColor}" font-size="${n.fontSize||13}" font-weight="${n.isRoot?900:700}" font-family="system-ui,sans-serif">${esc}</text>
 </g>`;
             });
             const title = document.getElementById('mm-title').value || 'Mapa Mental';
@@ -8486,10 +8810,10 @@ function renderHistoryTab() {
             let nodesSVGFinal = nodesSVG;
             if (isLight) {
                 // No tema claro, o fundo dos nós fica azul bem claro em vez de azul escuro
-                nodesSVGFinal = nodesSVG.replace(/rgba\(13,21,48,0\.9[05]?\)/g, 'rgba(239,246,255,0.95)');
+                nodesSVGFinal = nodesSVG.replace(/rgba\(15,23,42,0\.72\)/g, 'rgba(239,246,255,0.95)');
             }
             // Set aspect ratio preserving height
-            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" style="width:100%;height:auto;display:block;min-height:${Math.min(vh,400)}px;"><g>${linksSVG}</g><g>${nodesSVGFinal}</g></svg>`;
+            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" style="width:100%;height:auto;display:block;min-height:${Math.min(vh,400)}px;"><defs><filter id="mmx-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.35"/></filter>${gradDefs}</defs><g>${linksSVG}</g><g>${nodesSVGFinal}</g></svg>`;
             // Wrapper com data-mindmap="1" para permitir deleção via teclado (Delete/Backspace)
             const uid = 'mm_' + Date.now();
             const html = `<div data-mindmap="1" id="${uid}" contenteditable="false" style="margin:24px 0;border:2px solid ${borderColor};border-radius:16px;padding:16px;background:${bgColor};cursor:default;position:relative;" title="Clique para selecionar · Delete para apagar"><p style="text-align:center;font-weight:900;color:${titleColor};font-size:15px;margin:0 0 10px;">🧠 ${title}</p>${svgStr}<button onclick="this.closest('[data-mindmap]').remove();saveActiveSummary();" style="position:absolute;top:8px;right:10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:8px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:700;" title="Remover mapa">✕ Remover</button></div><p><br></p>`;
@@ -8552,24 +8876,24 @@ function renderHistoryTab() {
             if (existing) { existing.remove(); return; }
             const overlay = document.createElement('div');
             overlay.id = 'mm-icon-picker-modal';
-            overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(4,7,18,0.75);backdrop-filter:blur(6px);';
             const box = document.createElement('div');
-            box.style.cssText = 'background:#0d1530;border:1px solid #3b82f6;border-radius:16px;padding:20px;width:480px;max-width:95vw;max-height:70vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.8);';
+            box.style.cssText = 'background:linear-gradient(160deg,#0d1330,#090d1f);border:1px solid rgba(99,140,255,0.22);border-radius:20px;padding:20px;width:480px;max-width:95vw;max-height:70vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,0.7);';
             let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
               <span style="color:#fbbf24;font-weight:900;font-size:14px;">🎨 Escolher Ícone para o Nó</span>
-              <button onclick="document.getElementById('mm-icon-picker-modal').remove()" style="background:#1e3a5f;color:#94a3b8;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
+              <button onclick="document.getElementById('mm-icon-picker-modal').remove()" style="background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:10px;width:28px;height:28px;cursor:pointer;font-size:14px;">✕</button>
             </div>`;
             for (const [cat, icons] of Object.entries(MM_ICON_CATS)) {
                 html += `<div style="margin-bottom:12px;">
                   <div style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${cat}</div>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
                 icons.forEach(em => {
-                    html += `<button onclick="mmPickIcon('${em}')" style="width:36px;height:36px;background:#1e3a5f;border:1px solid #3b5f8a;border-radius:8px;font-size:20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#3b82f6';this.style.transform='scale(1.2)'" onmouseout="this.style.background='#1e3a5f';this.style.transform='scale(1)'" title="${em}">${em}</button>`;
+                    html += `<button onclick="mmPickIcon('${em}')" style="width:36px;height:36px;background:rgba(255,255,255,0.04);border:1px solid rgba(99,140,255,0.18);border-radius:10px;font-size:20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#3b82f6';this.style.transform='scale(1.15)'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.transform='scale(1)'" title="${em}">${em}</button>`;
                 });
                 html += `</div></div>`;
             }
-            html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #1e3a5f;display:flex;gap:8px;justify-content:flex-end;">
-              <button onclick="mmPickIcon('')" style="padding:6px 14px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Remover ícone</button>
+            html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:8px;justify-content:flex-end;">
+              <button onclick="mmPickIcon('')" style="padding:6px 14px;background:rgba(239,68,68,0.14);color:#fca5a5;border:1px solid rgba(239,68,68,0.25);border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Remover ícone</button>
             </div>`;
             box.innerHTML = html;
             overlay.appendChild(box);
