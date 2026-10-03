@@ -670,9 +670,6 @@
                     <i class="fa-solid fa-stopwatch mr-1"></i> Estudar Agora
                     <span id="tab-cronometro-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-blue-950" style="animation: timerPulse 2s infinite;" title="Cronômetro/Pomodoro ativo"></span>
                 </button>
-                <button onclick="switchTab('resumos')" id="tab-resumos" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
-                    <i class="fa-solid fa-book-bookmark mr-1"></i> Meus Resumos
-                </button>
                 <button onclick="switchTab('historico')" id="tab-historico" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 text-gray-300 hover:text-white relative">
                     <i class="fa-solid fa-history mr-1"></i> Histórico
                 </button>
@@ -1324,6 +1321,10 @@
                                 <button onclick="resetPomodoro()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition text-sm flex items-center gap-2">
                                     <i class="fa-solid fa-rotate-left"></i> Zerar
                                 </button>
+                            </div>
+                            <div class="mt-3">
+                                <button onclick="pomoEnableNotifications()" id="btn-pomo-notify" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white border border-blue-700 transition">🔔 Ativar notificações</button>
+                                <p id="pomo-notify-hint" class="text-[10px] text-gray-500 mt-1"></p>
                             </div>
                         </div>
 
@@ -2073,6 +2074,15 @@
                 </div>
             </div>
 
+            <!-- Limpeza dos resumos (a aba "Meus Resumos" foi removida do menu) -->
+            <div class="border-t border-blue-900 pt-3 space-y-2">
+                <p class="text-xxs text-gray-400 font-bold uppercase tracking-wider"><i class="fa-solid fa-broom mr-1"></i> Limpeza de resumos</p>
+                <p id="summaries-cleanup-info" class="text-xxs text-gray-500 font-mono">—</p>
+                <button onclick="cleanupSummaries()" class="w-full py-2 bg-red-900/20 hover:bg-red-900/30 text-red-300 font-bold rounded-lg text-xs border border-red-900/50 transition">
+                    <i class="fa-solid fa-file-export mr-1"></i> Exportar backup e limpar resumos do banco
+                </button>
+            </div>
+
             <div class="space-y-1.5 border-t border-blue-900 pt-3">
                 <div class="flex justify-between items-center text-xxs text-gray-400 font-mono">
                     <span>Estado: <strong id="sync-status-text" class="text-yellow-400">Local</strong></span>
@@ -2735,6 +2745,7 @@
 
         function openSyncCenterModal() {
             document.getElementById('modal-sync-center').classList.remove('hidden');
+            try { _refreshSummariesCleanupInfo(); } catch(e) {}
             // Pré-preenche o email salvo se o utilizador não estiver logado
             if (!currentUser) {
                 try {
@@ -2747,6 +2758,97 @@
             }
         }
         function closeSyncCenterModal() { document.getElementById('modal-sync-center').classList.add('hidden'); }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // ── LIMPEZA DOS RESUMOS (a aba "Meus Resumos" foi removida do menu) ───
+        // 1) baixa um backup (JSON restaurável + HTML legível)
+        // 2) pede uma SEGUNDA confirmação, depois de os arquivos terem sido baixados
+        // 3) remove os resumos do banco e grava uma "lápide" por resumo, para que
+        //    a nuvem e os outros aparelhos também os descartem (sem ressuscitar).
+        // ══════════════════════════════════════════════════════════════════════
+        function _summariesStats() {
+            const list = Array.isArray(studyDb.summaries) ? studyDb.summaries : [];
+            return { count: list.length, kb: Math.round(JSON.stringify(list).length / 1024) };
+        }
+        function _refreshSummariesCleanupInfo() {
+            const el = document.getElementById('summaries-cleanup-info');
+            if (!el) return;
+            const st = _summariesStats();
+            el.textContent = st.count === 0 ? 'Nenhum resumo no banco.' : `${st.count} resumo(s) · ${st.kb} KB no banco`;
+        }
+        function _escHtml(v) {
+            return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function _downloadTextFile(name, text, mime) {
+            const blob = new Blob([text], { type: mime + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 15000);
+        }
+        function _buildSummariesReadableHtml(list, stamp) {
+            const items = list.map(sm => {
+                const meta = [sm.subject, sm.topic].filter(Boolean).join(' › ');
+                const content = String(sm.content || '').replace(/<script[\s\S]*?<\/script>/gi, '');
+                return '<section><h2>' + _escHtml(sm.title || 'Resumo Sem Título') + '</h2>' +
+                    '<p class="meta">' + _escHtml(meta) + (sm.tags ? ' · tags: ' + _escHtml(sm.tags) : '') +
+                    ' · criado: ' + _escHtml(sm.created || '') + ' · editado: ' + _escHtml(sm.lastEdited || '') + '</p>' +
+                    '<div class="content">' + content + '</div></section>';
+            }).join('\n');
+            return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+                '<title>Backup de resumos — ' + stamp + '</title><style>' +
+                'body{font-family:system-ui,sans-serif;max-width:860px;margin:24px auto;padding:0 16px;background:#0f172a;color:#e2e8f0;line-height:1.55}' +
+                'section{border-top:2px solid #1e3a8a;padding-top:12px;margin-top:28px}h1,h2{color:#ffd400}.meta{color:#94a3b8;font-size:12px}' +
+                'img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #475569;padding:4px 8px}' +
+                '</style></head><body><h1>Backup de resumos</h1><p class="meta">' + list.length +
+                ' resumo(s) · exportado em ' + stamp + '</p>' + items + '</body></html>';
+        }
+        // Remove todos os resumos do banco e registra uma lápide por resumo.
+        function _removeAllSummaries() {
+            const ids = (studyDb.summaries || []).map(sm => sm.id);
+            if (!studyDb.tombstones) studyDb.tombstones = { history: {}, summaries: {}, syllabusSubjects: {}, syllabusTopics: {} };
+            if (!studyDb.tombstones.summaries) studyDb.tombstones.summaries = {};
+            const ts = new Date().toISOString();
+            ids.forEach(id => { studyDb.tombstones.summaries[id] = ts; });
+            studyDb.summaries = [];
+            return ids.length;
+        }
+        function cleanupSummaries() {
+            try { if (typeof _flushActiveSummarySave === 'function') _flushActiveSummarySave(); } catch(e) {}
+            const st = _summariesStats();
+            if (st.count === 0) { _refreshSummariesCleanupInfo(); return showAlert('Não há resumos no banco para limpar.'); }
+
+            showConfirm(`Vão ser baixados 2 arquivos de backup (JSON + HTML legível) com ${st.count} resumo(s) (${st.kb} KB). Nada é apagado nesta etapa. Continuar?`, () => {
+                let stamp;
+                try {
+                    stamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '');
+                    const list = studyDb.summaries;
+                    const json = JSON.stringify({ app: 'planilha_inteligente_estudei', exportedAt: new Date().toISOString(), count: list.length, summaries: list }, null, 1);
+                    if (!json || json.length < 10) throw new Error('backup vazio');
+                    _downloadTextFile(`resumos_backup_${stamp}.json`, json, 'application/json');
+                    setTimeout(() => {
+                        try { _downloadTextFile(`resumos_backup_${stamp}.html`, _buildSummariesReadableHtml(list, stamp), 'text/html'); } catch(e) { console.warn('Backup HTML falhou:', e); }
+                    }, 700);
+                } catch(e) {
+                    console.error('[Resumos] Falha ao gerar o backup:', e);
+                    return showAlert('Não consegui gerar o backup, então NADA foi apagado. Erro: ' + e.message);
+                }
+                // 2ª confirmação (adiada: handleConfirm zera o callback depois de executá-lo)
+                setTimeout(() => {
+                    showConfirm(`Os arquivos de backup foram baixados? Confira a pasta de Downloads. Só confirme se eles estiverem lá: serão APAGADOS ${st.count} resumo(s) do banco e da nuvem (em todos os seus aparelhos). Para desistir, clique em Cancelar — nada foi apagado.`, () => {
+                        try { if (typeof _activeSummarySaveTimer !== 'undefined' && _activeSummarySaveTimer) { clearTimeout(_activeSummarySaveTimer); _activeSummarySaveTimer = null; } } catch(e) {}
+                        const n = _removeAllSummaries();
+                        try { activeSummaryId = null; } catch(e) {}
+                        saveDatabase();
+                        _refreshSummariesCleanupInfo();
+                        showAlert(`✅ ${n} resumo(s) removido(s) do banco (cerca de ${st.kb} KB). A nuvem e os outros aparelhos serão atualizados na próxima sincronização.`);
+                    });
+                }, 1500);
+            });
+        }
+        window.cleanupSummaries = cleanupSummaries;
 
         // === BANCO DE DADOS PADRÃO PRF ===
         let studyDb = {
@@ -3173,37 +3275,61 @@
         // ══════════════════════════════════════════════════════════════════════
         const CLOUD_CHUNK_MAX_BYTES = 900000; // margem segura abaixo do limite do Firestore
 
+        // OTIMIZAÇÃO (abertura lenta): a versão antiga chamava TextEncoder para CADA
+        // caractere (1 chamada por caractere do JSON — milhões num banco grande).
+        // Agora codifica UMA vez e corta os bytes direto, recuando até uma
+        // fronteira de caractere UTF-8 para nunca partir um caractere ao meio.
+        // Os pedaços gerados são idênticos aos da versão antiga.
         function _splitStringByBytes(str, maxBytes) {
-            const encoder = new TextEncoder();
+            const bytes = new TextEncoder().encode(str);
+            const total = bytes.length;
+            if (total <= maxBytes) return [str]; // sempre pelo menos 1 chunk
+            const decoder = new TextDecoder('utf-8');
             const chunks = [];
-            let current = '';
-            let currentBytes = 0;
-            for (const ch of str) {
-                const chBytes = encoder.encode(ch).length;
-                if (currentBytes + chBytes > maxBytes && current) {
-                    chunks.push(current);
-                    current = '';
-                    currentBytes = 0;
+            let start = 0;
+            while (start < total) {
+                let end = Math.min(start + maxBytes, total);
+                if (end < total) {
+                    while (end > start && (bytes[end] & 0xC0) === 0x80) end--; // não corta no meio de um caractere
+                    if (end === start) end = Math.min(start + maxBytes, total);
                 }
-                current += ch;
-                currentBytes += chBytes;
+                chunks.push(decoder.decode(bytes.subarray(start, end)));
+                start = end;
             }
-            chunks.push(current); // sempre pelo menos 1 chunk, mesmo vazio
             return chunks;
         }
 
+        // Compara conteúdo ignorando a ORDEM das chaves dos objetos. JSON.stringify
+        // comum acusa "mudou" quando só a ordem das chaves difere, o que fazia o
+        // app regravar o banco inteiro na nuvem à toa (e acordar os outros aparelhos).
+        function _stableStringify(obj) {
+            return JSON.stringify(obj, function (k, v) {
+                if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    const o = {};
+                    Object.keys(v).sort().forEach(key => { o[key] = v[key]; });
+                    return o;
+                }
+                return v;
+            });
+        }
+
         // Salva o studyDb inteiro na nuvem, dividido em pedaços de tamanho seguro
-        async function _writeStudyDbToCloud(uid, dbObj) {
+        async function _writeStudyDbToCloud(uid, dbObj, knownOldChunkCount) {
             const jsonStr = JSON.stringify(dbObj);
             const chunks  = _splitStringByBytes(jsonStr, CLOUD_CHUNK_MAX_BYTES);
             const userRef = fbDb.collection('users').doc(uid);
 
             // Descobre quantos chunks existiam antes, pra apagar sobras se os dados encolheram
+            // (se quem chamou já leu o documento, repassa a contagem e evita mais uma ida à rede)
             let oldChunkCount = 0;
-            try {
-                const prev = await userRef.get();
-                if (prev.exists) oldChunkCount = prev.data().chunkCount || 0;
-            } catch(e) { /* segue mesmo assim */ }
+            if (typeof knownOldChunkCount === 'number') {
+                oldChunkCount = knownOldChunkCount;
+            } else {
+                try {
+                    const prev = await userRef.get();
+                    if (prev.exists) oldChunkCount = prev.data().chunkCount || 0;
+                } catch(e) { /* segue mesmo assim */ }
+            }
 
             const batch = fbDb.batch();
             batch.set(userRef, { updatedAt: dbObj.updatedAt, chunkCount: chunks.length, chunked: true });
@@ -3218,9 +3344,9 @@
 
         // Lê o studyDb da nuvem — funciona tanto no formato novo (chunked) quanto
         // no formato antigo (campo único "studyDb"), para não quebrar contas já existentes
-        async function _readStudyDbFromCloud(uid) {
+        async function _readStudyDbFromCloud(uid, prefetchedDoc) {
             const userRef = fbDb.collection('users').doc(uid);
-            const userDoc = await userRef.get();
+            const userDoc = prefetchedDoc || await userRef.get();
             if (!userDoc.exists) return null;
             const data = userDoc.data();
 
@@ -3261,11 +3387,12 @@
 
             const cloudDoc = await fbDb.collection('users').doc(currentUser.uid).get();
             const cloudHasData = cloudDoc.exists && (cloudDoc.data().studyDb || cloudDoc.data().chunkCount);
+            const _cloudChunkCount = cloudDoc.exists ? (cloudDoc.data().chunkCount || 0) : 0;
 
             if (!cloudHasData) {
                 // Nada na nuvem ainda — não há o que mesclar, envia o local.
                 studyDb.updatedAt = studyDb.updatedAt || new Date().toISOString();
-                await _writeStudyDbToCloud(currentUser.uid, studyDb);
+                await _writeStudyDbToCloud(currentUser.uid, studyDb, _cloudChunkCount);
                 await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                 await _setLastSyncAt();
                 _lastAppliedCloudTs = studyDb.updatedAt;
@@ -3273,7 +3400,7 @@
                 return { ok: true, action: 'upload-initial' };
             }
 
-            const cloudData   = await _readStudyDbFromCloud(currentUser.uid);
+            const cloudData   = await _readStudyDbFromCloud(currentUser.uid, cloudDoc); // reaproveita o doc já baixado acima
             const cloudParsed = JSON.parse(cloudData.json);
             if (!cloudParsed.summaries)  cloudParsed.summaries  = [];
             if (!cloudParsed.history)    cloudParsed.history    = [];
@@ -3288,8 +3415,9 @@
             // Só reescreve a nuvem se o merge realmente trouxe algo novo do
             // lado local — evita escritas desnecessárias e evita disparar à
             // toa o listener de outros dispositivos.
-            if (JSON.stringify(merged) !== JSON.stringify(cloudParsed)) {
-                await _writeStudyDbToCloud(currentUser.uid, studyDb);
+            // Comparação independente da ordem das chaves (ver _stableStringify).
+            if (_stableStringify(merged) !== _stableStringify(cloudParsed)) {
+                await _writeStudyDbToCloud(currentUser.uid, studyDb, _cloudChunkCount);
             }
             _lastAppliedCloudTs = studyDb.updatedAt;
             await _setLastSyncAt();
@@ -3669,17 +3797,18 @@
                         await storageSet(STORAGE_KEY, JSON.stringify(studyDb));
                         showToast('⚠️ Dados recuperados de backup após fechamento inesperado!', 'warn', 6000);
                     }
-                } else {
-                    // Dado ok — faz backup preventivo
-                    await _dlpBackup(studyDb);
                 }
+                // (dado ok: o backup preventivo agora acontece no backup adiado, mais abaixo)
             }
 
             // Inicia heartbeat
             _dlpStartHeartbeat();
 
-            // Faz backup inicial
-            await _dlpBackup(studyDb);
+            // Backup inicial ADIADO: serializar o banco inteiro e gravar um slot logo
+            // na abertura competia com o sync e o primeiro render. Roda 30s depois,
+            // com o app já pronto para uso (o dado principal já está salvo no
+            // armazenamento local, então não há perda de proteção relevante).
+            setTimeout(() => { try { _dlpBackup(studyDb); } catch(e) {} }, 30000);
 
             // Agenda backups periódicos
             _dlpScheduleBackup();
@@ -3740,7 +3869,7 @@
 
         // === NAVEGAÇÃO ===
         const ACTIVE_TAB_KEY = 'estudei_active_tab';
-        const VALID_TABS = ['dashboard', 'edital', 'ciclo', 'cronometro', 'historico', 'resumos'];
+        const VALID_TABS = ['dashboard', 'edital', 'ciclo', 'cronometro', 'historico'];
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
@@ -3753,7 +3882,6 @@
             if (activeBtn) activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold transition duration-200 bg-yellow-400 text-slate-900 shadow relative";
             
             renderAllTabs();
-            if (tabId === 'resumos') requestAnimationFrame(_updateEditorScrollFades);
 
             // Lembra qual aba estava aberta, para o navegador (principalmente no
             // mobile) conseguir voltar direto pra ela depois de uma recarga
@@ -5276,6 +5404,7 @@
                         updatePomodoroDisplay();
                         clearInterval(pomodoroInterval);
                         pomodoroInterval = setInterval(_pomoTick, 500);
+                        _pomoScheduleEndTimeout();
                     }
                 }
                 _updateTabTitle();
@@ -5372,6 +5501,7 @@
                         document.getElementById('btn-pomo-pause').classList.remove('hidden');
                         clearInterval(pomodoroInterval);
                         pomodoroInterval = setInterval(_pomoTick, 500);
+                        _pomoScheduleEndTimeout();
                     }
                 } else if (!pomodoroRunning && pomodoroFrozenSeconds != null) {
                     pomodoroSecondsLeft = pomodoroFrozenSeconds;
@@ -5392,42 +5522,227 @@
             if (secondsLeft <= 0) {
                 clearInterval(pomodoroInterval);
                 pomodoroRunning = false;
-                playAlarmSound();
-                _pomoAdvancePhase();
+                _pomoAdvancePhase(); // (alarme + notificação são disparados lá dentro)
             }
         }
 
-        // ── DESPERTADOR DO POMODORO ───────────────────────────────────────
-        // Toca uma sequência de bipes usando Web Audio API (não depende de arquivos externos)
+        // ── DESPERTADOR + NOTIFICAÇÃO DO POMODORO ─────────────────────────
+        // CORREÇÃO (alarme sumiu): o som só tocava dentro do _pomoTick, e o tick
+        // roda apenas com a aba visível (ao ir para segundo plano o intervalo é
+        // cancelado). Se o foco/pausa terminava com a aba escondida — o caso
+        // normal de quem estuda em outra aba/app — nada tocava, e ao voltar a
+        // fase avançava em silêncio. Agora:
+        //  • um temporizador único (_pomoEndTimeout) dispara no instante exato do
+        //    fim, mesmo com a aba em segundo plano (não é cancelado ao esconder);
+        //  • som + notificação saem de _pomoAdvancePhase, que TODOS os caminhos
+        //    (tick, timeout, volta à aba, restauração após recarga) já usam;
+        //  • o áudio é destravado no primeiro toque/clique em qualquer lugar da
+        //    página (antes só ao clicar em Iniciar — após recarregar o navegador
+        //    bloqueava o som).
         let _alarmAudioCtx = null;
-        function playAlarmSound() {
-            try {
-                if (!_alarmAudioCtx) {
-                    _alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const ctx = _alarmAudioCtx;
-                if (ctx.state === 'suspended') ctx.resume();
+        let _swReg = null;
+        let _pomoLastAlertedEndTs = null;
+        let _pomoEndTimeout = null;
+        let _pomoSpeechUnlocked = false;
+        try { if ('speechSynthesis' in window) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices(); } } catch (e) {}
 
-                const beepTimes = [0, 0.35, 0.7, 1.05, 1.4];
-                beepTimes.forEach((t) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = 880;
-                    gain.gain.setValueAtTime(0, ctx.currentTime + t);
-                    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.25);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(ctx.currentTime + t);
-                    osc.stop(ctx.currentTime + t + 0.3);
-                });
+        function _unlockAlarmAudio() {
+            try {
+                if (!_alarmAudioCtx) _alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = _alarmAudioCtx;
+                if (ctx.state !== 'running') {
+                    const pr = ctx.resume();
+                    if (pr && pr.then) pr.then(_pomoMaybeStopUnlockListeners).catch(() => {});
+                }
+                // 1 amostra silenciosa: destrava o áudio no Safari/iOS
+                const buf = ctx.createBuffer(1, 1, 22050);
+                const src = ctx.createBufferSource();
+                src.buffer = buf; src.connect(ctx.destination); src.start(0);
+            } catch (e) {}
+            // destrava também a síntese de voz (precisa de um gesto do usuário em celular/Safari)
+            try {
+                if ('speechSynthesis' in window && !_pomoSpeechUnlocked) {
+                    const u = new SpeechSynthesisUtterance(' ');
+                    u.volume = 0;
+                    window.speechSynthesis.speak(u);
+                    _pomoSpeechUnlocked = true;
+                }
+            } catch (e) {}
+        }
+        const _POMO_UNLOCK_EVENTS = ['pointerdown', 'touchend', 'click', 'keydown'];
+        function _pomoMaybeStopUnlockListeners() {
+            if (_alarmAudioCtx && _alarmAudioCtx.state === 'running') {
+                _POMO_UNLOCK_EVENTS.forEach(ev => document.removeEventListener(ev, _pomoUnlockOnGesture, true));
+            }
+        }
+        function _pomoUnlockOnGesture() { _unlockAlarmAudio(); _pomoMaybeStopUnlockListeners(); }
+        _POMO_UNLOCK_EVENTS.forEach(ev => document.addEventListener(ev, _pomoUnlockOnGesture, { capture: true, passive: true }));
+
+        // Toca uma sequência de bipes usando Web Audio API (não depende de arquivos externos)
+        // Fala uma frase em português (Web Speech API). Retorna true se conseguiu enfileirar a fala.
+        function _pomoSpeak(text) {
+            try {
+                if (!('speechSynthesis' in window) || !text) return false;
+                const synth = window.speechSynthesis;
+                synth.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'pt-BR';
+                u.rate = 1;
+                u.volume = 1;
+                const voices = synth.getVoices ? synth.getVoices() : [];
+                const v = voices.find(x => x.lang === 'pt-BR') || voices.find(x => (x.lang || '').toLowerCase().startsWith('pt'));
+                if (v) u.voice = v;
+                synth.speak(u);
+                return true;
+            } catch (e) { return false; }
+        }
+
+        // Fim de fase: fala a mensagem (ou, sem suporte a voz, toca os bipes de antes)
+        function playAlarmSound(message) {
+            if (message && _pomoSpeak(message)) {
+                try { if (navigator.vibrate) navigator.vibrate([300, 150, 300]); } catch (e) {}
+                return;
+            }
+            try {
+                _unlockAlarmAudio();
+                const ctx = _alarmAudioCtx;
+                if (ctx) {
+                    const beep = () => {
+                        [0, 0.35, 0.7, 1.05, 1.4].forEach((t) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.value = 880;
+                            gain.gain.setValueAtTime(0, ctx.currentTime + t);
+                            gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + t + 0.02);
+                            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.25);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(ctx.currentTime + t);
+                            osc.stop(ctx.currentTime + t + 0.3);
+                        });
+                    };
+                    // só agenda os bipes depois que o contexto estiver realmente rodando
+                    if (ctx.state === 'running') beep();
+                    else { const pr = ctx.resume(); if (pr && pr.then) pr.then(beep).catch(() => {}); }
+                }
             } catch (e) {
                 console.error('[Estudei] Falha ao tocar alarme:', e);
             }
+            try { if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {}
+        }
+
+        // Service worker opcional (arquivo sw.js ao lado do HTML): necessário para
+        // notificações no Android/tablet, onde o navegador não aceita `new Notification`.
+        function _pomoInitSW() {
+            try {
+                if (!('serviceWorker' in navigator)) return;
+                navigator.serviceWorker.register('sw.js').then(r => { _swReg = r; }).catch(() => {});
+            } catch (e) {}
+        }
+
+        function _pomoRequestNotifyPermission() {
+            return new Promise(resolve => {
+                if (!('Notification' in window)) return resolve('unsupported');
+                if (Notification.permission !== 'default') return resolve(Notification.permission);
+                try {
+                    const r = Notification.requestPermission(res => resolve(res)); // forma antiga (callback)
+                    if (r && r.then) r.then(resolve);
+                } catch (e) { resolve(Notification.permission); }
+            });
+        }
+
+        async function _pomoShowSystemNotification(title, body, tag) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+            const opts = { body, tag, renotify: true, vibrate: [250, 120, 250, 120, 250] };
+            try {
+                let reg = _swReg;
+                if (!reg && navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+                    reg = await navigator.serviceWorker.getRegistration();
+                }
+                if (reg && reg.showNotification) { await reg.showNotification(title, opts); return true; }
+            } catch (e) {}
+            try {
+                const n = new Notification(title, opts);
+                n.onclick = () => { try { window.focus(); } catch (e) {} n.close(); };
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function _pomoRefreshNotifyUI() {
+            const b = document.getElementById('btn-pomo-notify');
+            const h = document.getElementById('pomo-notify-hint');
+            if (!b) return;
+            let label, hint = '';
+            if (!('Notification' in window)) { label = '🔕 Notificações indisponíveis'; hint = 'Este navegador não suporta notificações.'; }
+            else if (Notification.permission === 'granted') { label = '🔔 Notificações ativas — testar'; hint = 'Você é avisado no fim do foco e da pausa, mesmo com outra aba aberta.'; }
+            else if (Notification.permission === 'denied') { label = '🔕 Notificações bloqueadas'; hint = 'Libere nas configurações do site, no navegador.'; }
+            else { label = '🔔 Ativar notificações'; }
+            b.textContent = label;
+            if (h) h.textContent = hint;
+        }
+
+        async function pomoEnableNotifications() {
+            _unlockAlarmAudio();
+            const perm = await _pomoRequestNotifyPermission();
+            _pomoRefreshNotifyUI();
+            if (perm === 'granted') {
+                await _pomoShowSystemNotification('🔔 Notificações ativas', 'Você será avisado quando o foco ou a pausa terminar.', 'estudei-pomodoro-teste');
+                playAlarmSound('É hora de estudar');
+                showToast('🔔 Notificações ativadas — enviei um teste.', 'success', 3000);
+            } else if (perm === 'denied') {
+                showAlert('O navegador está bloqueando as notificações deste site. No computador: clique no cadeado ao lado do endereço → Notificações → Permitir. No celular/tablet: configurações do navegador → Configurações do site → Notificações.');
+            } else {
+                showAlert('Este navegador não oferece notificações para esta página. No iPhone/iPad elas só funcionam se o app for adicionado à Tela de Início.');
+            }
+        }
+
+        // Fim de fase: som (sempre) + notificação do sistema (se a página não estiver à vista)
+        function _pomoAlertPhaseEnd(endedPhase, lateSec) {
+            // atrasado demais → não fala de surpresa ao reabrir
+            if (lateSec <= 120) playAlarmSound(endedPhase === 'focus' ? 'É hora de descansar' : 'É hora de estudar');
+            const late = lateSec > 60 ? ` (terminou há ${Math.round(lateSec / 60)} min)` : '';
+            let title, body;
+            if (endedPhase === 'focus') {
+                title = '🍅 Foco concluído!';
+                body = `Pomodoro ${pomodoroCycles + 1} concluído. Hora da pausa de ${pomodoroBreakMin} min.${late}`;
+            } else {
+                title = '☕ Pausa encerrada!';
+                body = `Hora de voltar ao foco (${pomodoroFocusMin} min).${late}`;
+            }
+            const pageActive = document.visibilityState === 'visible' && document.hasFocus();
+            if (!pageActive) _pomoShowSystemNotification(title, body, 'estudei-pomodoro');
+        }
+
+        // Temporizador de disparo único no instante do fim da fase. Não é cancelado
+        // quando a aba vai para segundo plano (diferente do intervalo de 500 ms).
+        function _pomoClearEndTimeout() { clearTimeout(_pomoEndTimeout); _pomoEndTimeout = null; }
+        function _pomoScheduleEndTimeout() {
+            _pomoClearEndTimeout();
+            if (!pomodoroRunning || !pomodoroEndTs) return;
+            const ms = Math.max(0, pomodoroEndTs - Date.now());
+            _pomoEndTimeout = setTimeout(_pomoOnEndTimeout, ms + 50);
+        }
+        function _pomoOnEndTimeout() {
+            _pomoEndTimeout = null;
+            if (!pomodoroRunning || !pomodoroEndTs) return;
+            if (Date.now() < pomodoroEndTs - 300) { _pomoScheduleEndTimeout(); return; }
+            clearInterval(pomodoroInterval);
+            pomodoroRunning = false;
+            pomodoroSecondsLeft = 0;
+            _pomoAdvancePhase();
         }
 
         function _pomoAdvancePhase() {
+            _pomoClearEndTimeout();
+            // Som + notificação, uma única vez por fim de fase (tick, timeout, volta à aba e
+            // restauração podem chegar aqui quase juntos).
+            try {
+                const _endTs = pomodoroEndTs;
+                const _dup = !!_endTs && _pomoLastAlertedEndTs === _endTs;
+                if (_endTs) _pomoLastAlertedEndTs = _endTs;
+                if (!_dup) _pomoAlertPhaseEnd(pomodoroPhase, _endTs ? Math.max(0, Math.round((Date.now() - _endTs) / 1000)) : 0);
+            } catch (e) { console.error('[Estudei] Alerta de fim de fase:', e); }
             if (pomodoroPhase === 'focus') {
                 pomodoroCycles++;
                 pomodoroPhase = 'break';
@@ -5460,9 +5775,12 @@
             if (pomodoroRunning) return;
             pomodoroRunning = true;
             // Prepara/desbloqueia o áudio do despertador aproveitando o gesto do usuário (clique)
+            _unlockAlarmAudio();
+            // Pede permissão de notificação na primeira vez (precisa ser dentro de um clique)
             try {
-                if (!_alarmAudioCtx) _alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (_alarmAudioCtx.state === 'suspended') _alarmAudioCtx.resume();
+                if ('Notification' in window && Notification.permission === 'default') {
+                    _pomoRequestNotifyPermission().then(_pomoRefreshNotifyUI);
+                }
             } catch (e) {}
             // Calcula o timestamp de fim baseado nos segundos restantes atuais
             pomodoroEndTs = Date.now() + pomodoroSecondsLeft * 1000;
@@ -5471,6 +5789,7 @@
             document.getElementById('btn-pomo-pause').classList.remove('hidden');
             clearInterval(pomodoroInterval);
             pomodoroInterval = setInterval(_pomoTick, 500);
+            _pomoScheduleEndTimeout();
             _pomoSaveState();
         }
 
@@ -5478,6 +5797,7 @@
             if (!pomodoroRunning) return;
             pomodoroRunning = false;
             clearInterval(pomodoroInterval);
+            _pomoClearEndTimeout();
             // Congela os segundos restantes no momento da pausa
             pomodoroFrozenSeconds = Math.max(0, Math.round((pomodoroEndTs - Date.now()) / 1000));
             pomodoroSecondsLeft = pomodoroFrozenSeconds;
@@ -5507,6 +5827,7 @@
                 }
             }
             clearInterval(pomodoroInterval); pomodoroRunning = false;
+            _pomoClearEndTimeout();
             pomodoroPhase = 'focus';
             pomodoroSecondsLeft = pomodoroFocusMin * 60;
             pomodoroTotalSeconds = pomodoroFocusMin * 60;
@@ -7796,7 +8117,7 @@ function renderHistoryTab() {
 
 
         // ── 2. KEYBOARD SHORTCUTS ───────────────────────────────────────────
-        const _tabKeys = ['dashboard','edital','ciclo','cronometro','resumos','historico'];
+        const _tabKeys = ['dashboard','edital','ciclo','cronometro','historico'];
         document.addEventListener('keydown', function _globalShortcuts(e) {
             // Skip if inside a text input / textarea / contenteditable (except our special ones)
             const tag = e.target.tagName;
@@ -9893,8 +10214,8 @@ function renderHistoryTab() {
             // se o conteúdo realmente mudou; caso contrário mantém o da nuvem,
             // e as comparações "isso é diferente do que já está na nuvem?"
             // rio abaixo passam a dar false corretamente, quebrando o ciclo.
-            const _mergedNoTs = JSON.stringify({ ...merged, updatedAt: undefined });
-            const _cloudNoTs  = JSON.stringify({ ...cloudDb, updatedAt: undefined });
+            const _mergedNoTs = _stableStringify({ ...merged, updatedAt: undefined });
+            const _cloudNoTs  = _stableStringify({ ...cloudDb, updatedAt: undefined });
             merged.updatedAt = (_mergedNoTs !== _cloudNoTs)
                 ? new Date().toISOString()
                 : (cloudDb.updatedAt || new Date().toISOString());
@@ -10458,7 +10779,7 @@ function renderHistoryTab() {
             try { renderStudyCycleTab();     } catch(e) { console.error('cycle',e); }
             try { renderHistoryTab();        } catch(e) { console.error('hist',e); }
             try { populateFormDropdowns();   } catch(e) { console.error('form',e); }
-            try { renderSummariesTree();     } catch(e) { console.error('tree',e); }
+            // (aba "Meus Resumos" removida do menu — não renderiza mais a árvore de resumos)
             try { updateChartData();         } catch(e) { console.error('chart',e); }
             try { renderSubjectTimeChart();  } catch(e) { console.error('subjectchart',e); }
             try { renderAccuracyTrendChart(); } catch(e) { console.error('acctrend',e); }
@@ -11013,6 +11334,7 @@ function renderHistoryTab() {
 
             // ── RESTAURAR POMODORO APÓS RECARGA DE PÁGINA ──
             try { _pomoRestoreState(); } catch(e) { console.error('[Estudei] Restauração do Pomodoro:', e); }
+            try { _pomoInitSW(); _pomoRefreshNotifyUI(); } catch(e) {}
 
             // ── RESTAURAR CRONÔMETRO APÓS RECARGA DE PÁGINA (mobile/tablet) ──
             try {
