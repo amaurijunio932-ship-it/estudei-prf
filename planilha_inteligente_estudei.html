@@ -916,7 +916,56 @@
                 </div>
             </div>
 
-            <!-- Insights do Estudei -->
+            
+<!-- CONTROLE DE PRAZO DO PROJETO -->
+<div id="deadline-control-card" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4 mb-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <span class="text-sm font-black text-white flex items-center gap-2">
+        <i class="fa-solid fa-hourglass-half text-prf-yellow"></i>
+        PRAZO DA PROVA
+      </span>
+      <p class="text-xs text-gray-400 mt-1">Defina o nome da prova e a data.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <input id="deadline-project-name" type="text" value="Prova PRF"
+        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold w-52 focus:outline-none focus:border-yellow-400"
+        placeholder="Nome da prova">
+      <input id="deadline-project-date" type="date"
+        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-yellow-400">
+      <button onclick="saveDeadlineData()"
+        class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-4 py-2 rounded-lg text-xs font-black transition">
+        SALVAR
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-4">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <div>
+        <div id="deadline-project-title" class="text-xs text-gray-400 font-bold uppercase tracking-widest">Prova PRF</div>
+        <div class="text-2xl font-black text-white mt-1 flex flex-wrap items-baseline gap-x-2">
+          <input id="deadline-label" type="text" maxlength="40" value="Dia da prova" title="Clique para editar o título" aria-label="Título do contador"
+            class="bg-transparent text-2xl font-black text-white p-0 m-0 border-0 border-b border-dashed border-transparent hover:border-yellow-400 focus:border-yellow-400 focus:outline-none"
+            style="width:12ch; max-width:100%; font-family:inherit;">
+          <span>—</span> <span id="deadline-days" class="text-prf-yellow">Defina a data</span>
+        </div>
+      </div>
+      <i class="fa-solid fa-flag-checkered text-3xl text-prf-yellow"></i>
+    </div>
+
+    <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden border border-blue-900">
+      <div id="deadline-progress-bar" class="h-full rounded-full transition-all duration-700"
+           style="width:0%; background:linear-gradient(90deg,#facc15,#f59e0b);"></div>
+    </div>
+    <div class="flex justify-between mt-2 text-xxs">
+      <span id="deadline-status" class="text-gray-400">Escolha a data da prova.</span>
+      <span class="text-gray-500">Hoje → prova</span>
+    </div>
+  </div>
+</div>
+
+<!-- Insights do Estudei -->
             <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <span class="text-sm font-black text-white flex items-center gap-2">
@@ -966,6 +1015,39 @@
                 <div>
                     <span class="text-xxs font-bold text-red-400 uppercase tracking-widest">Suas Piores Áreas</span>
                     <div id="insights-worst-label" class="mt-0.5"><p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas piores áreas.</p></div>
+                </div>
+            </div>
+
+            <!-- CONTROLE DE HÁBITOS -->
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-5" id="habits-dashboard-card">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-list-check text-prf-yellow mr-2"></i>Controle de Hábitos</h3>
+                        <p class="text-xxs text-gray-400">Marque os hábitos cumpridos e acompanhe sua consistência.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-gray-400">Hoje:</span>
+                        <span id="habit-today-score" class="text-sm font-black text-emerald-400">0%</span>
+                        <button onclick="addHabit()" class="px-3 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-slate-950 text-xs font-black shadow transition"><i class="fa-solid fa-plus mr-1"></i>Novo hábito</button>
+                    </div>
+                </div>
+                <div id="habits-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+                <div id="habits-empty" class="hidden text-center py-5 text-xs text-gray-500">Nenhum hábito cadastrado. Clique em “Novo hábito”.</div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
+                    <div class="bg-blue-950/50 rounded-xl border border-blue-800 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div><h4 class="text-sm font-black text-white">Hábitos concluídos por dia</h4><p class="text-xxs text-gray-500">Últimos 7 dias</p></div>
+                            <i class="fa-solid fa-chart-column text-yellow-400"></i>
+                        </div>
+                        <div class="h-52 relative"><canvas id="habitsWeekChart"></canvas></div>
+                    </div>
+                    <div class="bg-blue-950/50 rounded-xl border border-blue-800 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div><h4 class="text-sm font-black text-white">Desempenho por hábito</h4><p class="text-xxs text-gray-500">Percentual de conclusão nos últimos 30 dias</p></div>
+                            <i class="fa-solid fa-ranking-star text-yellow-400"></i>
+                        </div>
+                        <div class="h-52 relative"><canvas id="habitsRankChart"></canvas></div>
+                    </div>
                 </div>
             </div>
 
@@ -2567,6 +2649,8 @@
         // Gráficos e Cronômetro
         let studyChart = null;
         let studyTypeChart = null;
+        let habitsWeekChart = null;
+        let habitsRankChart = null;
         let currentChartPeriod = 'weekly';
         let evolutionChart = null;
         let evoGranularity = 'month';
@@ -2877,6 +2961,9 @@
             currentCycleStep: 0,
             history: [],
             revisions: [],
+            habits: [],
+            habitLog: {},
+            habitLogAt: {},
             summaries: [],
             // Cronograma semanal gerenciável: um plano por dia da semana,
             // editável pelo usuário na aba Dashboard (Planeamento Ativo).
@@ -3158,6 +3245,9 @@
                     if (!parsed.summaries) parsed.summaries = [];
                     if (!parsed.history) parsed.history = [];
                     if (!parsed.revisions) parsed.revisions = [];
+                    if (!Array.isArray(parsed.habits)) parsed.habits = [];
+                    if (!parsed.habitLog || typeof parsed.habitLog !== "object") parsed.habitLog = {};
+                    if (!parsed.habitLogAt || typeof parsed.habitLogAt !== "object") parsed.habitLogAt = {};
                     if (!parsed.syllabus) parsed.syllabus = [];
                     
                     parsed.summaries.forEach(s => {
@@ -7123,6 +7213,70 @@ function renderHistoryTab() {
             return `hsl(45, 95%, ${lightness}%)`;
         }
 
+        // === CONTROLE DE HÁBITOS ===
+        function _habitToday() { return todayBrazil(); }
+        function _habitKey(date, habitId) { return `${date}::${habitId}`; }
+        function _habitIsDone(date, habitId) { return !!(studyDb.habitLog && studyDb.habitLog[_habitKey(date, habitId)]); }
+        function _habitDatesBack(days) {
+            const out=[]; const base=new Date(_habitToday()+"T12:00:00");
+            for(let i=days-1;i>=0;i--){ const d=new Date(base); d.setDate(base.getDate()-i); out.push(d.toISOString().slice(0,10)); }
+            return out;
+        }
+        function _habitLabel(date) {
+            const d=new Date(date+"T12:00:00");
+            return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()];
+        }
+        function _habitEscape(v){ return String(v).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+        async function addHabit() {
+            const name = prompt('Nome do hábito:');
+            if(!name || !name.trim()) return;
+            const clean=name.trim();
+            studyDb.habits = Array.isArray(studyDb.habits)?studyDb.habits:[];
+            if(studyDb.habits.some(h=>(h.name||'').trim().toLowerCase()===clean.toLowerCase())) { showToast('Esse hábito já existe.','warn'); return; }
+            studyDb.habits.push({id:'h_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:clean,createdAt:new Date().toISOString(),active:true});
+            await saveDatabase(); renderHabitsDashboard();
+            showToast('✅ Hábito criado!','success');
+        }
+        async function removeHabit(id) {
+            const h=(studyDb.habits||[]).find(x=>x.id===id); if(!h) return;
+            if(!confirm(`Excluir o hábito “${h.name}”? O histórico dele também será removido.`)) return;
+            studyDb.habits=studyDb.habits.filter(x=>x.id!==id);
+            Object.keys(studyDb.habitLog||{}).forEach(k=>{if(k.endsWith('::'+id)) { delete studyDb.habitLog[k]; if(studyDb.habitLogAt) delete studyDb.habitLogAt[k]; }});
+            // Lápide: impede que a nuvem "ressuscite" o hábito excluído
+            studyDb.tombstones=studyDb.tombstones||{}; studyDb.tombstones.habits=studyDb.tombstones.habits||{}; studyDb.tombstones.habits[id]=new Date().toISOString();
+            await saveDatabase(); renderHabitsDashboard();
+        }
+        async function toggleHabit(id,date) {
+            studyDb.habitLog=studyDb.habitLog||{}; studyDb.habitLogAt=studyDb.habitLogAt||{}; const k=_habitKey(date,id);
+            // Mantém a chave (true/false) + carimbo de tempo, para o sync saber quem desmarcou por último
+            studyDb.habitLog[k]=!studyDb.habitLog[k]; studyDb.habitLogAt[k]=new Date().toISOString();
+            await saveDatabase(); renderHabitsDashboard();
+        }
+        function renderHabitsDashboard() {
+            if(!studyDb.habits) studyDb.habits=[]; if(!studyDb.habitLog) studyDb.habitLog={};
+            const list=document.getElementById('habits-list'), empty=document.getElementById('habits-empty'); if(!list) return;
+            const dates=_habitDatesBack(7), today=_habitToday();
+            list.innerHTML=''; empty.classList.toggle('hidden',studyDb.habits.length>0);
+            studyDb.habits.forEach(h=>{
+                const checks=dates.map(d=>`<button onclick="toggleHabit('${h.id}','${d}')" title="${d}" class="w-8 h-8 rounded-lg border text-xs font-black transition ${_habitIsDone(d,h.id)?'bg-emerald-500 border-emerald-300 text-white shadow':'bg-slate-900 border-blue-800 text-gray-500 hover:border-yellow-400 hover:text-yellow-400'}">${_habitIsDone(d,h.id)?'✓':_habitLabel(d).charAt(0)}</button>`).join('');
+                const doneToday=_habitIsDone(today,h.id);
+                list.insertAdjacentHTML('beforeend',`<div class="bg-blue-950/50 border border-blue-800 rounded-xl p-4">\n                    <div class="flex items-center justify-between gap-2 mb-3"><div class="min-w-0"><div class="text-sm font-black text-white truncate">${_habitEscape(h.name)}</div><div class="text-xxs text-gray-500">7 dias recentes</div></div><div class="flex gap-1"><button onclick="toggleHabit('${h.id}','${today}')" class="px-2.5 py-1.5 rounded-lg text-xxs font-black ${doneToday?'bg-emerald-500 text-white':'bg-yellow-400 text-slate-950'}">${doneToday?'Concluído':'Marcar hoje'}</button><button onclick="removeHabit('${h.id}')" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20" title="Excluir"><i class="fa-solid fa-trash text-xxs"></i></button></div></div>\n                    <div class="flex justify-between gap-1">${checks}</div>\n                </div>`);
+            });
+            const total=studyDb.habits.length, done=studyDb.habits.filter(h=>_habitIsDone(today,h.id)).length;
+            const score=document.getElementById('habit-today-score'); if(score) score.textContent=(total?Math.round(done/total*100):0)+'%';
+            renderHabitCharts();
+        }
+        function renderHabitCharts() {
+            if(typeof Chart==='undefined') return;
+            const dates=_habitDatesBack(7), habits=studyDb.habits||[];
+            const weekData=dates.map(d=>habits.reduce((n,h)=>n+(_habitIsDone(d,h.id)?1:0),0));
+            const w=document.getElementById('habitsWeekChart');
+            if(w){ if(habitsWeekChart) habitsWeekChart.destroy(); habitsWeekChart=new Chart(w.getContext('2d'),{type:'bar',data:{labels:dates.map(_habitLabel),datasets:[{label:'Hábitos concluídos',data:weekData,backgroundColor:'#FFD400',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,precision:0,ticks:{stepSize:1},grid:{color:'#1d355c'}}}}}); }
+            const rank=habits.map(h=>({name:h.name,value:Math.round(_habitDatesBack(30).reduce((n,d)=>n+(_habitIsDone(d,h.id)?1:0),0)/30*100)})).sort((a,b)=>b.value-a.value);
+            const r=document.getElementById('habitsRankChart');
+            if(r){ if(habitsRankChart) habitsRankChart.destroy(); habitsRankChart=new Chart(r.getContext('2d'),{type:'bar',data:{labels:rank.map(x=>x.name),datasets:[{label:'Conclusão',data:rank.map(x=>x.value),backgroundColor:'#10b981',borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.x+'%'}}},scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#1d355c'}},y:{grid:{display:false}}}}}); }
+        }
+
         // === 8. CHART JS ===
         function initCharts() {
             const canvas = document.getElementById('weeklyStudyChart');
@@ -9977,7 +10131,8 @@ function renderHistoryTab() {
             const mergedTombSum  = { ...(cloudTomb.summaries || {}), ...(localTomb.summaries || {}) };
             const mergedTombSubj = { ...(cloudTomb.syllabusSubjects || {}), ...(localTomb.syllabusSubjects || {}) };
             const mergedTombTop  = { ...(cloudTomb.syllabusTopics   || {}), ...(localTomb.syllabusTopics   || {}) };
-            merged.tombstones = { history: mergedTombHist, summaries: mergedTombSum, syllabusSubjects: mergedTombSubj, syllabusTopics: mergedTombTop };
+            const mergedTombHab = { ...(cloudTomb.habits || {}), ...(localTomb.habits || {}) };
+            merged.tombstones = { history: mergedTombHist, summaries: mergedTombSum, syllabusSubjects: mergedTombSubj, syllabusTopics: mergedTombTop, habits: mergedTombHab };
 
             // ── 1. HISTÓRICO: união por ID — garante que sessões offline não se perdem ──
             // Itens com uma lápide (excluídos de propósito em qualquer dispositivo)
@@ -10197,6 +10352,43 @@ function renderHistoryTab() {
             merged.weeklySchedule = (localDb.weeklySchedule && localDb.weeklySchedule.length === 7)
                 ? localDb.weeklySchedule
                 : (cloudDb.weeklySchedule || []);
+
+            // ── 5c. HÁBITOS E PRAZO DA PROVA ──
+            // Hábitos: união por id (menos os excluídos via lápide).
+            // Marcações: para cada dia+hábito vence a alteração mais recente.
+            {
+                const _t = v => (v ? (Date.parse(v) || 0) : 0);
+                const tombH = merged.tombstones.habits || {};
+                const byId = new Map();
+                (cloudDb.habits || []).forEach(h => { if (h && h.id && !tombH[h.id]) byId.set(h.id, h); });
+                (localDb.habits || []).forEach(h => { if (h && h.id && !tombH[h.id] && !byId.has(h.id)) byId.set(h.id, h); });
+                merged.habits = Array.from(byId.values());
+
+                const lLog = localDb.habitLog || {}, cLog = cloudDb.habitLog || {};
+                const lAt = localDb.habitLogAt || {}, cAt = cloudDb.habitLogAt || {};
+                const log = {}, at = {};
+                new Set([...Object.keys(cLog), ...Object.keys(lLog)]).forEach(k => {
+                    const hid = k.split('::')[1];
+                    if (tombH[hid]) return;
+                    const hasL = k in lLog, hasC = k in cLog;
+                    let val;
+                    if (hasL && hasC) {
+                        const lt = _t(lAt[k]), ct = _t(cAt[k]);
+                        val = lt > ct ? lLog[k] : (ct > lt ? cLog[k] : (!!lLog[k] || !!cLog[k]));
+                    } else val = hasL ? lLog[k] : cLog[k];
+                    log[k] = !!val;
+                    const bestAt = _t(lAt[k]) >= _t(cAt[k]) ? lAt[k] : cAt[k];
+                    if (bestAt) at[k] = bestAt;
+                });
+                merged.habitLog = log;
+                merged.habitLogAt = at;
+
+                // Prazo da prova: vence o salvo mais recentemente (empate → local)
+                const lD = localDb.deadline, cD = cloudDb.deadline;
+                if (lD || cD) {
+                    merged.deadline = (lD && (!cD || _t(lD.updatedAt) >= _t(cD.updatedAt))) ? lD : cD;
+                }
+            }
 
             // ── 6. META DIÁRIA + SYNC CODE ──
             merged.dailyGoalMinutes = Math.max(localDb.dailyGoalMinutes || 0, cloudDb.dailyGoalMinutes || 0) || undefined;
@@ -10790,6 +10982,8 @@ function renderHistoryTab() {
             try { updateIntelligencePanel(); } catch(e) { console.error('intel',e); }
             try { renderWeeklySchedule();     } catch(e) { console.error('weekly',e); }
             try { renderInsightsCard();        } catch(e) { console.error('insights',e); }
+            try { renderHabitsDashboard();     } catch(e) { console.error('habits',e); }
+            try { renderDeadline();            } catch(e) { console.error('deadline',e); }
             const _df = document.getElementById('form-session-date');
             if (_df && !_df.value) _df.value = isoToBR(todayBrazil());
             syncSessionDatePicker();
@@ -11386,4 +11580,119 @@ function renderHistoryTab() {
         window.saveStudySession      = saveStudySession;
 
         console.info('🚀 [Estudei PRF v3] Motor carregado. SM2 + Ebbinghaus + Mastery + Score Global ativos.');
-    </script>
+    
+// === CONTROLE DE PRAZOS / PROVA ===
+// Os dados ficam em studyDb.deadline {name, date, start, updatedAt}, então
+// são salvos junto com o resto e sincronizados com a nuvem entre aparelhos.
+function _dlDiffDays(fromISO, toISO) {
+    return Math.round((Date.parse(toISO + 'T12:00:00') - Date.parse(fromISO + 'T12:00:00')) / 86400000);
+}
+function _dlFitLabel() {
+    const el = document.getElementById('deadline-label');
+    if (el) el.style.width = (Math.max(3, el.value.length) + 1) + 'ch';
+}
+function getDeadlineData() {
+    try {
+        if (typeof studyDb !== 'undefined' && studyDb && studyDb.deadline && typeof studyDb.deadline === 'object') return studyDb.deadline;
+        // Migração do formato antigo (localStorage)
+        const raw = JSON.parse(localStorage.getItem('estudei_deadline_data') || 'null');
+        if (raw && raw.date) {
+            let start = todayBrazil();
+            const ms = Number(localStorage.getItem('estudei_deadline_start_' + raw.date));
+            if (ms) {
+                const b = new Date(new Date(ms).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+                start = b.getFullYear() + '-' + String(b.getMonth() + 1).padStart(2, '0') + '-' + String(b.getDate()).padStart(2, '0');
+            }
+            return { name: raw.name || 'Prova PRF', label: 'Dia da prova', date: raw.date, start, updatedAt: null, _legacy: true };
+        }
+    } catch (e) {}
+    return { name: 'Prova PRF', label: 'Dia da prova', date: '', start: '', updatedAt: null };
+}
+async function saveDeadlineData() {
+    const name = document.getElementById('deadline-project-name')?.value?.trim() || 'Prova PRF';
+    const date = document.getElementById('deadline-project-date')?.value || '';
+    const label = document.getElementById('deadline-label')?.value?.trim() || 'Dia da prova';
+    const prev = getDeadlineData();
+    const dateChanged = prev.date !== date;
+    studyDb.deadline = {
+        name, label, date,
+        start: (dateChanged || !prev.start) ? todayBrazil() : prev.start,
+        updatedAt: new Date().toISOString()
+    };
+    renderDeadline();
+    await saveDatabase();
+}
+function renderDeadline() {
+    const d = getDeadlineData();
+    // Só grava a migração depois que o banco real foi carregado (syncCode existe),
+    // para nunca sobrescrever dados salvos com o banco padrão.
+    if (d._legacy && typeof studyDb !== 'undefined' && studyDb && studyDb.syncCode) {
+        const { _legacy, ...clean } = d;
+        studyDb.deadline = clean;
+        saveDatabase();
+    }
+    const nameEl = document.getElementById('deadline-project-name');
+    const dateEl = document.getElementById('deadline-project-date');
+    const titleEl = document.getElementById('deadline-project-title');
+    const daysEl = document.getElementById('deadline-days');
+    const barEl = document.getElementById('deadline-progress-bar');
+    const statusEl = document.getElementById('deadline-status');
+    // não sobrescreve o que o usuário está digitando
+    if (nameEl && document.activeElement !== nameEl) nameEl.value = d.name || 'Prova PRF';
+    if (dateEl && document.activeElement !== dateEl) dateEl.value = d.date || '';
+    if (titleEl) titleEl.textContent = d.name || 'Prova PRF';
+    const labelEl = document.getElementById('deadline-label');
+    if (labelEl) {
+        if (document.activeElement !== labelEl) labelEl.value = d.label || 'Dia da prova';
+        _dlFitLabel();
+    }
+
+    if (!daysEl || !barEl || !statusEl) return;
+    if (!d.date) {
+        daysEl.textContent = 'Defina a data';
+        barEl.style.width = '0%';
+        statusEl.textContent = 'Escolha a data da prova.';
+        return;
+    }
+
+    // Contagem por dias de calendário (fuso de Brasília), igual aos hábitos.
+    const today = todayBrazil();
+    const days = _dlDiffDays(today, d.date);
+    // A barra mostra o tempo restante: 100% no dia em que a data foi definida → 0% na prova.
+    const totalDays = Math.max(1, _dlDiffDays(d.start || today, d.date));
+    const pct = days <= 0 ? 0 : Math.max(0, Math.min(100, (days / totalDays) * 100));
+
+    if (days < 0) daysEl.textContent = 'Encerrado';
+    else if (days === 0) daysEl.textContent = 'É hoje!';
+    else daysEl.textContent = days + (days === 1 ? ' dia' : ' dias');
+    barEl.style.width = pct.toFixed(1) + '%';
+    if (days < 0) {
+        statusEl.textContent = 'Prazo encerrado.';
+    } else if (days === 0) {
+        statusEl.textContent = '🏁 Dia da prova. Boa sorte!';
+    } else if (days <= 30) {
+        statusEl.textContent = '⚠️ Reta final — mantenha o ritmo!';
+    } else {
+        statusEl.textContent = 'Tempo restante até a prova';
+    }
+}
+function initDeadlineControl() {
+    renderDeadline();
+    const dateEl = document.getElementById('deadline-project-date');
+    if (dateEl) dateEl.addEventListener('change', saveDeadlineData);
+    const labelEl = document.getElementById('deadline-label');
+    if (labelEl) {
+        labelEl.addEventListener('input', _dlFitLabel);
+        labelEl.addEventListener('change', saveDeadlineData);
+        labelEl.addEventListener('keydown', e => { if (e.key === 'Enter') labelEl.blur(); });
+    }
+}
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try { initDeadlineControl(); } catch(e) { console.error('deadline', e); }
+    setInterval(function(){ try { renderDeadline(); } catch(e) {} }, 60000);
+});
+</script>
