@@ -883,7 +883,7 @@
                         <button onclick="activityCalNextYear()" class="w-6 h-6 rounded-md bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition shrink-0"><i class="fa-solid fa-chevron-right text-xxs"></i></button>
                     </div>
 
-                    <div class="overflow-x-auto pb-1">
+                    <div class="overflow-x-auto pb-1" id="activity-cal-scroll">
                         <div id="activity-cal-grid" class="flex items-start gap-3"></div>
                     </div>
 
@@ -917,89 +917,6 @@
             </div>
 
             
-<!-- CONTROLE DE PRAZO DO PROJETO -->
-<div id="deadline-control-card" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4 mb-6">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <span class="text-sm font-black text-white flex items-center gap-2">
-        <i class="fa-solid fa-hourglass-half text-prf-yellow"></i>
-        PRAZO DA PROVA
-      </span>
-      <p class="text-xs text-gray-400 mt-1">Defina o nome da prova e a data.</p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <select id="deadline-exam-select" onchange="switchDeadlineExam(this.value)" title="Alternar entre provas" aria-label="Prova ativa"
-        class="bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-xs font-bold max-w-[11rem] focus:outline-none focus:border-yellow-400"></select>
-      <button onclick="addDeadlineExam()" title="Adicionar outra prova" aria-label="Adicionar prova"
-        class="bg-blue-900 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-black transition"><i class="fa-solid fa-plus"></i></button>
-      <button id="deadline-del-btn" onclick="deleteDeadlineExam()" title="Excluir esta prova" aria-label="Excluir prova"
-        class="bg-blue-900 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-black transition"><i class="fa-solid fa-trash"></i></button>
-      <input id="deadline-project-name" type="text" value="Prova PRF"
-        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold w-44 focus:outline-none focus:border-yellow-400"
-        placeholder="Nome da prova">
-      <input id="deadline-project-date" type="date"
-        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-yellow-400">
-      <button onclick="saveDeadlineData()"
-        class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-4 py-2 rounded-lg text-xs font-black transition">
-        SALVAR
-      </button>
-    </div>
-  </div>
-
-  <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-4">
-    <div class="flex items-center justify-between gap-3 mb-2">
-      <div>
-        <div id="deadline-project-title" class="text-xs text-gray-400 font-bold uppercase tracking-widest">Prova PRF</div>
-        <div class="text-2xl font-black text-white mt-1 flex flex-wrap items-baseline gap-x-2">
-          <input id="deadline-label" type="text" maxlength="40" value="Dia da prova" title="Clique para editar o título" aria-label="Título do contador"
-            class="bg-transparent text-2xl font-black text-white p-0 m-0 border-0 border-b border-dashed border-transparent hover:border-yellow-400 focus:border-yellow-400 focus:outline-none"
-            style="width:12ch; max-width:100%; font-family:inherit;">
-          <span>—</span> <span id="deadline-days" class="text-prf-yellow">Defina a data</span>
-        </div>
-      </div>
-      <i class="fa-solid fa-flag-checkered text-3xl text-prf-yellow"></i>
-    </div>
-
-    <div class="relative pt-4">
-      <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden border border-blue-900">
-        <div id="deadline-progress-bar" class="h-full rounded-full transition-all duration-700"
-             style="width:0%; background:linear-gradient(90deg,#facc15,#f59e0b);"></div>
-      </div>
-      <div id="deadline-markers" class="absolute left-0 right-0 bottom-0 h-8 pointer-events-none"></div>
-    </div>
-    <div class="flex justify-between mt-2 text-xxs">
-      <span class="text-gray-500">🏁 prova</span>
-      <span class="text-gray-500">início do prazo</span>
-    </div>
-    <div id="deadline-status" class="text-xxs text-gray-400 mt-1">Escolha a data da prova.</div>
-    <div id="deadline-next-milestone" class="text-xs text-gray-300 mt-1"></div>
-
-    <div id="deadline-pace" class="hidden mt-3 rounded-lg border border-blue-800 bg-blue-950/80 p-3 text-xs text-gray-300 space-y-1"></div>
-
-    <details id="deadline-milestones-box" class="mt-3">
-      <summary class="cursor-pointer text-xs font-bold text-gray-300 hover:text-white select-none">
-        <i class="fa-solid fa-flag text-prf-yellow mr-1"></i> Marcos do prazo <span id="deadline-milestones-count" class="text-gray-500"></span>
-      </summary>
-      <div id="deadline-milestones-list" class="flex flex-wrap gap-2 mt-3"></div>
-      <div class="flex flex-wrap items-center gap-2 mt-3">
-        <select id="deadline-ms-type" onchange="_dlMsTypeChanged()" aria-label="Tipo de marco"
-          class="bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-xs font-bold focus:outline-none focus:border-yellow-400">
-          <option value="simulado">🎯 Simulado</option>
-          <option value="leitura">📖 Fim da 1ª leitura</option>
-          <option value="revisao">🔁 Início da revisão final</option>
-          <option value="outro">📌 Outro</option>
-        </select>
-        <input id="deadline-ms-title" type="text" maxlength="40" placeholder="Título (opcional)"
-          class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-xs font-bold w-44 focus:outline-none focus:border-yellow-400">
-        <input id="deadline-ms-date" type="date" aria-label="Data do marco"
-          class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-xs font-bold focus:outline-none focus:border-yellow-400">
-        <button onclick="addDeadlineMilestone()"
-          class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-3 py-2 rounded-lg text-xs font-black transition">ADICIONAR</button>
-      </div>
-    </details>
-  </div>
-</div>
-
 <!-- Insights do Estudei -->
             <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -1052,6 +969,131 @@
                     <div id="insights-worst-label" class="mt-0.5"><p class="text-xs text-gray-500 italic">Resolva mais questões para ver suas piores áreas.</p></div>
                 </div>
             </div>
+
+            <!-- Meta Diária de Estudo -->
+            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                        <span class="text-sm font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Meta Diária de Estudo</span>
+                        <p class="text-xs text-gray-400 mt-0.5" id="daily-goal-status-text">Definir meta ajuda a manter consistência</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400 font-bold">Meta:</span>
+                        <input type="number" id="daily-goal-input" min="1" max="1440" placeholder="120"
+                            class="w-20 bg-input-dark border border-blue-800 rounded-lg px-2 py-1.5 text-white text-center text-sm font-black focus:outline-none focus:border-yellow-400"
+                            oninput="updateDailyGoal()" title="Meta em minutos">
+                        <span class="text-xs text-gray-400">min</span>
+                    </div>
+                </div>
+                <div class="w-full bg-blue-950 rounded-full h-3 overflow-hidden">
+                    <div id="daily-goal-bar" class="daily-goal-bar-fill" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between text-xxs text-gray-500 mt-1.5">
+                    <span id="daily-goal-current">0 min hoje</span>
+                    <span id="daily-goal-pct">0%</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Gráfico de Evolução -->
+                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-area text-prf-yellow mr-2"></i>Evolução de Estudos</h3>
+                            <p class="text-xxs text-gray-400">Total acumulado de minutos produtivos</p>
+                        </div>
+                        <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 self-stretch sm:self-auto justify-center">
+                            <button onclick="setChartPeriod('daily')" id="btn-period-daily" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Hoje</button>
+                            <button onclick="setChartPeriod('weekly')" id="btn-period-weekly" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Semana</button>
+                            <button onclick="setChartPeriod('monthly')" id="btn-period-monthly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
+                            <button onclick="setChartPeriod('yearly')" id="btn-period-yearly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
+                        </div>
+                    </div>
+                    <div id="evo-chart-nav" class="flex items-center justify-center gap-3" style="visibility:hidden;">
+                        <button onclick="navEvoChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                        <span id="evo-chart-period-label" class="text-sm font-black text-white min-w-[140px] text-center">--</span>
+                        <button onclick="navEvoChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="weeklyStudyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Tipo de Estudo -->
+                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Foco de Preparação</h3>
+                        <p class="text-xxs text-gray-400 mb-3" id="focus-chart-desc">Divisão analítica em minutos</p>
+                        <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 justify-center gap-0.5 mb-3">
+                            <button onclick="setFocusChartPeriod('dia')" id="btn-focusperiod-dia" class="flex-1 px-2 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Dia</button>
+                            <button onclick="setFocusChartPeriod('mes')" id="btn-focusperiod-mes" class="flex-1 px-2 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
+                            <button onclick="setFocusChartPeriod('ano')" id="btn-focusperiod-ano" class="flex-1 px-2 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
+                            <button onclick="setFocusChartPeriod('total')" id="btn-focusperiod-total" class="flex-1 px-2 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Total</button>
+                        </div>
+                        <div id="focus-chart-nav" class="flex items-center justify-center gap-3 mb-3" style="visibility:hidden;">
+                            <button onclick="navFocusChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <span id="focus-chart-period-label" class="text-sm font-black text-white min-w-[120px] text-center">--</span>
+                            <button onclick="navFocusChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div class="h-44 relative flex items-center justify-center">
+                        <canvas id="studyTypeChart"></canvas>
+                    </div>
+                    <div id="study-type-legend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xxs mt-4 border-t border-blue-950 pt-3">
+                        <!-- Preenchido dinamicamente via JS -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Tempo de Estudo por Disciplina -->
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Tempo de Estudo por Disciplina</h3>
+                        <p class="text-xxs text-gray-400">Distribuição do tempo dedicado a cada matéria</p>
+                    </div>
+                    <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 flex-wrap justify-center gap-0.5">
+                        <button onclick="setSubjectChartPeriod('dia')" id="btn-subperiod-dia" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Dia</button>
+                        <button onclick="setSubjectChartPeriod('semana')" id="btn-subperiod-semana" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Semana</button>
+                        <button onclick="setSubjectChartPeriod('mes')" id="btn-subperiod-mes" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
+                        <button onclick="setSubjectChartPeriod('ano')" id="btn-subperiod-ano" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Ano</button>
+                        <button onclick="setSubjectChartPeriod('total')" id="btn-subperiod-total" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Total</button>
+                    </div>
+                </div>
+
+                <div id="subject-chart-nav" class="flex items-center justify-center gap-3">
+                    <button onclick="navSubjectChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                    <span id="subject-chart-period-label" class="text-sm font-black text-white min-w-[140px] text-center">--</span>
+                    <button onclick="navSubjectChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+                    <div class="lg:col-span-2 h-72 relative flex items-center justify-center">
+                        <canvas id="subjectTimeChart"></canvas>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <div class="pb-3 mb-2 border-b border-blue-900">
+                            <h4 class="text-2xl md:text-3xl font-black text-prf-yellow" id="subject-chart-total">0h 00m</h4>
+                            <p class="text-xxs text-gray-400" id="subject-chart-range-desc">Tempo total no período</p>
+                        </div>
+                        <div id="subject-chart-legend" class="space-y-1 max-h-64 overflow-y-auto pr-1">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aproveitamento -->
+            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+                <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-gauge-high text-prf-yellow mr-2"></i>Aproveitamento por Disciplina (Questões)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <!-- EVOLUÇÃO NOS ESTUDOS (renderizado via JS em updateIntelligencePanel) -->
+            <div id="evolution-slot"></div>
 
             <!-- CONTROLE DE HÁBITOS -->
             <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-5" id="habits-dashboard-card">
@@ -1141,117 +1183,6 @@
                 <p class="text-xs text-gray-300 bg-blue-950/40 border border-blue-900/60 rounded-xl px-4 py-3" id="ws-verdict"></p>
             </div>
 
-            <!-- Meta Diária de Estudo -->
-            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
-                    <div>
-                        <span class="text-sm font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Meta Diária de Estudo</span>
-                        <p class="text-xs text-gray-400 mt-0.5" id="daily-goal-status-text">Definir meta ajuda a manter consistência</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-400 font-bold">Meta:</span>
-                        <input type="number" id="daily-goal-input" min="1" max="1440" placeholder="120"
-                            class="w-20 bg-input-dark border border-blue-800 rounded-lg px-2 py-1.5 text-white text-center text-sm font-black focus:outline-none focus:border-yellow-400"
-                            oninput="updateDailyGoal()" title="Meta em minutos">
-                        <span class="text-xs text-gray-400">min</span>
-                    </div>
-                </div>
-                <div class="w-full bg-blue-950 rounded-full h-3 overflow-hidden">
-                    <div id="daily-goal-bar" class="daily-goal-bar-fill" style="width:0%"></div>
-                </div>
-                <div class="flex justify-between text-xxs text-gray-500 mt-1.5">
-                    <span id="daily-goal-current">0 min hoje</span>
-                    <span id="daily-goal-pct">0%</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Gráfico de Evolução -->
-                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div>
-                            <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-area text-prf-yellow mr-2"></i>Evolução de Estudos</h3>
-                            <p class="text-xxs text-gray-400">Total acumulado de minutos produtivos</p>
-                        </div>
-                        <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 self-stretch sm:self-auto justify-center">
-                            <button onclick="setChartPeriod('daily')" id="btn-period-daily" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Hoje</button>
-                            <button onclick="setChartPeriod('weekly')" id="btn-period-weekly" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Semana</button>
-                            <button onclick="setChartPeriod('monthly')" id="btn-period-monthly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
-                            <button onclick="setChartPeriod('yearly')" id="btn-period-yearly" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
-                        </div>
-                    </div>
-                    <div id="evo-chart-nav" class="flex items-center justify-center gap-3" style="visibility:hidden;">
-                        <button onclick="navEvoChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                        <span id="evo-chart-period-label" class="text-sm font-black text-white min-w-[140px] text-center">--</span>
-                        <button onclick="navEvoChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                    </div>
-                    <div class="h-64 relative">
-                        <canvas id="weeklyStudyChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Gráfico de Tipo de Estudo -->
-                <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-black text-white mb-2"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Foco de Preparação</h3>
-                        <p class="text-xxs text-gray-400 mb-4">Divisão analítica em minutos</p>
-                    </div>
-                    <div class="h-44 relative flex items-center justify-center">
-                        <canvas id="studyTypeChart"></canvas>
-                    </div>
-                    <div id="study-type-legend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xxs mt-4 border-t border-blue-950 pt-3">
-                        <!-- Preenchido dinamicamente via JS -->
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Tempo de Estudo por Disciplina -->
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Tempo de Estudo por Disciplina</h3>
-                        <p class="text-xxs text-gray-400">Distribuição do tempo dedicado a cada matéria</p>
-                    </div>
-                    <div class="flex bg-blue-950 p-1 rounded-lg border border-blue-800 flex-wrap justify-center gap-0.5">
-                        <button onclick="setSubjectChartPeriod('dia')" id="btn-subperiod-dia" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Dia</button>
-                        <button onclick="setSubjectChartPeriod('semana')" id="btn-subperiod-semana" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Semana</button>
-                        <button onclick="setSubjectChartPeriod('mes')" id="btn-subperiod-mes" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Mês</button>
-                        <button onclick="setSubjectChartPeriod('ano')" id="btn-subperiod-ano" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Ano</button>
-                        <button onclick="setSubjectChartPeriod('total')" id="btn-subperiod-total" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Total</button>
-                    </div>
-                </div>
-
-                <div id="subject-chart-nav" class="flex items-center justify-center gap-3">
-                    <button onclick="navSubjectChart(-1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                    <span id="subject-chart-period-label" class="text-sm font-black text-white min-w-[140px] text-center">--</span>
-                    <button onclick="navSubjectChart(1)" class="w-8 h-8 rounded-full bg-blue-950 hover:bg-blue-800 text-white flex items-center justify-center transition border border-blue-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
-                    <div class="lg:col-span-2 h-72 relative flex items-center justify-center">
-                        <canvas id="subjectTimeChart"></canvas>
-                    </div>
-                    <div class="lg:col-span-3">
-                        <div class="pb-3 mb-2 border-b border-blue-900">
-                            <h4 class="text-2xl md:text-3xl font-black text-prf-yellow" id="subject-chart-total">0h 00m</h4>
-                            <p class="text-xxs text-gray-400" id="subject-chart-range-desc">Tempo total no período</p>
-                        </div>
-                        <div id="subject-chart-legend" class="space-y-1 max-h-64 overflow-y-auto pr-1">
-                            <!-- Preenchido dinamicamente via JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aproveitamento -->
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
-                <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-gauge-high text-prf-yellow mr-2"></i>Aproveitamento por Disciplina (Questões)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
-                    <!-- Preenchido dinamicamente -->
-                </div>
-            </div>
-
             <!-- ── ANÁLISE DE DESEMPENHO (novos gráficos) ── -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Evolução da Taxa de Acerto -->
@@ -1286,6 +1217,89 @@
             <div id="intelligence-panel" class="space-y-4">
                 <!-- Preenchido pelo motor de IA -->
             </div>
+
+<!-- CONTROLE DE PRAZO DO PROJETO -->
+<div id="deadline-control-card" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <span class="text-sm font-black text-white flex items-center gap-2">
+        <i class="fa-solid fa-hourglass-half text-prf-yellow"></i>
+        PRAZO DA PROVA
+      </span>
+      <p class="text-xs text-gray-400 mt-1">Defina o nome da prova e a data.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="deadline-exam-select" onchange="switchDeadlineExam(this.value)" title="Alternar entre provas" aria-label="Prova ativa"
+        class="bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-xs font-bold max-w-[11rem] focus:outline-none focus:border-yellow-400"></select>
+      <button onclick="addDeadlineExam()" title="Adicionar outra prova" aria-label="Adicionar prova"
+        class="bg-blue-900 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-black transition"><i class="fa-solid fa-plus"></i></button>
+      <button id="deadline-del-btn" onclick="deleteDeadlineExam()" title="Excluir esta prova" aria-label="Excluir prova"
+        class="bg-blue-900 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-black transition"><i class="fa-solid fa-trash"></i></button>
+      <input id="deadline-project-name" type="text" value="Prova PRF"
+        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold w-44 focus:outline-none focus:border-yellow-400"
+        placeholder="Nome da prova">
+      <input id="deadline-project-date" type="date"
+        class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-sm font-bold focus:outline-none focus:border-yellow-400">
+      <button onclick="saveDeadlineData()"
+        class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-4 py-2 rounded-lg text-xs font-black transition">
+        SALVAR
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-blue-950/60 rounded-xl border border-blue-800 p-4">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <div>
+        <div id="deadline-project-title" class="text-xs text-gray-400 font-bold uppercase tracking-widest">Prova PRF</div>
+        <div class="text-2xl font-black text-white mt-1 flex flex-wrap items-baseline gap-x-2">
+          <input id="deadline-label" type="text" maxlength="40" value="Dia da prova" title="Clique para editar o título" aria-label="Título do contador"
+            class="bg-transparent text-2xl font-black text-white p-0 m-0 border-0 border-b border-dashed border-transparent hover:border-yellow-400 focus:border-yellow-400 focus:outline-none"
+            style="width:12ch; max-width:100%; font-family:inherit;">
+          <span>—</span> <span id="deadline-days" class="text-prf-yellow">Defina a data</span>
+        </div>
+      </div>
+      <i class="fa-solid fa-flag-checkered text-3xl text-prf-yellow"></i>
+    </div>
+
+    <div class="relative pt-4">
+      <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden border border-blue-900">
+        <div id="deadline-progress-bar" class="h-full rounded-full transition-all duration-700"
+             style="width:0%; background:linear-gradient(90deg,#facc15,#f59e0b);"></div>
+      </div>
+      <div id="deadline-markers" class="absolute left-0 right-0 bottom-0 h-8 pointer-events-none"></div>
+    </div>
+    <div class="flex justify-between mt-2 text-xxs">
+      <span class="text-gray-500">🏁 prova</span>
+      <span class="text-gray-500">início do prazo</span>
+    </div>
+    <div id="deadline-status" class="text-xxs text-gray-400 mt-1">Escolha a data da prova.</div>
+    <div id="deadline-next-milestone" class="text-xs text-gray-300 mt-1"></div>
+
+    <div id="deadline-pace" class="hidden mt-3 rounded-lg border border-blue-800 bg-blue-950/80 p-3 text-xs text-gray-300 space-y-1"></div>
+
+    <details id="deadline-milestones-box" class="mt-3">
+      <summary class="cursor-pointer text-xs font-bold text-gray-300 hover:text-white select-none">
+        <i class="fa-solid fa-flag text-prf-yellow mr-1"></i> Marcos do prazo <span id="deadline-milestones-count" class="text-gray-500"></span>
+      </summary>
+      <div id="deadline-milestones-list" class="flex flex-wrap gap-2 mt-3"></div>
+      <div class="flex flex-wrap items-center gap-2 mt-3">
+        <select id="deadline-ms-type" onchange="_dlMsTypeChanged()" aria-label="Tipo de marco"
+          class="bg-input-dark border border-blue-800 rounded-lg px-2 py-2 text-white text-xs font-bold focus:outline-none focus:border-yellow-400">
+          <option value="simulado">🎯 Simulado</option>
+          <option value="leitura">📖 Fim da 1ª leitura</option>
+          <option value="revisao">🔁 Início da revisão final</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+        <input id="deadline-ms-title" type="text" maxlength="40" placeholder="Título (opcional)"
+          class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-xs font-bold w-44 focus:outline-none focus:border-yellow-400">
+        <input id="deadline-ms-date" type="date" aria-label="Data do marco"
+          class="bg-input-dark border border-blue-800 rounded-lg px-3 py-2 text-white text-xs font-bold focus:outline-none focus:border-yellow-400">
+        <button onclick="addDeadlineMilestone()"
+          class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 px-3 py-2 rounded-lg text-xs font-black transition">ADICIONAR</button>
+      </div>
+    </details>
+  </div>
+</div>
         </section>
 
         <!-- 2. TAB EDITAL VERTICALIZADO -->
@@ -8086,6 +8100,54 @@ function renderHistoryTab() {
         }
         window.renderSubjectAccuracyChart = renderSubjectAccuracyChart;
 
+        // ── FOCO DE PREPARAÇÃO: período (Dia / Mês / Ano / Total) ──────────────
+        window._focusChartPeriod = window._focusChartPeriod || 'total';
+        window._focusChartOffset = window._focusChartOffset || 0;
+
+        function _focusChartRange() {
+            const period = window._focusChartPeriod || 'total';
+            const offset = window._focusChartOffset || 0;
+            const tzNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const mesesFull = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            if (period === 'dia') {
+                const d = new Date(tzNow); d.setDate(d.getDate() + offset);
+                const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                return { start: day, end: day, label: `${String(d.getDate()).padStart(2,'0')} ${mesesFull[d.getMonth()].slice(0,3)} ${d.getFullYear()}` };
+            }
+            if (period === 'mes') {
+                const d = new Date(tzNow.getFullYear(), tzNow.getMonth() + offset, 1);
+                return { start: new Date(d.getFullYear(), d.getMonth(), 1), end: new Date(d.getFullYear(), d.getMonth() + 1, 0), label: `${mesesFull[d.getMonth()]} ${d.getFullYear()}` };
+            }
+            if (period === 'ano') {
+                const y = tzNow.getFullYear() + offset;
+                return { start: new Date(y, 0, 1), end: new Date(y, 11, 31), label: `${y}` };
+            }
+            return { start: null, end: null, label: 'Todo o período' };
+        }
+
+        function setFocusChartPeriod(period) {
+            window._focusChartPeriod = period;
+            window._focusChartOffset = 0;
+            ['dia','mes','ano','total'].forEach(p => {
+                const btn = document.getElementById('btn-focusperiod-' + p);
+                if (!btn) return;
+                btn.className = (p === period)
+                    ? 'flex-1 px-2 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow'
+                    : 'flex-1 px-2 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition';
+            });
+            const navEl = document.getElementById('focus-chart-nav');
+            if (navEl) navEl.style.visibility = (period === 'total') ? 'hidden' : 'visible';
+            updateStudyTypeChartData();
+        }
+
+        function navFocusChart(dir) {
+            if (window._focusChartPeriod === 'total') return;
+            window._focusChartOffset = (window._focusChartOffset || 0) + dir;
+            updateStudyTypeChartData();
+        }
+        window.setFocusChartPeriod = setFocusChartPeriod;
+        window.navFocusChart = navFocusChart;
+
         function updateStudyTypeChartData() {
             if(!studyTypeChart) return;
             const minsToHHMM = (mins) => {
@@ -8098,19 +8160,29 @@ function renderHistoryTab() {
             const colors = ['#FFD400','#10b981','#3b82f6','#f97316','#a855f7','#06b6d4','#ef4444','#ec4899','#84cc16','#94a3b8'];
             let data = new Array(types.length).fill(0);
             const secByType = new Array(types.length).fill(0);
+            // Filtra pelo período escolhido (Dia / Mês / Ano / Total)
+            const { start: _fStart, end: _fEnd, label: _fLabel } = _focusChartRange();
+            const _iso = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const _fS = _fStart ? _iso(_fStart) : null, _fE = _fEnd ? _iso(_fEnd) : null;
             studyDb.history.forEach(s => {
+                if (_fS && (s.date < _fS || s.date > _fE)) return;
                 const idx = types.indexOf(s.type);
                 if (idx >= 0) secByType[idx] += _sessionSeconds(s);
             });
+            const _fLabelEl = document.getElementById('focus-chart-period-label');
+            if (_fLabelEl) _fLabelEl.innerText = _fLabel;
             data = secByType.map(sec => Math.round(sec / 60));
             // Filtrar apenas tipos com dados
             const activeTypes = types.filter((_,i) => data[i] > 0);
             const activeData  = data.filter(d => d > 0);
             const activeColors = colors.filter((_,i) => data[i] > 0);
 
-            studyTypeChart.data.labels = activeTypes.length ? activeTypes : types;
-            studyTypeChart.data.datasets[0].data = activeData.length ? activeData : data;
-            studyTypeChart.data.datasets[0].backgroundColor = activeColors.length ? activeColors : colors;
+            studyTypeChart.data.labels = activeTypes;
+            studyTypeChart.data.datasets[0].data = activeData;
+            studyTypeChart.data.datasets[0].backgroundColor = activeColors;
+            const _fTotal = activeData.reduce((a,b) => a+b, 0);
+            const _fDescEl = document.getElementById('focus-chart-desc');
+            if (_fDescEl) _fDescEl.innerText = (_fStart ? `Divisão em ${_fLabel}` : 'Divisão em todo o histórico') + ` · total ${minsToHHMM(_fTotal)}`;
             studyTypeChart.options.plugins.tooltip = {
                 callbacks: { label: ctx => ` ${ctx.label}: ${minsToHHMM(ctx.parsed)}` }
             };
@@ -8119,9 +8191,13 @@ function renderHistoryTab() {
             // Atualiza legendas dinamicamente com HH:MM para todos os tipos com dados
             const legendContainer = document.getElementById('study-type-legend');
             if (legendContainer) {
-                const displayTypes = activeTypes.length ? activeTypes : types;
-                const displayData = activeData.length ? activeData : data;
-                const displayColors = activeColors.length ? activeColors : colors;
+                const displayTypes = activeTypes;
+                const displayData = activeData;
+                const displayColors = activeColors;
+                if (!displayTypes.length) {
+                    legendContainer.innerHTML = '<p class="text-xs text-gray-500 text-center py-2 w-full">Nenhum estudo registrado neste período.</p>';
+                    return;
+                }
                 legendContainer.innerHTML = displayTypes.map((t, i) => `
                     <div class="text-center min-w-[64px]">
                         <span class="inline-block w-2.5 h-2.5 rounded-full mr-1" style="background-color:${displayColors[i]}"></span>
@@ -10312,8 +10388,42 @@ function renderHistoryTab() {
             return { current, record };
         }
 
+        // Rola o calendário direto para o mês atual (ou para Janeiro, se for outro ano).
+        // Só faz isso uma vez por ano exibido, para não atrapalhar quando a pessoa rola manualmente.
+        let _activityCalScrolledYear = null;
+        function _activityCalAutoScroll() {
+            const wrap = document.getElementById('activity-cal-scroll');
+            if (!wrap || wrap.clientWidth === 0) return;   // aba oculta: tenta de novo quando ela for exibida
+            if (_activityCalScrolledYear === activityCalYear) return;
+            _activityCalScrolledYear = activityCalYear;
+            const curYear = parseInt(todayBrazil().slice(0, 4), 10);
+            const curMonth = parseInt(todayBrazil().slice(5, 7), 10) - 1;
+            if (activityCalYear !== curYear) { wrap.scrollLeft = 0; return; }
+            const el = wrap.querySelector('[data-cal-month="' + curMonth + '"]');
+            if (!el) return;
+            const wr = wrap.getBoundingClientRect(), er = el.getBoundingClientRect();
+            // centraliza o mês atual na área visível
+            wrap.scrollLeft += (er.left - wr.left) - (wrap.clientWidth - er.width) / 2;
+        }
+
+        // Acompanha a virada de mês/ano com a página aberta: se o mês de hoje mudou desde a última
+        // renderização, rola de novo para o mês atual (e, se a pessoa estava vendo o ano que acabou
+        // de terminar, avança para o ano novo).
+        let _activityCalTodayKey = null;
+        function _activityCalCheckRollover() {
+            const nowKey = todayBrazil().slice(0, 7);          // AAAA-MM
+            if (_activityCalTodayKey && _activityCalTodayKey !== nowKey) {
+                const prevYear = parseInt(_activityCalTodayKey.slice(0, 4), 10);
+                const nowYear = parseInt(nowKey.slice(0, 4), 10);
+                if (activityCalYear === prevYear && nowYear !== prevYear) activityCalYear = nowYear;
+                _activityCalScrolledYear = null;                // força nova rolagem para o mês atual
+            }
+            _activityCalTodayKey = nowKey;
+        }
+
         function renderActivityCalendar() {
             if (!activityCalYear) activityCalYear = new Date().getFullYear();
+            _activityCalCheckRollover();
             const grid = document.getElementById('activity-cal-grid');
             const yearLabel = document.getElementById('activity-cal-year-label');
             const subtitle = document.getElementById('activity-cal-subtitle');
@@ -10329,7 +10439,7 @@ function renderHistoryTab() {
             let html = '';
             for (let m = 0; m < 12; m++) {
                 const lastDate = new Date(activityCalYear, m + 1, 0).getDate();
-                html += '<div class="flex flex-col items-start shrink-0">'
+                html += '<div class="flex flex-col items-start shrink-0" data-cal-month="' + m + '">'
                       + '<span class="text-xxs text-gray-400 font-bold" style="height:14px;line-height:14px;">' + monthNames[m] + '</span>'
                       + '<div style="display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:2px;">';
 
@@ -10350,7 +10460,11 @@ function renderHistoryTab() {
                 }
                 html += '</div></div>';
             }
+            const _scrollEl = document.getElementById('activity-cal-scroll');
+            const _prevScroll = _scrollEl ? _scrollEl.scrollLeft : 0;
             grid.innerHTML = html;
+            if (_scrollEl) _scrollEl.scrollLeft = _prevScroll; // não "pula" ao re-renderizar
+            _activityCalAutoScroll();
 
             const streaks = _computeStreaks();
             const curEl = document.getElementById('activity-current-streak');
@@ -11156,7 +11270,7 @@ function renderHistoryTab() {
         // ── PAINEL DE INTELIGÊNCIA ───────────────────────────────────────────
         function updateIntelligencePanel() {
             const panel = document.getElementById('intelligence-panel');
-            if (!panel || !studyDb.history.length) { if (panel) panel.innerHTML = ''; return; }
+            if (!panel || !studyDb.history.length) { if (panel) panel.innerHTML = ''; const _es = document.getElementById('evolution-slot'); if (_es) _es.innerHTML = ''; return; }
 
             const score = calcGlobalScore();
             const rank  = _scoreRank(score);
@@ -11203,6 +11317,38 @@ function renderHistoryTab() {
                     <span style="font-size:11px;font-weight:900;color:${c};min-width:32px;text-align:right;">${m.mastery}%</span>
                 </div>`;
             }).join('');
+
+            const evoSlot = document.getElementById('evolution-slot');
+            if (evoSlot) evoSlot.innerHTML = `
+              <div style="background:#15294a;border:1px solid rgba(59,130,246,0.25);border-radius:20px;padding:20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i>
+                    <div>
+                      <div style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Evolução nos Estudos</div>
+                      <div style="font-size:10px;color:#6b7280;">% de acerto nas questões — por disciplina e geral, ao longo do tempo</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <select id="evo-subject-select" onchange="setEvoSubjectFilter(this.value)" style="background:#0d1e36;color:#e2e8f0;border:1px solid #1d355c;border-radius:8px;font-size:11px;font-weight:700;padding:5px 8px;max-width:220px;">
+                      <option value="all">Todas as disciplinas</option>
+                    </select>
+                    <div style="display:flex;gap:4px;background:#0d1e36;border-radius:8px;padding:3px;">
+                      <button type="button" id="btn-evo-week" onclick="setEvoGranularity('week')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Semana</button>
+                      <button type="button" id="btn-evo-month" onclick="setEvoGranularity('month')" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Mês</button>
+                      <button type="button" id="btn-evo-year" onclick="setEvoGranularity('year')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="evolution-chart-wrap" style="position:relative;height:340px;">
+                  <canvas id="evolution-chart"></canvas>
+                </div>
+                <p id="evolution-chart-empty" style="display:none;font-size:12px;color:#6b7280;text-align:center;padding:30px 0;">Registe sessões com questões respondidas para ver a evolução do seu desempenho.</p>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+                  <span style="width:18px;height:0;border-top:3px dashed #FFD400;display:inline-block;"></span>
+                  <span style="font-size:10px;color:#6b7280;">Linha amarela tracejada = média Geral (todas as disciplinas)</span>
+                </div>
+              </div>`;
 
             panel.innerHTML = `
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
@@ -11255,35 +11401,6 @@ function renderHistoryTab() {
                   <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>≥70% Forte</span>
                   <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>45-69% Médio</span>
                   <span style="font-size:10px;color:#6b7280;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>&lt;45% Fraco</span>
-                </div>
-              </div>
-              <div style="grid-column:1/-1;background:#15294a;border:1px solid rgba(59,130,246,0.25);border-radius:20px;padding:20px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i>
-                    <div>
-                      <div style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;">Evolução nos Estudos</div>
-                      <div style="font-size:10px;color:#6b7280;">% de acerto nas questões — por disciplina e geral, ao longo do tempo</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <select id="evo-subject-select" onchange="setEvoSubjectFilter(this.value)" style="background:#0d1e36;color:#e2e8f0;border:1px solid #1d355c;border-radius:8px;font-size:11px;font-weight:700;padding:5px 8px;max-width:220px;">
-                      <option value="all">Todas as disciplinas</option>
-                    </select>
-                    <div style="display:flex;gap:4px;background:#0d1e36;border-radius:8px;padding:3px;">
-                      <button type="button" id="btn-evo-week" onclick="setEvoGranularity('week')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Semana</button>
-                      <button type="button" id="btn-evo-month" onclick="setEvoGranularity('month')" class="px-3 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow">Mês</button>
-                      <button type="button" id="btn-evo-year" onclick="setEvoGranularity('year')" class="px-3 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">Ano</button>
-                    </div>
-                  </div>
-                </div>
-                <div id="evolution-chart-wrap" style="position:relative;height:340px;">
-                  <canvas id="evolution-chart"></canvas>
-                </div>
-                <p id="evolution-chart-empty" style="display:none;font-size:12px;color:#6b7280;text-align:center;padding:30px 0;">Registe sessões com questões respondidas para ver a evolução do seu desempenho.</p>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
-                  <span style="width:18px;height:0;border-top:3px dashed #FFD400;display:inline-block;"></span>
-                  <span style="font-size:10px;color:#6b7280;">Linha amarela tracejada = média Geral (todas as disciplinas)</span>
                 </div>
               </div>
             </div>`;
