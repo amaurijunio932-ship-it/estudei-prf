@@ -584,12 +584,48 @@
         .flatpickr-day.flatpickr-disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #475569 !important; }
         .flatpickr-prev-month, .flatpickr-next-month { color: #FFD400 !important; fill: #FFD400 !important; }
         .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: #ffe873 !important; }
+
+        /* ===== Dock flutuante de tópicos ===== */
+        #topic-dock{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:60;display:none;flex-direction:column;gap:2px;padding:8px 6px;border-radius:18px;background:rgba(13,30,54,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(59,130,246,.35);box-shadow:0 10px 30px rgba(0,0,0,.45);max-height:80vh;overflow-y:auto;scrollbar-width:none}
+        #topic-dock::-webkit-scrollbar{display:none}
+        body.dock-on #topic-dock{display:flex}
+        #topic-dock a{display:flex;align-items:center;justify-content:flex-end;gap:10px;height:34px;padding:0 9px;border-radius:12px;color:#93c5fd;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
+        #topic-dock a .td-label{max-width:0;opacity:0;overflow:hidden;transition:max-width .2s,opacity .2s}
+        #topic-dock:hover a .td-label{max-width:150px;opacity:1}
+        #topic-dock a i{width:16px;text-align:center;font-size:14px}
+        #topic-dock a:hover{background:rgba(30,58,138,.7);color:#fff}
+        #topic-dock a.active{background:#FFD400;color:#0f1b3d}
+        #topic-progress{position:fixed;left:0;top:0;height:3px;width:0;background:#FFD400;z-index:61;display:none;transition:width .1s}
+        body.dock-on #topic-progress{display:block}
+        #topic-top{margin-top:4px;border-top:1px solid rgba(59,130,246,.3);padding-top:4px}
+        #pane-dashboard > [id]{scroll-margin-top:84px}
+        #pane-dashboard .bg-card-dark{transition:transform .2s,box-shadow .2s,border-color .2s}
+        #pane-dashboard .bg-card-dark:hover{border-color:rgba(255,212,0,.35);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+        #topic-fab{position:fixed;left:14px;bottom:76px;z-index:60;width:46px;height:46px;border-radius:50%;display:none;align-items:center;justify-content:center;background:#FFD400;color:#0f1b3d;border:none;box-shadow:0 8px 20px rgba(0,0,0,.5);font-size:18px;cursor:pointer}
+        @media (max-width:1023px){
+            body.dock-on #topic-fab{display:flex}
+            body.dock-on #topic-dock{right:auto;left:14px;top:auto;bottom:130px;transform:none;display:none;max-height:55vh;padding:8px}
+            body.dock-on.dock-open #topic-dock{display:flex}
+            #topic-dock a{justify-content:flex-start}
+            #topic-dock a .td-label{max-width:150px;opacity:1}
+        }
+        .dock-hidden{display:none!important}
+        .dock-head{cursor:pointer;user-select:none}
+        .dock-chev{margin-left:8px;font-size:.7em;color:#93c5fd;transition:transform .2s}
+        .dock-collapsed .dock-chev{transform:rotate(-90deg)}
+        .dock-head:hover .dock-chev{color:#FFD400}
+        #deadline-chip{display:none;align-items:center;gap:6px;background:#FFD400;color:#0f1b3d;font-weight:900;font-size:12px;padding:6px 10px;border-radius:999px;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
+        #deadline-chip:hover{background:#ffe873}
+        @media (prefers-reduced-motion:reduce){#topic-dock *,#pane-dashboard .bg-card-dark{transition:none!important}}
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-12">
 
     <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
+    <div id="topic-progress"></div>
+    <nav id="topic-dock" aria-label="Tópicos do painel"></nav>
+    <button id="topic-fab" type="button" aria-label="Tópicos do painel"><i class="fa-solid fa-list-ul"></i></button>
 
     <!-- OVERLAY DE SINCRONIZAÇÃO AUTOMÁTICA AO ABRIR -->
     <div id="sync-boot-overlay">
@@ -651,6 +687,7 @@
                     </div>
                 </div>
                 
+                <button id="deadline-chip" type="button" title="Ir para o Prazo da Prova"><i class="fa-solid fa-hourglass-half"></i><span id="deadline-chip-text"></span></button>
                 <button onclick="openSyncCenterModal()" title="Sincronizar Conta" class="xl:hidden bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold p-2 rounded-lg flex items-center shadow transition">
                     <i class="fa-solid fa-arrows-rotate text-base"></i>
                 </button>
@@ -688,7 +725,7 @@
 
         <!-- 1. TAB DASHBOARD / PAINEL PRINCIPAL -->
         <section id="pane-dashboard" class="tab-pane active space-y-6">
-            <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 rounded-2xl border-2 border-yellow-400/50 shadow-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+            <div id="sec-inicio" class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 p-6 rounded-2xl border-2 border-yellow-400/50 shadow-2xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div class="flex-shrink-0 flex items-center justify-center bg-blue-950/60 p-4 rounded-full border border-yellow-400/20 shadow-inner">
@@ -738,7 +775,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+            <div id="sec-kpis" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex flex-col">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
@@ -817,7 +854,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Planeamento Ativo -->
-                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between gap-4">
+                <div id="sec-plano" class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl flex flex-col justify-between gap-4">
                     <div class="space-y-4">
                         <h3 class="text-lg font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Planeamento Ativo</h3>
                         
@@ -868,7 +905,7 @@
                 </div>
 
                 <!-- Calendário de Atividade -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
+                <div id="sec-calendario" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl flex flex-col">
                     <div class="flex items-center gap-3 mb-3">
                         <div class="bg-rose-500/20 text-rose-400 text-lg w-10 h-10 rounded-xl flex items-center justify-center shrink-0"><i class="fa-solid fa-calendar-days"></i></div>
                         <div class="min-w-0">
@@ -918,7 +955,7 @@
 
             
 <!-- Insights do Estudei -->
-            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+            <div id="sec-insights" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <span class="text-sm font-black text-white flex items-center gap-2">
                         <span class="bg-blue-600 text-white text-xs font-black px-2 py-0.5 rounded-md tracking-wide">INSIGHTS</span>
@@ -971,7 +1008,7 @@
             </div>
 
             <!-- Meta Diária de Estudo -->
-            <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
+            <div id="sec-meta" class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                     <div>
                         <span class="text-sm font-black text-white"><i class="fa-solid fa-bullseye text-prf-yellow mr-2"></i>Meta Diária de Estudo</span>
@@ -996,7 +1033,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Gráfico de Evolução -->
-                <div class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+                <div id="sec-evolucao" class="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                         <div>
                             <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-area text-prf-yellow mr-2"></i>Evolução de Estudos</h3>
@@ -1047,7 +1084,7 @@
 
 
             <!-- Tempo de Estudo por Disciplina -->
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
+            <div id="sec-tempo" class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                         <h3 class="text-lg font-black text-white"><i class="fa-solid fa-chart-pie text-prf-yellow mr-2"></i>Tempo de Estudo por Disciplina</h3>
@@ -1085,7 +1122,7 @@
             </div>
 
             <!-- Aproveitamento -->
-            <div class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
+            <div id="sec-aproveitamento" class="bg-card-dark p-6 rounded-2xl border border-blue-900 shadow-xl">
                 <h3 class="text-lg font-black text-white mb-4"><i class="fa-solid fa-gauge-high text-prf-yellow mr-2"></i>Aproveitamento por Disciplina (Questões)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="subject-performance-grid">
                     <!-- Preenchido dinamicamente -->
@@ -12636,4 +12673,139 @@ document.addEventListener('DOMContentLoaded', function() {
     try { initDeadlineControl(); } catch(e) { console.error('deadline', e); }
     setInterval(function(){ try { renderDeadline(); } catch(e) {} }, 60000);
 });
+</script>
+<script>
+(function(){
+    var TOPICS=[
+        ['sec-inicio','Início','fa-house'],['sec-kpis','Indicadores','fa-gauge'],
+        ['sec-plano','Planejamento','fa-bullseye'],['sec-calendario','Calendário','fa-calendar-days'],
+        ['sec-insights','Insights','fa-lightbulb'],['sec-meta','Meta diária','fa-flag-checkered'],
+        ['sec-evolucao','Evolução','fa-chart-area'],['sec-tempo','Tempo por disciplina','fa-chart-pie'],
+        ['sec-aproveitamento','Aproveitamento','fa-gauge-high'],['habits-dashboard-card','Hábitos','fa-list-check'],
+        ['weekly-summary-card','Resumo semanal','fa-calendar-week'],['intelligence-panel','Inteligência','fa-brain'],
+        ['deadline-control-card','Prazo da prova','fa-hourglass-half']
+    ];
+    var dock,links={},current=null;
+    function build(){
+        dock=document.getElementById('topic-dock'); if(!dock) return;
+        TOPICS.forEach(function(t){
+            if(!document.getElementById(t[0])) return;
+            var a=document.createElement('a'); a.href='#'+t[0]; a.title=t[1];
+            a.innerHTML='<span class="td-label">'+t[1]+'</span><i class="fa-solid '+t[2]+'"></i>';
+            a.addEventListener('click',function(e){
+                e.preventDefault();
+                var el=document.getElementById(t[0]); if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+                document.body.classList.remove('dock-open');
+            });
+            dock.appendChild(a); links[t[0]]=a;
+        });
+        var up=document.createElement('a'); up.id='topic-top'; up.href='#'; up.title='Voltar ao topo';
+        up.innerHTML='<span class="td-label">Topo</span><i class="fa-solid fa-arrow-up"></i>';
+        up.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'});document.body.classList.remove('dock-open');});
+        dock.appendChild(up);
+        var fab=document.getElementById('topic-fab');
+        if(fab) fab.addEventListener('click',function(){document.body.classList.toggle('dock-open');});
+    }
+    function visible(el){return el && el.offsetParent!==null && el.offsetHeight>0;}
+    function update(){
+        var pane=document.getElementById('pane-dashboard');
+        var on=pane && !pane.classList.contains('hidden');
+        document.body.classList.toggle('dock-on',!!on);
+        if(!on) return;
+        var h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+        var bar=document.getElementById('topic-progress');
+        if(bar) bar.style.width=(max>0?Math.min(100,window.scrollY/max*100):0)+'%';
+        var line=window.innerHeight*0.3, best=null;
+        TOPICS.forEach(function(t){
+            var el=document.getElementById(t[0]), a=links[t[0]];
+            if(!a) return;
+            var show=visible(el); a.style.display=show?'':'none';
+            if(show && el.getBoundingClientRect().top<=line) best=t[0];
+        });
+        if(!best){ for(var i=0;i<TOPICS.length;i++){ if(links[TOPICS[i][0]] && links[TOPICS[i][0]].style.display!=='none'){best=TOPICS[i][0];break;} } }
+        if(best!==current){
+            if(current&&links[current]) links[current].classList.remove('active');
+            current=best; if(current&&links[current]) links[current].classList.add('active');
+        }
+    }
+    var tick=false;
+    function sched(){ if(tick) return; tick=true; requestAnimationFrame(function(){tick=false;try{update();}catch(e){}}); }
+    function init(){
+        try{ build(); }catch(e){ console.error('dock',e); return; }
+        window.addEventListener('scroll',sched,{passive:true});
+        window.addEventListener('resize',sched);
+        var pane=document.getElementById('pane-dashboard');
+        if(pane && window.MutationObserver) new MutationObserver(sched).observe(pane,{attributes:true,attributeFilter:['class']});
+        document.querySelectorAll('.tab-pane').forEach(function(p){ if(window.MutationObserver) new MutationObserver(sched).observe(p,{attributes:true,attributeFilter:['class']}); });
+        setInterval(sched,1500);
+        sched();
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+<script>
+(function(){
+    var KEY='estudei_collapsed_cards';
+    var IDS=['sec-plano','sec-calendario','sec-insights','sec-meta','sec-evolucao','sec-tempo','sec-aproveitamento','habits-dashboard-card','weekly-summary-card','deadline-control-card'];
+    function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
+    function save(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+    function headOf(card){
+        if(card.id==='deadline-control-card') return card.querySelector('#deadline-project-title');
+        return card.querySelector('h3')||card.querySelector('span.font-black');
+    }
+    function apply(card,head,collapsed){
+        card.classList.toggle('dock-collapsed',collapsed);
+        var node=head;
+        while(node&&node!==card){
+            var sib=node.nextElementSibling;
+            while(sib){ sib.classList.toggle('dock-hidden',collapsed); sib=sib.nextElementSibling; }
+            node=node.parentElement;
+        }
+        head.setAttribute('aria-expanded',collapsed?'false':'true');
+        if(!collapsed){ try{window.dispatchEvent(new Event('resize'));}catch(e){} }
+    }
+    function setup(){
+        var st=load();
+        IDS.forEach(function(id){
+            var card=document.getElementById(id); if(!card||card.dataset.dockInit) return;
+            var head=headOf(card); if(!head) return;
+            card.dataset.dockInit='1';
+            head.classList.add('dock-head'); head.setAttribute('role','button'); head.setAttribute('tabindex','0');
+            head.title='Clique para recolher/expandir';
+            var chev=document.createElement('i'); chev.className='fa-solid fa-chevron-down dock-chev'; head.appendChild(chev);
+            var toggle=function(ev){
+                if(ev.target.closest&&ev.target.closest('input,button,select,a,textarea')) return;
+                var c=!card.classList.contains('dock-collapsed'); apply(card,head,c);
+                var o=load(); if(c) o[id]=1; else delete o[id]; save(o);
+            };
+            head.addEventListener('click',toggle);
+            head.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(e);} });
+            if(st[id]) apply(card,head,true);
+        });
+    }
+    // Chip do prazo
+    function chip(){
+        var c=document.getElementById('deadline-chip'),t=document.getElementById('deadline-chip-text'),src=document.getElementById('deadline-days'),lab=document.getElementById('deadline-label');
+        if(!c||!t||!src) return;
+        var v=(src.textContent||'').trim();
+        if(!v||/defina/i.test(v)){c.style.display='none';return;}
+        t.textContent=v; c.title=((lab&&lab.value)||'Prazo da prova')+' — ir para o Prazo da Prova'; c.style.display='inline-flex';
+    }
+    function init(){
+        try{setup();}catch(e){console.error('collapse',e);}
+        var c=document.getElementById('deadline-chip');
+        if(c) c.addEventListener('click',function(){
+            if(typeof switchTab==='function') switchTab('dashboard');
+            setTimeout(function(){
+                var el=document.getElementById('deadline-control-card'); if(!el) return;
+                var h=headOf(el); if(el.classList.contains('dock-collapsed')&&h) h.click();
+                el.scrollIntoView({behavior:'smooth',block:'center'});
+            },60);
+        });
+        var src=document.getElementById('deadline-days');
+        if(src&&window.MutationObserver) new MutationObserver(chip).observe(src,{childList:true,characterData:true,subtree:true});
+        chip(); setInterval(function(){chip();setup();},2000);
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 </script>
