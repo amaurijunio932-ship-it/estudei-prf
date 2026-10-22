@@ -4942,7 +4942,13 @@
         }
 
         // Modais de Adição e Edição
-        function openAddTopicModal() { populateFormDropdowns(); document.getElementById('modal-add-topic').classList.remove('hidden'); }
+        function openAddTopicModal() {
+            populateFormDropdowns();
+            const _sel = document.getElementById('modal-add-subject-select'); if (_sel) _sel.value = '';
+            ['modal-new-subject-name', 'modal-new-topic-name'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            toggleNewSubjectInput();
+            document.getElementById('modal-add-topic').classList.remove('hidden');
+        }
         function closeAddTopicModal() { document.getElementById('modal-add-topic').classList.add('hidden'); }
         function toggleNewSubjectInput() {
             const v = document.getElementById('modal-add-subject-select').value;
@@ -4956,6 +4962,7 @@
             const newTop = document.getElementById('modal-new-topic-name').value.trim();
             
             let targetSub = sel;
+            if (!targetSub) { showAlert('Selecione uma disciplina (ou "+ Criar Nova Disciplina...").'); return; }
             if (sel === 'NEW_SUBJECT') {
                 targetSub = newSub;
                 // AUDITORIA (criação quebrada): o campo "Nome da Nova
@@ -4970,7 +4977,7 @@
                     return;
                 }
                 if (!studyDb.syllabus.find(s => s.subject.toLowerCase() === targetSub.toLowerCase())) {
-                    studyDb.syllabus.push({ id: _newId(), subject: targetSub, topics: [] });
+                    studyDb.syllabus.push({ id: _newId(), subject: targetSub, topics: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
                     studyDb.syllabus.sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true, sensitivity: 'base' }));
                 }
             }
@@ -4989,7 +4996,7 @@
                     showAlert(`"${newTop}" já existe em "${subObj.subject}". Use "Editar questões" nesse tópico em vez de criar um novo.`);
                     return;
                 }
-                subObj.topics.push({ id: _newId(), name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0 });
+                subObj.topics.push({ id: _newId(), name: newTop, status: "Não Estudado", qCorrect: 0, qTotal: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
                 subObj.topics.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                 saveDatabase(); closeAddTopicModal(); renderAllTabs(); showAlert("Tópico adicionado!");
             }
@@ -6305,6 +6312,7 @@
             const prevSubjectVal = formSubSelect ? formSubSelect.value : '';
             const topicSelect = document.getElementById('form-topic');
             const prevTopicVal = topicSelect ? topicSelect.value : '';
+            const prevModalAddVal = modalAddSubSelect ? modalAddSubSelect.value : '';
 
             if (modalAddSubSelect) modalAddSubSelect.innerHTML = '<option value="">Selecione...</option><option value="NEW_SUBJECT">+ Criar Nova Disciplina...</option>';
             if (formSubSelect) formSubSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -6317,6 +6325,15 @@
                 if (resSubSelect) resSubSelect.innerHTML += opt;
             });
             populateSummaryTopicsDropdown();
+
+            // CORREÇÃO (modal "Adicionar Matéria ou Tópico" voltava para "Selecione..."
+            // sozinho): o auto-sync reconstrói este <select> em segundo plano e a
+            // escolha era perdida — o campo é "required", então o botão Adicionar
+            // ficava bloqueado mesmo com o nome da disciplina digitado.
+            if (modalAddSubSelect && prevModalAddVal &&
+                Array.from(modalAddSubSelect.options).some(o => o.value === prevModalAddVal)) {
+                modalAddSubSelect.value = prevModalAddVal;
+            }
 
             // Restaura a disciplina, repopula os tópicos correspondentes e
             // restaura o tópico selecionado, se ainda existir no plano de estudos.
@@ -10698,8 +10715,20 @@ function renderHistoryTab() {
             // duplica por causa de um id gerado de forma diferente.
             const _sameSubject = (a, b) => (!!a.id && !!b.id && a.id === b.id) || (a.subject === b.subject);
             const _sameTopic   = (a, b) => (!!a.id && !!b.id && a.id === b.id) || (a.name === b.name);
-            const _subjTomb = s => (s.id && mergedTombSubj[s.id]) || mergedTombSubj[s.subject];
-            const _topTomb  = (subjName, t) => (t.id && mergedTombTop[t.id]) || mergedTombTop[`${subjName}||${t.name}`];
+            // CORREÇÃO (matéria recriada "sumia" no sync): a lápide por NOME
+            // ficava para sempre — se você apagava "Direito Administrativo" e
+            // depois criava de novo (id novo), o merge via o nome na lápide e
+            // apagava a matéria nova. Agora a lápide por nome só vale se o item
+            // NÃO foi criado/editado depois da exclusão. A lápide por id
+            // continua valendo sempre (é o que impede cópias antigas de voltarem).
+            const _nameTombWins = (ts, item) => {
+                if (!ts) return false;
+                const born = item && (item.createdAt || item.updatedAt);
+                if (!born) return true; // dado antigo sem carimbo → mantém o comportamento anterior
+                return new Date(ts).getTime() >= new Date(born).getTime();
+            };
+            const _subjTomb = s => (s.id && mergedTombSubj[s.id]) || _nameTombWins(mergedTombSubj[s.subject], s);
+            const _topTomb  = (subjName, t) => (t.id && mergedTombTop[t.id]) || _nameTombWins(mergedTombTop[`${subjName}||${t.name}`], t);
 
             merged.syllabus = (cloudDb.syllabus || [])
                 .filter(cloudSubj => !_subjTomb(cloudSubj)) // matéria apagada → não ressuscita
