@@ -781,26 +781,56 @@
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
                         <div class="text-yellow-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                     </div>
-                    <div class="flex justify-center -mt-1 -mb-3">
-                        <svg viewBox="0 0 200 120" class="w-full max-w-[170px]">
+                    <div class="flex justify-center -mt-1">
+                        <svg viewBox="0 0 200 142" class="w-full max-w-[190px]">
+                            <defs>
+                                <linearGradient id="syl-grad" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
+                                    <stop offset="0" stop-color="#ef4444"/>
+                                    <stop offset="0.5" stop-color="#FFD400"/>
+                                    <stop offset="1" stop-color="#10b981"/>
+                                </linearGradient>
+                                <radialGradient id="syl-hub" cx="50%" cy="40%" r="60%">
+                                    <stop offset="0" stop-color="#2a4676"/>
+                                    <stop offset="1" stop-color="#0d1e36"/>
+                                </radialGradient>
+                            </defs>
+                            <!-- Escala graduada -->
+                            <g>
+                                <line x1="7.0" y1="100.0" x2="1.0" y2="100.0" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="11.6" y1="71.3" x2="8.7" y2="70.3" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="24.8" y1="45.3" x2="22.3" y2="43.6" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="45.3" y1="24.8" x2="43.6" y2="22.3" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="71.3" y1="11.6" x2="70.3" y2="8.7" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="100.0" y1="7.0" x2="100.0" y2="1.0" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                                <line x1="128.7" y1="11.6" x2="129.7" y2="8.7" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="154.7" y1="24.8" x2="156.4" y2="22.3" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="175.2" y1="45.3" x2="177.7" y2="43.6" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="188.4" y1="71.3" x2="191.3" y2="70.3" stroke="#1d355c" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="193.0" y1="100.0" x2="199.0" y2="100.0" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                            </g>
+                            <!-- Anel interno decorativo -->
+                            <path d="M38 100 A62 62 0 0 1 162 100" fill="none" stroke="#1d355c" stroke-width="1.5" stroke-dasharray="1.5 5" stroke-linecap="round"/>
                             <!-- Trilha de fundo -->
                             <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#0d1e36" stroke-width="16" stroke-linecap="round"/>
-                            <!-- Marcadores -->
-                            <g stroke="#1d355c" stroke-width="2">
-                                <line x1="20" y1="100" x2="26" y2="100"/>
-                                <line x1="41.7" y1="43.4" x2="46.9" y2="46.3"/>
-                                <line x1="100" y1="20" x2="100" y2="26"/>
-                                <line x1="158.3" y1="43.4" x2="153.1" y2="46.3"/>
-                                <line x1="180" y1="100" x2="174" y2="100"/>
-                            </g>
-                            <!-- Arco de progresso -->
-                            <path id="stat-syllabus-progress-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FFD400" stroke-width="16" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="251.33" style="transition: stroke-dashoffset 0.6s ease, stroke 0.6s ease;"/>
+                            <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#17305a" stroke-width="16" stroke-linecap="round" opacity="0.35"/>
+                            <!-- Arco de progresso (degradê vermelho → amarelo → verde) -->
+                            <path id="stat-syllabus-progress-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#syl-grad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251.33" stroke-dashoffset="251.33" style="transition: stroke-dashoffset 0.8s cubic-bezier(.22,1,.36,1); filter: drop-shadow(0 0 5px rgba(255,212,0,.35));"/>
+                            <!-- Rótulos da escala -->
+                            <text x="20" y="119" text-anchor="middle" font-size="9" font-weight="700" fill="#5b7aa8">0</text>
+                            <text x="180" y="119" text-anchor="middle" font-size="9" font-weight="700" fill="#5b7aa8">100</text>
                             <!-- Ponteiro -->
-                            <line id="stat-syllabus-progress-needle" x1="100" y1="100" x2="100" y2="30" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round" style="transform-origin: 100px 100px; transform: rotate(-90deg); transition: transform 0.6s ease;"/>
-                            <circle cx="100" cy="100" r="6" fill="#e2e8f0"/>
-                            <text id="stat-syllabus-progress" x="100" y="98" text-anchor="middle" font-size="26" font-weight="900" fill="#ffffff">0.0%</text>
+                            <g id="stat-syllabus-progress-needle" style="transform-origin: 100px 100px; transform: rotate(-90deg); transition: transform 0.8s cubic-bezier(.22,1,.36,1); filter: drop-shadow(0 1px 2px rgba(0,0,0,.6));">
+                                <polygon points="100,34 95.5,100 104.5,100" fill="#e2e8f0"/>
+                                <polygon points="95.5,100 104.5,100 102.5,110 97.5,110" fill="#94a3b8"/>
+                            </g>
+                            <!-- Eixo -->
+                            <circle cx="100" cy="100" r="10" fill="url(#syl-hub)" stroke="#e2e8f0" stroke-width="2.5"/>
+                            <circle cx="100" cy="100" r="3.5" fill="#FFD400" id="stat-syllabus-hub"/>
+                            <!-- Percentual -->
+                            <text id="stat-syllabus-progress" x="100" y="136" text-anchor="middle" font-size="24" font-weight="900" fill="#ffffff" letter-spacing="-0.5">0.0%</text>
                         </svg>
                     </div>
+                    <p id="stat-syllabus-sub" class="text-xs text-blue-300 text-center -mt-0.5">0 de 0 tópicos estudados</p>
                 </div>
 
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
@@ -849,6 +879,21 @@
                         <p class="text-xs text-gray-400 mt-1">Remuneração inicial da carreira</p>
                     </div>
                     <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-sack-dollar"></i></div>
+                </div>
+
+                <!-- Notas da Redação -->
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Notas da Redação</span>
+                        <h3 class="text-2xl font-black mt-1 text-gray-400" id="stat-essay-avg">--</h3>
+                        <p class="text-xs text-blue-300 mt-1" id="stat-essay-sub">Nenhuma redação registrada</p>
+                        <label class="text-xxs text-gray-500 mt-1.5 flex items-center gap-1" title="Pré-edital: ajuste quando o edital definir o valor da redação">
+                            Vale
+                            <input type="number" id="essay-max-input" min="1" step="0.5" value="20" inputmode="decimal" onchange="setEssayMax(this.value)" class="w-14 bg-input-dark border border-blue-800 rounded-md px-1.5 py-0.5 text-white text-xxs text-center focus:outline-none focus:border-yellow-400">
+                            pontos
+                        </label>
+                    </div>
+                    <div class="text-prf-yellow text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-file-pen"></i></div>
                 </div>
             </div>
 
@@ -1364,6 +1409,8 @@
                 </div>
             </div>
 
+            <div id="edital-summary"></div>
+
             <div class="flex flex-wrap gap-2" id="edital-subject-filters">
                 <!-- Preenchido dinamicamente -->
             </div>
@@ -1636,6 +1683,16 @@
                                         <div class="bg-blue-900/40 p-2.5 rounded-lg text-center font-bold text-sm text-gray-300">
                                             Aproveitamento: <span class="text-emerald-400" id="form-accuracy-preview">0%</span>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-blue-950/60 rounded-xl border border-blue-800 space-y-2">
+                                <span class="text-xs font-bold text-prf-yellow uppercase tracking-wider block"><i class="fa-solid fa-file-pen mr-1"></i>Redação <span class="text-gray-500 normal-case font-normal">(opcional)</span></span>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-1">Nota da Redação</label>
+                                        <input type="number" id="form-essay-score" min="0" step="0.01" inputmode="decimal" class="w-full bg-input-dark border border-blue-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Ex: 24,5">
                                     </div>
                                 </div>
                             </div>
@@ -2115,6 +2172,15 @@
                     <span id="edit-history-accuracy-preview" class="text-sm font-black text-emerald-400">0%</span>
                 </div>
                 <p class="text-xxs text-gray-600">⚠️ Alterar questões atualiza também o Edital Verticalizado e os gráficos.</p>
+            </div>
+
+            <!-- Nota da Redação -->
+            <div class="space-y-1">
+                <label class="text-xs font-black text-gray-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-file-pen mr-1 text-yellow-400"></i> Nota da Redação <span class="text-gray-600 normal-case font-normal">(opcional)</span>
+                </label>
+                <input type="number" id="edit-history-essay-score" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 24,5"
+                    class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-400 transition placeholder-gray-600">
             </div>
 
             <!-- Observações -->
@@ -4206,12 +4272,17 @@
             if (gaugeArc) {
                 const arcLength = 251.33;
                 gaugeArc.style.strokeDashoffset = arcLength * (1 - gaugePct / 100);
-                gaugeArc.style.stroke = gaugePct >= 66 ? '#10b981' : gaugePct >= 33 ? '#FFD400' : '#ef4444';
             }
             if (gaugeNeedle) {
                 const angle = -90 + (gaugePct / 100) * 180;
                 gaugeNeedle.style.transform = `rotate(${angle}deg)`;
             }
+            const gaugeTier = gaugePct >= 66 ? '#10b981' : gaugePct >= 33 ? '#FFD400' : '#ef4444';
+            if (gaugeText) gaugeText.setAttribute('fill', gaugeTier);
+            const gaugeHub = document.getElementById('stat-syllabus-hub');
+            if (gaugeHub) gaugeHub.setAttribute('fill', gaugeTier);
+            const gaugeSub = document.getElementById('stat-syllabus-sub');
+            if (gaugeSub) gaugeSub.textContent = `${completedTopics} de ${totalTopics} tópicos estudados`;
 
             let cycleDone = studyDb.studyCycle.filter(s => s.status === "Concluído").length;
             let cycleCompletion = studyDb.studyCycle.length > 0 ? Math.round((cycleDone / studyDb.studyCycle.length) * 100) : 0;
@@ -4326,6 +4397,8 @@
                 }
             })();
 
+            try { updateEssayCard(); } catch(e) { console.error('[Estudei] card redação:', e); }
+
             // Sessões Recentes
             (function renderRecent() {
                 const container=document.getElementById('recent-sessions-list');
@@ -4392,7 +4465,7 @@
                       <input
                         type="text"
                         id="edital-search-input"
-                        placeholder="Buscar disciplina..."
+                        placeholder="Buscar disciplina ou tópico..."
                         oninput="handleEditalSearch(this.value)"
                         onfocus="showEditalDropdown()"
                         autocomplete="off"
@@ -4411,7 +4484,7 @@
                         <div style="background:linear-gradient(160deg,#0d1c38,#0a1628);border:1px solid rgba(59,130,246,0.28);border-radius:18px;overflow:hidden;box-shadow:0 28px 70px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.03);">
                           <div style="padding:9px 16px 7px;border-bottom:1px solid rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:space-between;">
                             <span style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#3b82f6;">
-                              <i class="fa-solid fa-graduation-cap" style="margin-right:5px;"></i>Disciplinas
+                              <i class="fa-solid fa-graduation-cap" style="margin-right:5px;"></i>Resultados
                             </span>
                             <span id="edital-dd-count" style="font-size:10px;font-weight:700;color:#374151;"></span>
                           </div>
@@ -4466,11 +4539,26 @@
             const list    = document.getElementById('edital-dropdown-list');
             const countEl = document.getElementById('edital-dd-count');
             if (!list) return;
-            const term     = (searchTerm || '').toLowerCase();
+            const _norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const _escH = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+            const term     = _norm((searchTerm || '').trim());
             const disc_colors = ['#ef4444','#f97316','#eab308','#10b981','#3b82f6','#a855f7','#ec4899','#06b6d4','#84cc16','#f43f5e','#8b5cf6','#14b8a6'];
-            const filtered = studyDb.syllabus.map((s,i)=>({s,i})).filter(({s})=>!term||s.subject.toLowerCase().includes(term));
+            const filtered = studyDb.syllabus.map((s,i)=>({s,i})).filter(({s})=>!term||_norm(s.subject).includes(term));
 
-            if (countEl) countEl.textContent = filtered.length + ' encontradas';
+            // Tópicos que combinam com a busca (de todas as disciplinas)
+            const topicMatches = [];
+            if (term) {
+                studyDb.syllabus.forEach((sub, sI) => {
+                    (sub.topics || []).forEach((t, tI) => {
+                        if (_norm(t.name).includes(term)) topicMatches.push({ sub, sI, t, tI });
+                    });
+                });
+            }
+            const TOPIC_LIMIT = 40;
+
+            if (countEl) countEl.textContent = term
+                ? `${filtered.length} disc. • ${topicMatches.length} tópicos`
+                : filtered.length + ' encontradas';
 
             let html = '';
             if (!term) {
@@ -4486,12 +4574,15 @@
                 <div style="height:1px;background:rgba(59,130,246,0.1);margin:2px 0;"></div>`;
             }
 
-            if (filtered.length === 0) {
+            if (filtered.length === 0 && topicMatches.length === 0) {
                 html += `<div style="padding:28px 16px;text-align:center;color:#374151;font-size:13px;">
                   <i class="fa-solid fa-magnifying-glass" style="display:block;margin-bottom:10px;font-size:20px;color:#1e3a5f;"></i>
-                  Nenhuma disciplina encontrada
+                  Nenhuma disciplina ou tópico encontrado
                 </div>`;
             } else {
+                if (term && filtered.length > 0) {
+                    html += `<div style="padding:8px 16px 4px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#4b5563;">Disciplinas</div>`;
+                }
                 filtered.forEach(({s,i}) => {
                     const isActive = _editalActiveFilter == i;
                     const color    = disc_colors[i % disc_colors.length];
@@ -4516,7 +4607,51 @@
                     </div>`;
                 });
             }
+            if (topicMatches.length > 0) {
+                const statusInfo = {
+                    'Não Estudado':    { c: '#6b7280', l: 'Não estudado' },
+                    'Teoria Vista':    { c: '#10b981', l: 'Teoria' },
+                    'Questões Feitas': { c: '#fbbf24', l: 'Questões' },
+                    'Revisado':        { c: '#60a5fa', l: 'Revisado' }
+                };
+                html += `<div style="height:1px;background:rgba(59,130,246,0.1);margin:4px 0 0;"></div>
+                  <div style="padding:8px 16px 4px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#4b5563;">Tópicos${topicMatches.length > TOPIC_LIMIT ? ` (mostrando ${TOPIC_LIMIT} de ${topicMatches.length})` : ''}</div>`;
+                topicMatches.slice(0, TOPIC_LIMIT).forEach(({ sub, sI, t, tI }) => {
+                    const st = statusInfo[t.status] || statusInfo['Não Estudado'];
+                    html += `<div onclick="goToEditalTopic(${sI},${tI})" onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='transparent'" style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;transition:background .15s;">
+                      <div style="width:30px;height:30px;border-radius:9px;background:rgba(251,191,36,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fa-solid fa-list-check" style="font-size:11px;color:#fbbf24;"></i>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escH(t.name)}</div>
+                        <div style="font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${_escH(sub.subject)}</div>
+                      </div>
+                      <span style="font-size:9px;font-weight:800;color:${st.c};border:1px solid ${st.c}55;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">${st.l}</span>
+                    </div>`;
+                });
+            }
             list.innerHTML = html;
+        }
+
+        // Abre a disciplina do tópico escolhido na busca, rola até ele e o destaca
+        function goToEditalTopic(sIdx, tIdx) {
+            const sub = studyDb.syllabus[sIdx];
+            if (!sub || !sub.topics[tIdx]) return;
+            const topic = sub.topics[tIdx];
+            // Se "Ocultar já estudados" esconderia o tópico, desmarca o filtro
+            const hideChk = document.getElementById('toggle-hide-studied');
+            if (hideChk && hideChk.checked && topic.status !== 'Não Estudado') hideChk.checked = false;
+            _collapsedSubjects.delete(sIdx);
+            applyEditalFilter(String(sIdx), sub.subject); // re-renderiza só essa disciplina
+            hideEditalDropdown();
+            setTimeout(() => {
+                const row = document.getElementById(`topic-row-${sIdx}-${tIdx}`);
+                if (!row) return;
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.style.transition = 'background-color .4s';
+                row.style.backgroundColor = 'rgba(251,191,36,0.28)';
+                setTimeout(() => { row.style.backgroundColor = ''; }, 2200);
+            }, 80);
         }
 
         function handleEditalSearch(val) {
@@ -4575,7 +4710,87 @@
             applyEditalFilter(index, label);
         }
 
+        // ── Resumo no topo da aba Edital Verticalizado ──────────────────────
+        function renderEditalSummary() {
+            const box = document.getElementById('edital-summary');
+            if (!box) return;
+            const syl = Array.isArray(studyDb.syllabus) ? studyDb.syllabus : [];
+            const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+            const counts = { 'Não Estudado': 0, 'Teoria Vista': 0, 'Questões Feitas': 0, 'Revisado': 0 };
+            let total = 0, qT = 0, qC = 0;
+            const subjStats = [];
+            syl.forEach((sub, sIdx) => {
+                let sq = 0, sc = 0;
+                (sub.topics || []).forEach(t => {
+                    total++;
+                    counts[t.status] = (counts[t.status] || 0) + 1;
+                    sq += (t.qTotal || 0); sc += (t.qCorrect || 0);
+                });
+                qT += sq; qC += sc;
+                if (sq > 0) subjStats.push({ sIdx, name: sub.subject, sq, sc, acc: sc / sq });
+            });
+            if (total === 0) { box.innerHTML = ''; return; }
+
+            const studied = total - counts['Não Estudado'];
+            const progress = Math.round((studied / total) * 100);
+            const accAll = qT > 0 ? Math.round((qC / qT) * 100) : null;
+            const accCls = a => a >= 80 ? 'text-emerald-400' : a >= 60 ? 'text-yellow-400' : 'text-red-400';
+            const accBar = a => a >= 80 ? 'bg-emerald-400' : a >= 60 ? 'bg-yellow-400' : 'bg-red-400';
+
+            const segs = [
+                { key: 'Revisado',        label: 'Revisado',     color: 'bg-blue-400' },
+                { key: 'Questões Feitas', label: 'Questões',     color: 'bg-yellow-400' },
+                { key: 'Teoria Vista',    label: 'Teoria',       color: 'bg-emerald-400' },
+                { key: 'Não Estudado',    label: 'Não estudado', color: 'bg-slate-600' }
+            ];
+            const barHtml = segs.filter(g => counts[g.key] > 0).map(g =>
+                `<div class="${g.color} h-full transition-all" style="width:${(counts[g.key] / total) * 100}%" title="${g.label}: ${counts[g.key]}"></div>`).join('');
+            const legendHtml = segs.map(g =>
+                `<span class="flex items-center gap-1.5 text-xs text-gray-300"><span class="inline-block w-2.5 h-2.5 rounded-sm ${g.color}"></span>${g.label} <b class="text-white">${counts[g.key]}</b></span>`).join('');
+
+            const weakest = subjStats.sort((a, b) => a.acc - b.acc || b.sq - a.sq).slice(0, 3);
+            const weakHtml = weakest.length === 0
+                ? `<p class="text-xs text-gray-500 italic">Registre questões para ver aqui as disciplinas com pior desempenho.</p>`
+                : weakest.map(w => {
+                    const pct = Math.round(w.acc * 100);
+                    return `<button type="button" onclick="filterEditalSubject(${w.sIdx})" title="Ver só esta disciplina" class="w-full text-left group">
+                        <div class="flex items-center justify-between gap-3 text-xs">
+                            <span class="text-gray-200 font-semibold truncate group-hover:text-yellow-400 transition">${esc(w.name)}</span>
+                            <span class="font-black ${accCls(pct)} whitespace-nowrap">${pct}% <span class="text-gray-500 font-normal">(${w.sc}/${w.sq})</span></span>
+                        </div>
+                        <div class="w-full bg-blue-950 rounded-full h-1.5 mt-1"><div class="${accBar(pct)} h-1.5 rounded-full" style="width:${pct}%"></div></div>
+                    </button>`;
+                }).join('');
+
+            box.innerHTML = `
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-lg grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-3">
+                        <div class="flex items-end justify-between gap-4 flex-wrap">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-400">Avanço geral do edital</span>
+                                <div class="text-3xl font-black text-white leading-none mt-1">${progress}%
+                                    <span class="text-sm font-semibold text-gray-400">${studied} de ${total} tópicos</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-400">Acerto geral</span>
+                                <div class="text-xl font-black mt-0.5 ${accAll === null ? 'text-gray-500' : accCls(accAll)}">${accAll === null ? '--' : accAll + '%'}
+                                    <span class="text-xs font-normal text-gray-500">${qT > 0 ? `(${qC}/${qT})` : ''}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-3 bg-blue-950 rounded-full overflow-hidden flex mt-3">${barHtml}</div>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">${legendHtml}</div>
+                    </div>
+                    <div class="lg:col-span-2 lg:border-l lg:border-blue-900 lg:pl-6">
+                        <span class="text-xs font-bold uppercase tracking-wide text-gray-400"><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1"></i>Disciplinas mais fracas</span>
+                        <div class="space-y-3 mt-3">${weakHtml}</div>
+                    </div>
+                </div>`;
+        }
+
         function renderSyllabusAccordion(filterIdx) {
+            try { renderEditalSummary(); } catch (e) { console.error('[Estudei] resumo do edital:', e); }
             const accordion = document.getElementById('edital-content-accordion');
             if (!accordion) return;
             accordion.innerHTML = '';
@@ -4622,7 +4837,7 @@
                     else if (topic.status === "Revisado") badgeClass = "bg-blue-500/20 text-blue-300";
 
                     topicsRowsHtml += `
-                        <tr class="hover:bg-blue-950/40 transition">
+                        <tr class="hover:bg-blue-950/40 transition" id="topic-row-${sIdx}-${tIdx}">
                             <td class="px-4 py-3 text-sm text-gray-200 font-medium">${topic.name}</td>
                             <td class="px-4 py-3 text-center">
                                 <select onchange="updateTopicStatus(${sIdx}, ${tIdx}, this.value)" class="bg-input-dark text-xs font-semibold rounded-lg px-2.5 py-1 text-white border border-blue-900 ${badgeClass}">
@@ -6980,7 +7195,14 @@ function renderHistoryTab() {
                                     "bg-blue-900/40 text-blue-300";
                     let qStats = s.qTotal > 0 ? `${s.qCorrect}/${s.qTotal} (${Math.round(s.qCorrect/s.qTotal*100)}%)` : "--";
                     let pagesCell = s.pages > 0 ? `<span class="text-cyan-400 font-bold">${s.pages}p</span>` : `<span class="text-gray-600">--</span>`;
-                    let notesCell = s.notes ? `<span class="text-gray-300 text-xs italic" title="${s.notes.replace(/"/g,"'")}">${s.notes.length > 40 ? s.notes.substring(0,40)+'…' : s.notes}</span>` : `<span class="text-gray-600">--</span>`;
+                    const _escNote = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+                    // Observação completa (sem cortar): quebra de linha preservada e palavras longas quebram para caber na coluna
+                    let notesCell = s.notes ? `<span class="block text-gray-300 text-xs italic" style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${_escNote(s.notes)}</span>` : `<span class="text-gray-600">--</span>`;
+                    if (s.essayScore !== undefined && s.essayScore !== null) {
+                        const _es = String(s.essayScore).replace('.', ',');
+                        const _essayBadge = `<span class="inline-flex items-center gap-1 bg-prf-yellow/20 text-prf-yellow border border-yellow-400/30 text-xxs px-2 py-0.5 rounded font-bold mb-1" title="Nota da redação"><i class="fa-solid fa-file-pen"></i> Redação: ${_es}</span>`;
+                        notesCell = _essayBadge + (s.notes ? notesCell : '');
+                    }
 
                     htmlParts.push(`
                         <tr class="hover:bg-blue-950/20" style="border-left:3px solid transparent;">
@@ -6991,7 +7213,7 @@ function renderHistoryTab() {
                             <td class="px-4 py-3 text-center"><span class="${typeBadge} text-xxs px-2 py-0.5 rounded font-bold">${s.type}</span></td>
                             <td class="px-4 py-3 text-center text-xs text-gray-300">${qStats}</td>
                             <td class="px-4 py-3 text-center text-xs">${pagesCell}</td>
-                            <td class="px-4 py-3 text-xs max-w-[200px]">${notesCell}</td>
+                            <td class="px-4 py-3 text-xs align-top" style="min-width:220px;max-width:380px;">${notesCell}</td>
                             <td class="px-4 py-3 text-right flex items-center justify-end gap-2">
                                 <button onclick="openEditHistoryModal(${s.id})" class="text-blue-400 hover:text-blue-300 p-1" title="Editar registo"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button onclick="deleteHistorySession(${s.id})" class="text-red-400 hover:text-red-300 p-1" title="Apagar registo"><i class="fa-solid fa-trash-can"></i></button>
@@ -7056,6 +7278,52 @@ function renderHistoryTab() {
             });
         }
 
+        // ── Card "Notas da Redação" (painel principal) ─────────────────────────
+        const ESSAY_MAX_KEY = 'estudei_prf_essay_max';
+        function getEssayMax() {
+            try {
+                const v = parseFloat(localStorage.getItem(ESSAY_MAX_KEY));
+                if (isFinite(v) && v > 0) return v;
+            } catch(e) {}
+            return 20; // pré-edital: valor padrão da redação
+        }
+        function setEssayMax(val) {
+            const v = parseFloat(String(val).replace(',', '.'));
+            if (!isFinite(v) || v <= 0) { showAlert('Informe um valor válido para a redação.'); updateEssayCard(); return; }
+            try { localStorage.setItem(ESSAY_MAX_KEY, String(v)); } catch(e) {}
+            updateEssayCard();
+        }
+        window.setEssayMax = setEssayMax;
+        function _fmtEssay(n) {
+            return (Math.round(n * 100) / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        }
+        function updateEssayCard() {
+            const avgEl = document.getElementById('stat-essay-avg');
+            if (!avgEl) return;
+            const max = getEssayMax();
+            const inp = document.getElementById('essay-max-input');
+            if (inp && document.activeElement !== inp) inp.value = max;
+            const scores = (studyDb.history || [])
+                .map(s => s.essayScore)
+                .filter(v => v !== undefined && v !== null && isFinite(Number(v)))
+                .map(Number);
+            const subEl = document.getElementById('stat-essay-sub');
+            if (scores.length === 0) {
+                avgEl.className = 'text-2xl font-black mt-1 text-gray-400';
+                avgEl.textContent = '--';
+                if (subEl) subEl.textContent = 'Nenhuma redação registrada';
+                return;
+            }
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const best = Math.max(...scores);
+            const pct = avg / max;
+            const color = pct >= 0.7 ? 'text-emerald-400' : pct >= 0.5 ? 'text-yellow-400' : 'text-red-400';
+            avgEl.className = 'text-2xl font-black mt-1 ' + color;
+            avgEl.textContent = _fmtEssay(pct * 100) + '%';
+            if (subEl) subEl.textContent = `Média ${_fmtEssay(avg)} de ${_fmtEssay(max)} · ${scores.length} redaç${scores.length > 1 ? 'ões' : 'ão'} · melhor ${_fmtEssay(best)}`;
+        }
+        window.updateEssayCard = updateEssayCard;
+
         function openEditHistoryModal(id) {
             const session = studyDb.history.find(s => s.id === id);
             if (!session) return;
@@ -7092,6 +7360,10 @@ function renderHistoryTab() {
             document.getElementById('edit-history-qtotal').value = session.qTotal > 0 ? session.qTotal : '';
             document.getElementById('edit-history-qcorrect').value = session.qCorrect > 0 ? session.qCorrect : '';
             calcEditAccuracyPreview();
+
+            // Fill nota da redação
+            const _essayEl = document.getElementById('edit-history-essay-score');
+            if (_essayEl) _essayEl.value = (session.essayScore !== undefined && session.essayScore !== null) ? session.essayScore : '';
 
             // Fill observações
             document.getElementById('edit-history-notes').value = session.notes || '';
@@ -7296,6 +7568,8 @@ function renderHistoryTab() {
             const newQTotal = parseInt(document.getElementById('edit-history-qtotal')?.value) || 0;
             const newQCorrect = parseInt(document.getElementById('edit-history-qcorrect')?.value) || 0;
             const notes = document.getElementById('edit-history-notes')?.value.trim() || '';
+            const _essayRawE = (document.getElementById('edit-history-essay-score')?.value || '').replace(',', '.').trim();
+            const newEssayScore = (_essayRawE !== '' && !isNaN(parseFloat(_essayRawE)) && parseFloat(_essayRawE) >= 0) ? parseFloat(_essayRawE) : null;
 
             if (!subject) { showAlert('Por favor, preencha a disciplina.'); return; }
             if (dateEl && dateEl.value && dateEl.value.length !== 10) { showAlert('Por favor, preencha a data completa (DD/MM/AAAA).'); return; }
@@ -7356,6 +7630,8 @@ function renderHistoryTab() {
             studyDb.history[idx].qTotal   = appliedQTotal;
             studyDb.history[idx].qCorrect = appliedQCorrect;
             studyDb.history[idx].notes    = notes;
+            if (newEssayScore !== null) studyDb.history[idx].essayScore = newEssayScore;
+            else delete studyDb.history[idx].essayScore;
             // Marca QUANDO esta sessão foi editada. O merge com a nuvem
             // (_mergeStudyDbs) usa este carimbo para decidir qual versão é mais
             // nova quando o mesmo registro existe nos dois lados — sem ele, a
@@ -7371,10 +7647,10 @@ function renderHistoryTab() {
 
         function exportStudyHistory() {
             if(studyDb.history.length === 0) return showAlert("Sem dados.");
-            let csv = "Data,Disciplina,Topico,Duracao_Min,Duracao_Seg,Tipo,Questoes_Total,Questoes_Corretas,Paginas,Observacoes\n";
+            let csv = "Data,Disciplina,Topico,Duracao_Min,Duracao_Seg,Tipo,Questoes_Total,Questoes_Corretas,Paginas,Nota_Redacao,Observacoes\n";
             studyDb.history.forEach(s => {
                 const durSec = (s.durationSec !== undefined && s.durationSec !== null) ? s.durationSec : (s.duration||0)*60;
-                csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${durSec},${s.type},${s.qTotal||0},${s.qCorrect||0},${s.pages||0},"${(s.notes||'').replace(/"/g,"'")}"\n`;
+                csv += `${s.date},${s.subject},${s.topic.replace(/,/g,' ')},${s.duration},${durSec},${s.type},${s.qTotal||0},${s.qCorrect||0},${s.pages||0},${(s.essayScore!==undefined&&s.essayScore!==null)?s.essayScore:''},"${(s.notes||'').replace(/"/g,"'")}"\n`;
             });
             const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8," + csv); link.download = `historico_prf.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
@@ -12118,6 +12394,8 @@ function renderHistoryTab() {
 
             const pages = parseInt(document.getElementById('form-pages').value) || 0;
             const notes = (document.getElementById('form-notes').value || '').trim();
+            const _essayRaw = (document.getElementById('form-essay-score')?.value || '').replace(',', '.').trim();
+            const essayScore = (_essayRaw !== '' && !isNaN(parseFloat(_essayRaw)) && parseFloat(_essayRaw) >= 0) ? parseFloat(_essayRaw) : null;
             const sessionDateEl = document.getElementById('form-session-date');
             const sessionDate   = (sessionDateEl && sessionDateEl.value && sessionDateEl.value.length === 10)
                 ? brToISO(sessionDateEl.value) : todayBrazil();
@@ -12125,7 +12403,8 @@ function renderHistoryTab() {
             studyDb.history.push({
                 id: Date.now(), date: sessionDate,
                 subject, topic, duration, durationSec, type,
-                qCorrect: qC, qTotal: qT, pages, notes
+                qCorrect: qC, qTotal: qT, pages, notes,
+                ...(essayScore !== null ? { essayScore } : {})
             });
 
             advanceCycleForSubject(subject);
