@@ -833,13 +833,37 @@
                     <p id="stat-syllabus-sub" class="text-xs text-blue-300 text-center -mt-0.5">0 de 0 tópicos estudados</p>
                 </div>
 
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex flex-col">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Aproveitamento Geral</span>
-                        <h3 class="text-2xl font-black mt-1" id="stat-total-questions">0%</h3>
-                        <p class="text-xs text-emerald-400 mt-1" id="stat-accuracy-fraction">0 corretas de 0</p>
+                        <div class="text-emerald-400 text-base bg-blue-950/80 p-1.5 rounded-lg" id="stat-acc-icon"><i class="fa-solid fa-bullseye"></i></div>
                     </div>
-                    <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-circle-question"></i></div>
+                    <div class="relative mx-auto my-3 w-[128px] h-[128px]">
+                        <svg viewBox="0 0 120 120" class="w-full h-full" style="transform:rotate(-90deg)">
+                            <circle cx="60" cy="60" r="48" fill="none" stroke="#0d1e36" stroke-width="12"/>
+                            <circle cx="60" cy="60" r="48" fill="none" stroke="#17305a" stroke-width="12" opacity="0.35"/>
+                            <circle id="stat-acc-ring" cx="60" cy="60" r="48" fill="none" stroke="#10b981" stroke-width="12" stroke-linecap="round" stroke-dasharray="301.59" stroke-dashoffset="301.59" style="transition: stroke-dashoffset .9s cubic-bezier(.22,1,.36,1), stroke .6s ease;"/>
+                            <!-- Marcador da meta -->
+                            <g id="stat-acc-goal-tick" style="transform-origin:60px 60px; transform:rotate(252deg); transition: transform .6s ease;">
+                                <line x1="103" y1="60" x2="117" y2="60" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round"><title>Sua meta</title></line>
+                            </g>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <h3 class="text-3xl font-black leading-none text-gray-400" id="stat-total-questions">0%</h3>
+                            <span class="text-xxs text-gray-500 mt-1 uppercase tracking-wide">de acerto</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl py-1.5 text-center">
+                            <div class="text-base font-black text-emerald-400 leading-tight" id="stat-acc-correct">0</div>
+                            <div class="text-xxs text-emerald-300/80"><i class="fa-solid fa-check mr-0.5"></i>acertos</div>
+                        </div>
+                        <div class="bg-red-500/10 border border-red-500/30 rounded-xl py-1.5 text-center">
+                            <div class="text-base font-black text-red-400 leading-tight" id="stat-acc-wrong">0</div>
+                            <div class="text-xxs text-red-300/80"><i class="fa-solid fa-xmark mr-0.5"></i>erros</div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 text-center mt-2.5" id="stat-accuracy-fraction">Sem questões registradas</p>
                 </div>
 
                 <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
@@ -2259,20 +2283,33 @@
                 </div>
             </div>
 
+            <div class="flex gap-1 bg-blue-950 p-1 rounded-xl">
+                <button type="button" id="insights-view-subject" onclick="setInsightsView('subject')" class="flex-1 py-1.5 text-xs font-black rounded-lg transition bg-yellow-400 text-slate-900"><i class="fa-solid fa-book mr-1"></i>Disciplinas</button>
+                <button type="button" id="insights-view-topic" onclick="setInsightsView('topic')" class="flex-1 py-1.5 text-xs font-black rounded-lg transition text-gray-400 hover:text-white"><i class="fa-solid fa-list-check mr-1"></i>Tópicos</button>
+            </div>
+
             <div class="space-y-2">
                 <button type="button" onclick="toggleInsightsSection('worst')" class="w-full flex items-center justify-between bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2.5 text-left transition">
-                    <span class="text-xs font-bold text-red-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down"></i> Top 10 piores — consolidado</span>
-                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥25 · meta <span id="insights-modal-goal-worst">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-worst"></i></span>
+                    <span class="text-xs font-bold text-red-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down"></i> <span id="insights-title-worst">Top 10 piores — consolidado</span></span>
+                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥<span id="insights-min-worst">25</span> · meta <span id="insights-modal-goal-worst">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-worst"></i></span>
                 </button>
                 <div id="insights-list-worst" class="space-y-2 px-1"></div>
             </div>
 
             <div class="space-y-2">
                 <button type="button" onclick="toggleInsightsSection('best')" class="w-full flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5 text-left transition">
-                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> Top 10 melhores — consolidado</span>
-                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥25 · meta <span id="insights-modal-goal-best">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-best"></i></span>
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> <span id="insights-title-best">Top 10 melhores — consolidado</span></span>
+                    <span class="text-xxs text-gray-400 flex items-center gap-1">≥<span id="insights-min-best">25</span> · meta <span id="insights-modal-goal-best">70</span>% <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-best"></i></span>
                 </button>
                 <div id="insights-list-best" class="space-y-2 px-1"></div>
+            </div>
+
+            <div class="space-y-2">
+                <button type="button" onclick="toggleInsightsSection('detail')" class="w-full flex items-center justify-between bg-blue-500/10 border border-blue-500/30 rounded-xl px-3 py-2.5 text-left transition">
+                    <span class="text-xs font-bold text-blue-300 flex items-center gap-1"><i class="fa-solid fa-sitemap"></i> Detalhamento por disciplina (tópicos)</span>
+                    <span class="text-xxs text-gray-400 flex items-center gap-1">todas com questões <i class="fa-solid fa-chevron-down text-xxs transition-transform" id="insights-chevron-detail" style="transform:rotate(-90deg)"></i></span>
+                </button>
+                <div id="insights-list-detail" class="space-y-2 px-1 hidden"></div>
             </div>
 
             <div class="flex items-center justify-between pt-1 border-t border-blue-900/60">
@@ -4259,9 +4296,39 @@
             const accuracyPct = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
             const errorCount = totalQuestions - correctQuestions;
             const accuracyEl = document.getElementById('stat-total-questions');
-            accuracyEl.innerText = `${accuracyPct}%`;
-            accuracyEl.className = 'text-2xl font-black mt-1 ' + (accuracyPct >= 70 ? 'text-emerald-400' : accuracyPct >= 50 ? 'text-yellow-400' : 'text-red-400');
-            document.getElementById('stat-accuracy-fraction').innerText = totalQuestions > 0 ? `${correctQuestions} acertos • ${errorCount} erros (${totalQuestions} questões)` : 'Sem questões registradas';
+            const accGoal = studyDb.accuracyGoalPercent || 70;
+            const accRealPct = totalQuestions > 0 ? (correctQuestions / totalQuestions) * 100 : 0;
+            const accTier = totalQuestions === 0 ? '#9ca3af'
+                : accuracyPct >= accGoal ? '#10b981'
+                : accuracyPct >= accGoal - 15 ? '#FFD400' : '#ef4444';
+            accuracyEl.innerText = totalQuestions > 0 ? `${accuracyPct}%` : '--';
+            accuracyEl.style.color = accTier;
+            const accRing = document.getElementById('stat-acc-ring');
+            if (accRing) {
+                accRing.style.strokeDashoffset = 301.59 * (1 - Math.min(100, accRealPct) / 100);
+                accRing.style.stroke = accTier;
+                accRing.style.filter = totalQuestions > 0 ? `drop-shadow(0 0 4px ${accTier}66)` : 'none';
+            }
+            const accTick = document.getElementById('stat-acc-goal-tick');
+            if (accTick) accTick.style.transform = `rotate(${Math.min(100, accGoal) * 3.6}deg)`;
+            const accIcon = document.getElementById('stat-acc-icon');
+            if (accIcon) accIcon.style.color = accTier;
+            const accCorrectEl = document.getElementById('stat-acc-correct');
+            const accWrongEl = document.getElementById('stat-acc-wrong');
+            if (accCorrectEl) accCorrectEl.innerText = correctQuestions.toLocaleString('pt-BR');
+            if (accWrongEl) accWrongEl.innerText = errorCount.toLocaleString('pt-BR');
+            const accFracEl = document.getElementById('stat-accuracy-fraction');
+            if (accFracEl) {
+                if (totalQuestions > 0) {
+                    const diff = Math.round(accRealPct - accGoal);
+                    const diffTxt = diff === 0 ? `na meta (${accGoal}%)`
+                        : diff > 0 ? `${diff} pt${diff > 1 ? 's' : ''} acima da meta (${accGoal}%)`
+                        : `${-diff} pt${-diff > 1 ? 's' : ''} abaixo da meta (${accGoal}%)`;
+                    accFracEl.innerHTML = `<span class="text-gray-300 font-semibold">${totalQuestions.toLocaleString('pt-BR')} questões</span><br><span style="color:${accTier}">${diffTxt}</span>`;
+                } else {
+                    accFracEl.innerText = 'Sem questões registradas';
+                }
+            }
 
             let syllabusProgress = totalTopics > 0 ? ((completedTopics / totalTopics) * 100).toFixed(1) : "0.0";
             const gaugeArc = document.getElementById('stat-syllabus-progress-arc');
@@ -12187,29 +12254,51 @@ function renderHistoryTab() {
         window.toggleWeeklyScheduleItem = toggleWeeklyScheduleItem;
 
         // ── INSIGHTS DO ESTUDEI (cartão + análise completa) ─────────────────
-        const INSIGHTS_MIN_QUESTIONS = 25; // nº mínimo de questões p/ entrar nos rankings
+        const INSIGHTS_MIN_QUESTIONS = 25; // nº mínimo de questões p/ entrar nos rankings de disciplinas
+        const INSIGHTS_MIN_QUESTIONS_TOPIC = 10; // nº mínimo p/ rankings de tópicos (cada tópico tem menos questões)
+        window._insightsView = window._insightsView || 'subject';
         let insightsDonutChart = null;
 
         function computeInsightsData() {
             const perSubject = [];
+            const perTopic = [];
+            const detail = [];
             let totalQ = 0, totalC = 0;
             (studyDb.syllabus || []).forEach(sub => {
-                let sQ = 0, sC = 0;
-                (sub.topics || []).forEach(t => { sQ += (t.qTotal || 0); sC += (t.qCorrect || 0); });
+                let sQ = 0, sC = 0, noQ = 0;
+                const subTopics = [];
+                (sub.topics || []).forEach(t => {
+                    const tq = t.qTotal || 0, tc = t.qCorrect || 0;
+                    sQ += tq; sC += tc;
+                    if (tq > 0) {
+                        const item = { subject: sub.subject, topic: t.name, qCorrect: tc, qTotal: tq, accuracy: (tc / tq) * 100 };
+                        perTopic.push(item); subTopics.push(item);
+                    } else noQ++;
+                });
                 totalQ += sQ; totalC += sC;
-                if (sQ > 0) perSubject.push({ subject: sub.subject, qCorrect: sC, qTotal: sQ, accuracy: (sC / sQ) * 100 });
+                if (sQ > 0) {
+                    const subItem = { subject: sub.subject, qCorrect: sC, qTotal: sQ, accuracy: (sC / sQ) * 100 };
+                    perSubject.push(subItem);
+                    detail.push({ ...subItem, topics: subTopics.sort((a, b) => a.accuracy - b.accuracy || b.qTotal - a.qTotal), topicsWithoutQuestions: noQ });
+                }
             });
+            detail.sort((a, b) => a.accuracy - b.accuracy);
 
             const goal = studyDb.accuracyGoalPercent || 70;
             const eligible = perSubject.filter(s => s.qTotal >= INSIGHTS_MIN_QUESTIONS);
             const best = eligible.filter(s => s.accuracy >= goal).sort((a, b) => b.accuracy - a.accuracy).slice(0, 10);
             const worst = eligible.filter(s => s.accuracy < goal).sort((a, b) => a.accuracy - b.accuracy).slice(0, 10);
 
+            const eligibleT = perTopic.filter(t => t.qTotal >= INSIGHTS_MIN_QUESTIONS_TOPIC);
+            const bestTopics = eligibleT.filter(t => t.accuracy >= goal).sort((a, b) => b.accuracy - a.accuracy || b.qTotal - a.qTotal).slice(0, 10);
+            const worstTopics = eligibleT.filter(t => t.accuracy < goal).sort((a, b) => a.accuracy - b.accuracy || b.qTotal - a.qTotal).slice(0, 10);
+
             return {
                 totalQ, totalC,
                 accuracy: totalQ > 0 ? (totalC / totalQ) * 100 : 0,
                 disciplinesCount: perSubject.length,
-                goal, best, worst, perSubject
+                goal, best, worst, perSubject,
+                bestTopics, worstTopics, perTopic, detail
             };
         }
 
@@ -12241,20 +12330,28 @@ function renderHistoryTab() {
         }
         window.renderInsightsCard = renderInsightsCard;
 
+        function _insEsc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
         function _renderInsightsList(items, kind) {
             const goal = (window._insightsData && window._insightsData.goal) || 70;
+            const isTopic = window._insightsView === 'topic';
+            const min = isTopic ? INSIGHTS_MIN_QUESTIONS_TOPIC : INSIGHTS_MIN_QUESTIONS;
+            const noun = isTopic ? 'tópico' : 'disciplina';
             if (!items.length) {
                 const msg = kind === 'worst'
-                    ? `Nenhuma disciplina com ≥${INSIGHTS_MIN_QUESTIONS} questões abaixo da sua meta (${goal}%).`
-                    : `Nenhuma disciplina com ≥${INSIGHTS_MIN_QUESTIONS} questões acima ou igual à sua meta (${goal}%).`;
+                    ? `Nenhum ${noun} com ≥${min} questões abaixo da sua meta (${goal}%).`
+                    : `Nenhum ${noun} com ≥${min} questões acima ou igual à sua meta (${goal}%).`;
                 return `<p class="text-xs text-gray-500 italic px-1 py-1">${msg}</p>`;
             }
             const barColor = kind === 'worst' ? 'bg-red-500' : 'bg-emerald-500';
             const textColor = kind === 'worst' ? 'text-red-400' : 'text-emerald-400';
             return items.map(it => `
                 <div class="bg-slate-900/60 rounded-lg px-3 py-2 space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-bold text-white truncate pr-2">${it.subject}</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="block text-sm font-bold text-white truncate">${_insEsc(it.topic || it.subject)}</span>
+                            ${it.topic ? `<span class="block text-xxs text-gray-500 truncate">${_insEsc(it.subject)}</span>` : ''}
+                        </div>
                         <span class="text-xs font-bold ${textColor} shrink-0">${it.accuracy.toFixed(1)}%</span>
                     </div>
                     <div class="flex items-center justify-between">
@@ -12265,6 +12362,37 @@ function renderHistoryTab() {
                     </div>
                 </div>`).join('');
         }
+
+        // Detalhamento: cada disciplina (pior → melhor) expande e mostra seus tópicos
+        function _renderInsightsDetail(detail, goal) {
+            if (!detail.length) return `<p class="text-xs text-gray-500 italic px-1 py-1">Registre questões nos tópicos para ver o detalhamento.</p>`;
+            const col = a => a >= goal ? 'text-emerald-400' : a >= goal - 15 ? 'text-yellow-400' : 'text-red-400';
+            const bar = a => a >= goal ? 'bg-emerald-500' : a >= goal - 15 ? 'bg-yellow-400' : 'bg-red-500';
+            return detail.map(sub => `
+                <details class="bg-slate-900/60 rounded-lg overflow-hidden">
+                    <summary class="cursor-pointer list-none px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-800/60 transition">
+                        <span class="text-sm font-bold text-white truncate"><i class="fa-solid fa-chevron-right text-xxs text-gray-500 mr-1.5"></i>${_insEsc(sub.subject)}</span>
+                        <span class="shrink-0 text-xs font-bold ${col(sub.accuracy)}">${sub.accuracy.toFixed(1)}% <span class="text-xxs text-gray-500 font-normal">(${sub.qCorrect}/${sub.qTotal})</span></span>
+                    </summary>
+                    <div class="px-3 pb-2.5 pt-1 space-y-2 border-t border-slate-800">
+                        ${sub.topics.map(t => `
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs text-gray-200 truncate">${_insEsc(t.topic)}</span>
+                                    <span class="text-xs font-bold ${col(t.accuracy)} shrink-0">${t.accuracy.toFixed(1)}% <span class="text-xxs text-gray-500 font-normal">(${t.qCorrect}/${t.qTotal})</span></span>
+                                </div>
+                                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full ${bar(t.accuracy)} rounded-full" style="width:${Math.min(100, t.accuracy)}%"></div></div>
+                            </div>`).join('')}
+                        ${sub.topicsWithoutQuestions > 0 ? `<p class="text-xxs text-gray-500 italic">${sub.topicsWithoutQuestions} tópico${sub.topicsWithoutQuestions > 1 ? 's' : ''} sem questões registradas.</p>` : ''}
+                    </div>
+                </details>`).join('');
+        }
+
+        function setInsightsView(view) {
+            window._insightsView = view === 'topic' ? 'topic' : 'subject';
+            renderInsightsModalContent();
+        }
+        window.setInsightsView = setInsightsView;
 
         function renderInsightsDonutChart(correct, total) {
             const canvas = document.getElementById('insightsDonutChart');
@@ -12315,8 +12443,21 @@ function renderHistoryTab() {
 
             document.getElementById('insights-modal-goal-worst').innerText = d.goal;
             document.getElementById('insights-modal-goal-best').innerText = d.goal;
-            document.getElementById('insights-list-worst').innerHTML = _renderInsightsList(d.worst, 'worst');
-            document.getElementById('insights-list-best').innerHTML = _renderInsightsList(d.best, 'best');
+            const isTopic = window._insightsView === 'topic';
+            const vSubj = document.getElementById('insights-view-subject');
+            const vTopic = document.getElementById('insights-view-topic');
+            const on = 'flex-1 py-1.5 text-xs font-black rounded-lg transition bg-yellow-400 text-slate-900';
+            const off = 'flex-1 py-1.5 text-xs font-black rounded-lg transition text-gray-400 hover:text-white';
+            if (vSubj) vSubj.className = isTopic ? off : on;
+            if (vTopic) vTopic.className = isTopic ? on : off;
+            const minQ = isTopic ? INSIGHTS_MIN_QUESTIONS_TOPIC : INSIGHTS_MIN_QUESTIONS;
+            document.getElementById('insights-min-worst').innerText = minQ;
+            document.getElementById('insights-min-best').innerText = minQ;
+            document.getElementById('insights-title-worst').innerText = isTopic ? 'Top 10 piores tópicos' : 'Top 10 piores — consolidado';
+            document.getElementById('insights-title-best').innerText = isTopic ? 'Top 10 melhores tópicos' : 'Top 10 melhores — consolidado';
+            document.getElementById('insights-list-worst').innerHTML = _renderInsightsList(isTopic ? d.worstTopics : d.worst, 'worst');
+            document.getElementById('insights-list-best').innerHTML = _renderInsightsList(isTopic ? d.bestTopics : d.best, 'best');
+            document.getElementById('insights-list-detail').innerHTML = _renderInsightsDetail(d.detail, d.goal);
 
             const goalInput = document.getElementById('insights-goal-input');
             if (goalInput) goalInput.value = d.goal;
