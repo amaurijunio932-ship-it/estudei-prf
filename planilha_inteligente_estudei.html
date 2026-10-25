@@ -374,18 +374,26 @@
 
         /* Cores Dinâmicas das Disciplinas na Sidebar */
         .disc-color-default { color: #94a3b8; border-left-color: #94a3b8; }
-        .disc-color-0  { color: #ef4444; border-left-color: #ef4444; }
-        .disc-color-1  { color: #f97316; border-left-color: #f97316; }
-        .disc-color-2  { color: #eab308; border-left-color: #eab308; }
-        .disc-color-3  { color: #10b981; border-left-color: #10b981; }
-        .disc-color-4  { color: #3b82f6; border-left-color: #3b82f6; }
-        .disc-color-5  { color: #a855f7; border-left-color: #a855f7; }
-        .disc-color-6  { color: #ec4899; border-left-color: #ec4899; }
-        .disc-color-7  { color: #06b6d4; border-left-color: #06b6d4; }
-        .disc-color-8  { color: #84cc16; border-left-color: #84cc16; }
-        .disc-color-9  { color: #f43f5e; border-left-color: #f43f5e; }
-        .disc-color-10 { color: #8b5cf6; border-left-color: #8b5cf6; }
-        .disc-color-11 { color: #14b8a6; border-left-color: #14b8a6; } 
+        .disc-color-0 { color: #ef4444; border-left-color: #ef4444; }
+        .disc-color-1 { color: #3b82f6; border-left-color: #3b82f6; }
+        .disc-color-2 { color: #22c55e; border-left-color: #22c55e; }
+        .disc-color-3 { color: #a855f7; border-left-color: #a855f7; }
+        .disc-color-4 { color: #f97316; border-left-color: #f97316; }
+        .disc-color-5 { color: #06b6d4; border-left-color: #06b6d4; }
+        .disc-color-6 { color: #ec4899; border-left-color: #ec4899; }
+        .disc-color-7 { color: #84cc16; border-left-color: #84cc16; }
+        .disc-color-8 { color: #4f46e5; border-left-color: #4f46e5; }
+        .disc-color-9 { color: #b45309; border-left-color: #b45309; }
+        .disc-color-10 { color: #14b8a6; border-left-color: #14b8a6; }
+        .disc-color-11 { color: #94a3b8; border-left-color: #94a3b8; }
+        .disc-color-12 { color: #d946ef; border-left-color: #d946ef; }
+        .disc-color-13 { color: #7dd3fc; border-left-color: #7dd3fc; }
+        .disc-color-14 { color: #6ee7b7; border-left-color: #6ee7b7; }
+        .disc-color-15 { color: #c4b5fd; border-left-color: #c4b5fd; }
+        .disc-color-16 { color: #0f766e; border-left-color: #0f766e; }
+        .disc-color-17 { color: #fb7185; border-left-color: #fb7185; }
+        .disc-color-18 { color: #fdba74; border-left-color: #fdba74; }
+        .disc-color-19 { color: #f5d0fe; border-left-color: #f5d0fe; }
 
         /* ===== EDIT HISTORY MODAL ===== */
         #modal-edit-history .bg-card-dark {
@@ -5457,9 +5465,7 @@
         function _colorForSubject(subject) {
             const map = _getSubjectColorMap();
             if (map[subject]) return map[subject];
-            const palette = _subjectChartPalette();
-            const usedCount = Object.keys(window._subjectColorMap || {}).length;
-            const color = palette[usedCount % palette.length];
+            const color = _pickUnusedSubjectColor();
             window._subjectColorMap[subject] = color;
             return color;
         }
@@ -6628,29 +6634,34 @@
             }
         }
 
-        // Mapa global disciplina→índice para cor estável
+        // Paleta de disciplinas: matizes bem distintos, SEM amarelo (reservado à linha "Geral")
+        const DISC_COLOR_HEX = ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f97316', '#06b6d4', '#ec4899', '#84cc16', '#4f46e5', '#b45309', '#14b8a6', '#94a3b8', '#d946ef', '#7dd3fc', '#6ee7b7', '#c4b5fd', '#0f766e', '#fb7185', '#fdba74', '#f5d0fe'];
+        // Mapa global disciplina→índice para cor estável (sem repetir cor entre disciplinas)
         const _subjectColorIndex = {};
         function getDisciplineColorClass(subjectName) {
             if (_subjectColorIndex[subjectName] === undefined) {
-                // Tenta pegar do syllabus primeiro para consistência
-                const idx = studyDb.syllabus.findIndex(s => s.subject === subjectName);
+                const syl = studyDb.syllabus || [];
+                const idx = syl.findIndex(s => s.subject === subjectName);
                 if (idx >= 0) {
-                    _subjectColorIndex[subjectName] = idx % 12;
+                    _subjectColorIndex[subjectName] = idx; // cada disciplina do edital tem índice único
                 } else {
-                    // Usa hash do nome como fallback
-                    let h = 0;
-                    for (let i = 0; i < subjectName.length; i++) h = (h * 31 + subjectName.charCodeAt(i)) & 0xffff;
-                    _subjectColorIndex[subjectName] = h % 12;
+                    // Disciplina fora do edital: primeiro índice livre após as do edital
+                    const used = new Set(Object.values(_subjectColorIndex));
+                    let n = syl.length;
+                    while (used.has(n)) n++;
+                    _subjectColorIndex[subjectName] = n;
                 }
             }
-            return 'disc-color-' + _subjectColorIndex[subjectName];
+            const i = _subjectColorIndex[subjectName];
+            return i < DISC_COLOR_HEX.length ? 'disc-color-' + i : 'disc-color-default';
         }
 
-        // Mesma paleta das classes .disc-color-N (CSS), em hex, para uso no Chart.js
-        const DISC_COLOR_HEX = ['#ef4444','#f97316','#eab308','#10b981','#3b82f6','#a855f7','#ec4899','#06b6d4','#84cc16','#f43f5e','#8b5cf6','#14b8a6'];
         function getDisciplineColorHex(subjectName) {
             getDisciplineColorClass(subjectName); // garante índice em cache
-            return DISC_COLOR_HEX[_subjectColorIndex[subjectName] % 12];
+            const i = _subjectColorIndex[subjectName];
+            if (i < DISC_COLOR_HEX.length) return DISC_COLOR_HEX[i];
+            // Mais disciplinas que cores: gera um matiz novo (ângulo áureo)
+            return `hsl(${Math.round((i * 137.508) % 360)}, 65%, 60%)`;
         }
 
         function setTreeFilter(mode) { treeFilterMode = mode; filterSummariesTree(); }
@@ -8169,18 +8180,29 @@ function renderHistoryTab() {
         window._cyclePvaPeriod = window._cyclePvaPeriod || 'semana';
 
         function _subjectChartPalette() {
-            return ['#FFD400','#3b82f6','#a855f7','#10b981','#f97316','#94a3b8','#22c55e','#ef4444','#06b6d4','#eab308','#8b5cf6','#f43f5e','#14b8a6','#f59e0b','#64748b'];
+            // Paleta com matizes bem separados (sem tons parecidos lado a lado)
+            return ['#FFD400','#3b82f6','#ef4444','#22c55e','#a855f7','#f97316','#06b6d4','#ec4899',
+                    '#84cc16','#4f46e5','#b45309','#14b8a6','#94a3b8','#fb7185','#d946ef','#7dd3fc',
+                    '#6ee7b7','#c4b5fd','#fde68a','#0f766e'];
         }
 
-        // Cores estáveis por disciplina (mesma cor sempre, baseada no total histórico)
+        // Escolhe a primeira cor ainda NÃO usada; se a paleta acabar, gera matiz novo (ângulo áureo)
+        function _pickUnusedSubjectColor() {
+            const used = new Set(Object.values(window._subjectColorMap || {}));
+            const free = _subjectChartPalette().find(c => !used.has(c));
+            if (free) return free;
+            const n = used.size;
+            return `hsl(${Math.round((n * 137.508) % 360)}, 70%, ${n % 2 ? 55 : 65}%)`;
+        }
+
+        // Cores estáveis por disciplina: as mais estudadas recebem as primeiras cores, sem repetição
         function _getSubjectColorMap() {
             if (!window._subjectColorMap) window._subjectColorMap = {};
-            const palette = _subjectChartPalette();
             const totals = {};
             studyDb.history.forEach(s => { totals[s.subject] = (totals[s.subject]||0) + _sessionSeconds(s)/60; });
             const subjectsSorted = Object.keys(totals).sort((a,b) => totals[b]-totals[a]);
-            subjectsSorted.forEach((subj, i) => {
-                if (!window._subjectColorMap[subj]) window._subjectColorMap[subj] = palette[i % palette.length];
+            subjectsSorted.forEach(subj => {
+                if (!window._subjectColorMap[subj]) window._subjectColorMap[subj] = _pickUnusedSubjectColor();
             });
             return window._subjectColorMap;
         }
