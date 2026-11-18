@@ -597,7 +597,7 @@
         #topic-dock{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:60;display:none;flex-direction:column;gap:2px;padding:8px 6px;border-radius:18px;background:rgba(13,30,54,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(59,130,246,.35);box-shadow:0 10px 30px rgba(0,0,0,.45);max-height:80vh;overflow-y:auto;scrollbar-width:none}
         #topic-dock::-webkit-scrollbar{display:none}
         body.dock-on #topic-dock{display:flex}
-        #topic-dock a{display:flex;align-items:center;justify-content:flex-end;gap:10px;height:34px;padding:0 9px;border-radius:12px;color:#93c5fd;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
+        #topic-dock a{display:flex;align-items:center;justify-content:flex-end;gap:10px;height:30px;padding:0 9px;border-radius:12px;color:#93c5fd;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
         #topic-dock a .td-label{max-width:0;opacity:0;overflow:hidden;transition:max-width .2s,opacity .2s}
         #topic-dock:hover a .td-label{max-width:150px;opacity:1}
         #topic-dock a i{width:16px;text-align:center;font-size:14px}
@@ -617,6 +617,14 @@
             #topic-dock a{justify-content:flex-start}
             #topic-dock a .td-label{max-width:150px;opacity:1}
         }
+        /* Minimizar o dock (somente desktop) + reservar espaço para ele não cobrir os cartões */
+        #topic-toggle{display:flex;align-items:center;justify-content:center;width:100%;height:24px;margin-bottom:2px;flex-shrink:0;border:none;background:transparent;color:#93c5fd;cursor:pointer;border-radius:10px;font-size:12px;transition:background .15s,color .15s}
+        #topic-toggle:hover{background:rgba(30,58,138,.7);color:#FFD400}
+        body.dock-min #topic-dock{padding:4px;border-radius:999px;overflow:visible}
+        body.dock-min #topic-toggle{width:34px;height:34px;margin:0;font-size:15px;border-radius:999px}
+        body.dock-min #topic-dock a{display:none!important}
+        @media (min-width:1024px){ body.dock-on:not(.dock-min) #pane-dashboard{padding-right:52px} }
+        @media (max-width:1023px){ #topic-toggle{display:none} }
         .dock-hidden{display:none!important}
         .dock-head{cursor:pointer;user-select:none}
         .dock-chev{margin-left:8px;font-size:.7em;color:#93c5fd;transition:transform .2s}
@@ -783,14 +791,14 @@
                 </div>
             </div>
 
-            <div id="sec-kpis" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex flex-col">
+            <div id="sec-kpis" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-12 gap-3">
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col xl:col-span-3 xl:row-span-2">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Edital Avançado</span>
                         <div class="text-yellow-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                     </div>
                     <div class="flex justify-center -mt-1">
-                        <svg viewBox="0 0 200 142" class="w-full max-w-[190px]">
+                        <svg viewBox="0 0 200 142" class="w-full max-w-[165px]">
                             <defs>
                                 <linearGradient id="syl-grad" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
                                     <stop offset="0" stop-color="#ef4444"/>
@@ -841,12 +849,12 @@
                     <p id="stat-syllabus-sub" class="text-xs text-blue-300 text-center -mt-0.5">0 de 0 tópicos estudados</p>
                 </div>
 
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex flex-col">
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col xl:col-span-3 xl:row-span-2">
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Aproveitamento Geral</span>
                         <div class="text-emerald-400 text-base bg-blue-950/80 p-1.5 rounded-lg" id="stat-acc-icon"><i class="fa-solid fa-bullseye"></i></div>
                     </div>
-                    <div class="relative mx-auto my-3 w-[128px] h-[128px]">
+                    <div class="relative mx-auto my-2 w-[110px] h-[110px]">
                         <svg viewBox="0 0 120 120" class="w-full h-full" style="transform:rotate(-90deg)">
                             <circle cx="60" cy="60" r="48" fill="none" stroke="#0d1e36" stroke-width="12"/>
                             <circle cx="60" cy="60" r="48" fill="none" stroke="#17305a" stroke-width="12" opacity="0.35"/>
@@ -874,58 +882,68 @@
                     <p class="text-xs text-gray-400 text-center mt-2.5" id="stat-accuracy-fraction">Sem questões registradas</p>
                 </div>
 
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col justify-between gap-2 xl:col-span-2">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Ciclo de Estudos</span>
-                        <h3 class="text-2xl font-black mt-1 text-white" id="stat-cycle-status">0% Completo</h3>
-                        <p class="text-xs text-blue-300 mt-1" id="stat-cycle-next-sub">Seguinte: Carregando...</p>
+                        <div class="text-sky-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-arrows-spin"></i></div>
                     </div>
-                    <div class="text-sky-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-arrows-spin"></i></div>
+                    <div>
+                        <h3 class="text-xl font-black text-white leading-tight" id="stat-cycle-status">0% Completo</h3>
+                        <p class="text-xs text-blue-300 mt-0.5" id="stat-cycle-next-sub">Seguinte: Carregando...</p>
+                    </div>
                 </div>
 
-                <!-- NOVO: Total de Horas -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+                <!-- Total de Horas -->
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col justify-between gap-2 xl:col-span-2">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Total de Horas</span>
-                        <h3 class="text-2xl font-black mt-1 text-prf-yellow" id="stat-total-hours">0h 00m</h3>
-                        <p class="text-xs text-blue-300 mt-1" id="stat-today-hours">Hoje: 0h</p>
+                        <div class="text-prf-yellow text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-clock"></i></div>
                     </div>
-                    <div class="text-prf-yellow text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <h3 class="text-xl font-black text-prf-yellow leading-tight" id="stat-total-hours">0h 00m</h3>
+                        <p class="text-xs text-blue-300 mt-0.5" id="stat-today-hours">Hoje: 0h</p>
+                    </div>
                 </div>
 
-                <!-- NOVO: Streak -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+                <!-- Streak -->
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col justify-between gap-2 xl:col-span-2">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Sequência</span>
-                        <h3 class="text-2xl font-black mt-1 text-orange-400" id="stat-streak">0 <span class="streak-fire text-xl">🔥</span></h3>
-                        <p class="text-xs text-gray-400 mt-1" id="stat-streak-label">dias seguidos</p>
+                        <div class="text-orange-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-fire-flame-curved"></i></div>
                     </div>
-                    <div class="text-orange-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                    <div>
+                        <h3 class="text-xl font-black text-orange-400 leading-tight" id="stat-streak">0 <span class="streak-fire text-lg">🔥</span></h3>
+                        <p class="text-xs text-gray-400 mt-0.5" id="stat-streak-label">dias seguidos</p>
+                    </div>
                 </div>
 
-                <!-- NOVO: Salário PRF -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between">
-                    <div>
+                <!-- Salário PRF -->
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col justify-between gap-2 xl:col-span-3">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Salário PRF</span>
-                        <h3 class="text-2xl font-black mt-1 text-emerald-400">R$ 12.253<span class="text-lg text-gray-400">,84</span></h3>
-                        <p class="text-xs text-gray-400 mt-1">Remuneração inicial da carreira</p>
+                        <div class="text-emerald-400 text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-sack-dollar"></i></div>
                     </div>
-                    <div class="text-emerald-400 text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-sack-dollar"></i></div>
+                    <div>
+                        <h3 class="text-xl font-black text-emerald-400 leading-tight">R$ 12.253<span class="text-base text-gray-400">,84</span></h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Remuneração inicial da carreira</p>
+                    </div>
                 </div>
 
                 <!-- Notas da Redação -->
-                <div class="bg-card-dark p-5 rounded-2xl border border-blue-900 shadow-md flex items-center justify-between gap-3">
-                    <div class="min-w-0">
+                <div class="bg-card-dark p-4 rounded-2xl border border-blue-900 shadow-md flex flex-col justify-between gap-2 xl:col-span-3">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-400 text-xs font-bold uppercase tracking-wide">Notas da Redação</span>
-                        <h3 class="text-2xl font-black mt-1 text-gray-400" id="stat-essay-avg">--</h3>
-                        <p class="text-xs text-blue-300 mt-1" id="stat-essay-sub">Nenhuma redação registrada</p>
-                        <label class="text-xxs text-gray-500 mt-1.5 flex items-center gap-1" title="Pré-edital: ajuste quando o edital definir o valor da redação">
+                        <div class="text-prf-yellow text-base bg-blue-950/80 p-1.5 rounded-lg"><i class="fa-solid fa-file-pen"></i></div>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-xl font-black text-gray-400 leading-tight" id="stat-essay-avg">--</h3>
+                        <p class="text-xs text-blue-300 mt-0.5" id="stat-essay-sub">Nenhuma redação registrada</p>
+                        <label class="text-xxs text-gray-500 mt-1 flex items-center gap-1" title="Pré-edital: ajuste quando o edital definir o valor da redação">
                             Vale
                             <input type="number" id="essay-max-input" min="1" step="0.5" value="20" inputmode="decimal" onchange="setEssayMax(this.value)" class="w-14 bg-input-dark border border-blue-800 rounded-md px-1.5 py-0.5 text-white text-xxs text-center focus:outline-none focus:border-yellow-400">
                             pontos
                         </label>
                     </div>
-                    <div class="text-prf-yellow text-3xl bg-blue-950/80 p-3 rounded-xl"><i class="fa-solid fa-file-pen"></i></div>
                 </div>
             </div>
 
@@ -1236,10 +1254,22 @@
                     </div>
                     <div class="bg-blue-950/50 rounded-xl border border-blue-800 p-4">
                         <div class="flex items-center justify-between mb-3">
-                            <div><h4 class="text-sm font-black text-white">Desempenho por hábito</h4><p class="text-xxs text-gray-500">% da meta nos últimos 30 dias (contado desde a criação do hábito)</p></div>
+                            <div><h4 class="text-sm font-black text-white">Desempenho por hábito</h4><p id="habits-rank-subtitle" class="text-xxs text-gray-500"></p></div>
                             <i class="fa-solid fa-ranking-star text-yellow-400"></i>
                         </div>
-                        <div class="h-52 relative"><canvas id="habitsRankChart"></canvas></div>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <div class="flex bg-slate-900 rounded-lg p-0.5 border border-blue-800">
+                                <button onclick="setHabitRankMode('mes')" id="btn-habrank-mes" class="px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow transition">Mês</button>
+                                <button onclick="setHabitRankMode('30d')" id="btn-habrank-30d" class="px-2.5 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition">30 dias</button>
+                            </div>
+                            <div id="habits-rank-month-nav" class="flex items-center gap-1">
+                                <button onclick="shiftHabitRankMonth(-1)" class="w-7 h-7 rounded-lg bg-slate-900 border border-blue-800 text-gray-300 hover:text-yellow-400 transition" title="Mês anterior"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                                <span id="habits-rank-month-label" class="text-xs font-bold text-white min-w-[104px] text-center"></span>
+                                <button onclick="shiftHabitRankMonth(1)" id="btn-habrank-next" class="w-7 h-7 rounded-lg bg-slate-900 border border-blue-800 text-gray-300 hover:text-yellow-400 transition" title="Próximo mês"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div id="habitsRankWrap" class="h-52 relative"><canvas id="habitsRankChart"></canvas></div>
+                        <p class="text-xxs text-gray-500 mt-2">Barra cheia (100%) = meta em dia. <span class="text-emerald-400">Verde</span> 100% · <span class="text-yellow-400">amarelo</span> 70–99% · <span class="text-red-400">vermelho</span> abaixo de 70%.</p>
                     </div>
                 </div>
             </div>
@@ -1759,6 +1789,15 @@
                             <span class="text-xxs text-gray-500 font-medium" id="scratchpad-save-indicator">salvo automaticamente</span>
                         </div>
                         <textarea id="local-scratchpad" oninput="saveScratchpad()" rows="6" class="w-full bg-input-dark border border-blue-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-yellow-400 resize-y placeholder-gray-500" placeholder="Anote aqui o que quiser lembrar: dúvidas, pegadinhas, artigos de lei, o que fizer sentido..."></textarea>
+                    </div>
+
+                    <!-- Últimas sessões da matéria selecionada -->
+                    <div id="subject-last-sessions-card" class="bg-card-dark p-5 rounded-2xl border border-yellow-400/30 shadow-xl space-y-3 hidden">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-black text-white"><i class="fa-solid fa-clock-rotate-left text-prf-yellow mr-2"></i>Últimas sessões</h3>
+                            <span id="subject-last-sessions-name" class="text-xxs font-bold text-prf-yellow truncate max-w-[55%] text-right"></span>
+                        </div>
+                        <div id="subject-last-sessions-list" class="space-y-2"></div>
                     </div>
 
                     <!-- Sessões Recentes -->
@@ -4491,6 +4530,7 @@
                     return `<div class="recent-session-row"><span class="text-base">${te[s.type]||'📚'}</span><div style="flex:1;min-width:0;"><div class="font-bold text-white truncate" style="font-size:11px;">${s.subject}</div><div class="text-gray-400 truncate" style="font-size:10px;">${s.topic}</div></div><div class="text-right flex-shrink-0"><div class="text-prf-yellow font-black" style="font-size:11px;">${ts}</div><div class="text-gray-500" style="font-size:10px;">${ds}</div></div></div>`;
                 }).join('');
             })();
+            try { renderSubjectLastSessions(); } catch (e) { console.error('lastSessions', e); }
         }
 
         let _scratchpadSaveTimeout = null;
@@ -5645,7 +5685,7 @@
         window.renderCyclePvaChart = renderCyclePvaChart;
 
         function resetCycleProgress() {
-            studyDb.studyCycle.forEach(c => c.status = "A Fazer");
+            studyDb.studyCycle.forEach(c => { c.status = "A Fazer"; delete c.doneSessionId; });
             studyDb.currentCycleStep = 0;
             studyDb.studyCycleUpdatedAt = new Date().toISOString();
             saveDatabase(); renderAllTabs();
@@ -5661,7 +5701,7 @@
         // mesmo que ela não seja exatamente a etapa apontada por currentCycleStep
         // (ex: estudo feito fora de ordem, via Cronômetro Tático, ou após sync entre dispositivos).
         // Procura primeiro a partir do passo atual (fila pendente), depois em qualquer lugar do ciclo.
-        function advanceCycleForSubject(subject) {
+        function advanceCycleForSubject(subject, sessionId) {
             const cycle = studyDb.studyCycle;
             if (!Array.isArray(cycle) || cycle.length === 0) return;
 
@@ -5687,6 +5727,10 @@
             if (idx === -1) return;
 
             cycle[idx].status = "Concluído";
+            // CORREÇÃO (Histórico x Ciclo): guarda QUAL sessão concluiu esta etapa.
+            // Sem esse vínculo, editar/apagar a sessão no Histórico não tinha como
+            // desfazer a etapa marcada no Ciclo.
+            if (sessionId !== undefined && sessionId !== null) cycle[idx].doneSessionId = sessionId;
             studyDb.studyCycleUpdatedAt = new Date().toISOString();
 
             // Avança o ponteiro para o próximo passo ainda pendente (circular)
@@ -5699,11 +5743,36 @@
 
             if (scanned >= cycle.length) {
                 // Todas as etapas concluídas: reinicia o ciclo
-                cycle.forEach(s => s.status = "A Fazer");
+                cycle.forEach(s => { s.status = "A Fazer"; delete s.doneSessionId; });
                 studyDb.currentCycleStep = 0;
             } else {
                 studyDb.currentCycleStep = next;
             }
+        }
+
+        // Desfaz no Ciclo a etapa que foi concluída por uma sessão do Histórico
+        // (usada ao editar a matéria da sessão ou ao apagá-la).
+        // 1) procura a etapa vinculada à sessão (doneSessionId);
+        // 2) se allowLegacy, e a sessão é antiga (feita antes deste vínculo existir),
+        //    desfaz uma etapa "Concluído" da matéria antiga que não tenha vínculo.
+        function revertCycleForSession(sessionId, oldSubject, allowLegacy) {
+            const cycle = studyDb.studyCycle;
+            if (!Array.isArray(cycle) || cycle.length === 0) return false;
+            let idx = cycle.findIndex(c => c.doneSessionId === sessionId && c.status === "Concluído");
+            if (idx === -1 && allowLegacy && oldSubject) {
+                for (let i = cycle.length - 1; i >= 0; i--) {
+                    const c = cycle[i];
+                    if (c.subject === oldSubject && c.status === "Concluído" && (c.doneSessionId === undefined || c.doneSessionId === null)) { idx = i; break; }
+                }
+            }
+            if (idx === -1) return false;
+            cycle[idx].status = "A Fazer";
+            delete cycle[idx].doneSessionId;
+            studyDb.studyCycleUpdatedAt = new Date().toISOString();
+            // O ponteiro volta para a etapa desfeita se ela vem antes (ou se o atual já está concluído)
+            const cur = cycle[studyDb.currentCycleStep];
+            if (idx < studyDb.currentCycleStep || !cur || cur.status === "Concluído") studyDb.currentCycleStep = idx;
+            return true;
         }
 
         function startNextCycleSubject() {
@@ -5724,10 +5793,17 @@
             setTimeout(() => {
                 const selTop = document.getElementById('form-topic');
                 if (selTop && selTop.options.length > 1) {
-                    // Tenta usar tópico salvo no ciclo, senão usa o primeiro disponível
+                    // Prioridade: tópico salvo na etapa do ciclo → tópico da ÚLTIMA sessão
+                    // estudada dessa matéria (continua de onde parou) → primeiro disponível.
+                    const _lastS = (studyDb.history || [])
+                        .filter(h => h.subject === step.subject && h.topic)
+                        .sort((a, b) => (a.date !== b.date) ? (b.date || '').localeCompare(a.date || '') : b.id - a.id)[0];
                     if (step.topic) {
                         selTop.value = step.topic;
                         if (!selTop.value) selTop.selectedIndex = 1;
+                    } else if (_lastS) {
+                        selTop.value = _lastS.topic;
+                        if (!selTop.value) selTop.selectedIndex = 1; // tópico não existe mais no Edital
                     } else {
                         selTop.selectedIndex = 1;
                     }
@@ -6401,8 +6477,77 @@
 
         // --- Modo Manual (registrar sessão sem o app) ---
 
+        // Mostra as 3 últimas sessões da matéria escolhida no formulário "Registar Sessão".
+        // O card fica escondido enquanto nenhuma matéria estiver selecionada.
+        function renderSubjectLastSessions() {
+            const card = document.getElementById('subject-last-sessions-card');
+            const list = document.getElementById('subject-last-sessions-list');
+            const sel  = document.getElementById('form-subject');
+            if (!card || !list || !sel) return;
+            const subject = sel.value;
+            if (!subject) { card.classList.add('hidden'); return; }
+            const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+            const last = (studyDb.history || []).filter(h => h.subject === subject).sort((a, b) => {
+                if (a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
+                return b.id - a.id;
+            }).slice(0, 3);
+            document.getElementById('subject-last-sessions-name').textContent = subject;
+            card.classList.remove('hidden');
+            if (last.length === 0) {
+                list.innerHTML = '<p class="text-xs text-gray-500 text-center py-3">Nenhuma sessão desta matéria ainda.</p>';
+                return;
+            }
+            const te = {'Teoria':'📖','Questões':'📝','Revisão':'🔁','Mapa Mental':'🗺️','Flashcards':'🃏','Resumo':'✍️','Simulado':'🎯','Videoaula':'🎥','Outros':'⚡'};
+            list.innerHTML = last.map(s => {
+                const d = (s.date || '').split('-'), ds = d.length === 3 ? `${d[2]}/${d[1]}` : '';
+                const dm = parseInt(s.duration || 0), dh = Math.floor(dm / 60), dmin = dm % 60;
+                const ts = dh > 0 ? `${dh}h${String(dmin).padStart(2, '0')}m` : `${dmin}m`;
+                const q = (s.qTotal || 0) > 0 ? ` · ${s.qCorrect || 0}/${s.qTotal} (${Math.round(((s.qCorrect || 0) / s.qTotal) * 100)}%)` : '';
+                const noteTxt = (s.notes || '').replace(/\s+/g, ' ').trim();
+                const n = noteTxt ? ` · 📝 ${esc(noteTxt)}` : '';
+                const tip = esc([s.type, (s.qTotal || 0) > 0 ? `${s.qCorrect || 0}/${s.qTotal} questões` : '', noteTxt].filter(Boolean).join(' · '));
+                return `<div class="recent-session-row" style="cursor:pointer;" title="${tip}" onclick="openSessionDetailModal(${s.id})"><span class="text-base">${te[s.type] || '📚'}</span><div style="flex:1;min-width:0;"><div class="font-bold text-white truncate" style="font-size:11px;">${esc(s.topic) || '—'}</div><div class="text-gray-400 truncate" style="font-size:10px;">${esc(s.type || '')}${q}${n}</div></div><div class="text-right flex-shrink-0"><div class="text-prf-yellow font-black" style="font-size:11px;">${ts}</div><div class="text-gray-500" style="font-size:10px;">${ds}</div></div></div>`;
+            }).join('');
+        }
+        window.renderSubjectLastSessions = renderSubjectLastSessions;
+
+        // Detalhe completo da sessão (observações e questões) ao clicar numa linha de "Últimas sessões".
+        function openSessionDetailModal(id) {
+            const s = (studyDb.history || []).find(h => h.id === id);
+            if (!s) return;
+            const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+            const d = (s.date || '').split('-'), ds = d.length === 3 ? `${d[2]}/${d[1]}/${d[0]}` : '';
+            const dm = parseInt(s.duration || 0), dh = Math.floor(dm / 60), dmin = dm % 60;
+            const ts = dh > 0 ? `${dh}h${String(dmin).padStart(2, '0')}m` : `${dmin}m`;
+            const hasQ = (s.qTotal || 0) > 0;
+            const acc = hasQ ? Math.round(((s.qCorrect || 0) / s.qTotal) * 100) : 0;
+            let m = document.getElementById('session-detail-modal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'session-detail-modal';
+                m.className = 'fixed inset-0 bg-black/70 backdrop-blur-sm z-[140] flex items-center justify-center p-4';
+                m.onclick = e => { if (e.target === m) m.remove(); };
+                document.body.appendChild(m);
+            }
+            m.innerHTML = `<div class="bg-card-dark border border-blue-900 rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-3 max-h-[80vh] overflow-y-auto">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0"><div class="text-xs text-prf-yellow font-black truncate">${esc(s.subject)}</div><div class="text-sm font-black text-white">${esc(s.topic) || '—'}</div></div>
+                    <button onclick="document.getElementById('session-detail-modal').remove()" class="text-gray-400 hover:text-white text-lg leading-none">&times;</button>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-input-dark rounded-xl py-2"><div class="text-xxs text-gray-400">Data</div><div class="text-xs font-bold text-white">${ds}</div></div>
+                    <div class="bg-input-dark rounded-xl py-2"><div class="text-xxs text-gray-400">Tempo</div><div class="text-xs font-bold text-white">${ts}</div></div>
+                    <div class="bg-input-dark rounded-xl py-2"><div class="text-xxs text-gray-400">Tipo</div><div class="text-xs font-bold text-white truncate px-1">${esc(s.type || '—')}</div></div>
+                </div>
+                <div class="bg-input-dark rounded-xl p-3"><div class="text-xxs text-gray-400 mb-1">Questões</div><div class="text-xs font-bold text-white">${hasQ ? `${s.qCorrect || 0} acertos de ${s.qTotal} (${acc}%)` : 'Nenhuma questão registrada'}</div></div>
+                <div class="bg-input-dark rounded-xl p-3"><div class="text-xxs text-gray-400 mb-1">Observações</div><div class="text-xs text-gray-200" style="white-space:pre-wrap;word-break:break-word;">${s.notes && s.notes.trim() ? esc(s.notes) : '<span class="text-gray-500">Sem observações.</span>'}</div></div>
+            </div>`;
+        }
+        window.openSessionDetailModal = openSessionDetailModal;
+
         function updateFormTopics() {
             const sub = document.getElementById('form-subject').value;
+            try { renderSubjectLastSessions(); } catch (e) { console.error('lastSessions', e); }
             const topicSel = document.getElementById('form-topic');
             topicSel.innerHTML = '<option value="">Selecione...</option>';
             const sData = studyDb.syllabus.find(s => s.subject === sub);
@@ -7351,6 +7496,10 @@ function renderHistoryTab() {
                     }
                 }
 
+                // CORREÇÃO (Histórico x Ciclo): apagar a sessão também desmarca a etapa
+                // do Ciclo que ela havia concluído (somente se houver vínculo).
+                revertCycleForSession(id, delSession ? delSession.subject : null, false);
+
                 studyDb.history = studyDb.history.filter(s => s.id !== id);
                 saveDatabase(); renderAllTabs();
             });
@@ -7717,6 +7866,13 @@ function renderHistoryTab() {
             // sozinha logo depois de salvar.
             studyDb.history[idx].lastEdited = new Date().toISOString();
 
+            // CORREÇÃO (Histórico x Ciclo): se a matéria da sessão mudou, desfaz a
+            // etapa da matéria antiga e marca a da matéria nova no Ciclo de Estudos.
+            if (oldSubject !== subject) {
+                revertCycleForSession(id, oldSubject, true);
+                advanceCycleForSubject(subject, id);
+            }
+
             saveDatabase();
             renderAllTabs();
             closeEditHistoryModal();
@@ -7848,6 +8004,40 @@ function renderHistoryTab() {
             return { value: Math.min(100, Math.round(n / expected * 100)), win };
         }
 
+        // ── Desempenho por hábito: modo "Mês" (mês-calendário) ou "30 dias" (janela móvel) ──
+        let _habitRankMode = 'mes', _habitRankMonth = null;
+        const _HAB_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        function _habitCurMonth() { return _habitToday().slice(0, 7); }
+        function _habitMonthLabel(ym) { const p = ym.split('-').map(Number); return `${_HAB_MESES[p[1] - 1]}/${p[0]}`; }
+        function setHabitRankMode(m) { _habitRankMode = (m === '30d') ? '30d' : 'mes'; renderHabitCharts(); }
+        function shiftHabitRankMonth(delta) {
+            const cur = _habitCurMonth(), ym = _habitRankMonth || cur, p = ym.split('-').map(Number);
+            const n = new Date(Date.UTC(p[0], p[1] - 1 + delta, 1)).toISOString().slice(0, 7);
+            if (n > cur) return;           // não navega para meses futuros
+            _habitRankMonth = n; renderHabitCharts();
+        }
+        function _habitRankData(h) {
+            const today = _habitToday(), start = _habitStart(h), goal = _habitGoal(h);
+            const doneIn = (from, win) => { let n = 0; for (let i = 0; i < win; i++) if (_habitIsDone(_hAdd(from, i), h.id)) n++; return n; };
+            if (_habitRankMode === '30d') {
+                const win = Math.max(1, Math.min(30, _hDiff(start, today) + 1));
+                const n = doneIn(_hAdd(today, -(win - 1)), win), exp = Math.max(1, goal / 7 * win);
+                return { win, n, expected: Math.max(1, Math.round(exp)), value: Math.min(100, Math.round(n / exp * 100)), nodata: false };
+            }
+            const ym = _habitRankMonth || _habitCurMonth(), p = ym.split('-').map(Number);
+            const dim = new Date(Date.UTC(p[0], p[1], 0)).getUTCDate();
+            const first = `${ym}-01`, last = `${ym}-${String(dim).padStart(2, '0')}`;
+            const from = first > start ? first : start, to = last < today ? last : today;
+            if (from > to) return { win: 0, n: 0, expected: 0, target: 0, left: 0, daysLeft: 0, value: 0, nodata: true };
+            const win = _hDiff(from, to) + 1, n = doneIn(from, win), exp = Math.max(1, goal / 7 * win);
+            const target = Math.max(1, Math.round(goal / 7 * (_hDiff(from, last) + 1)));
+            return {
+                win, n, expected: Math.max(1, Math.round(exp)), target, left: Math.max(0, target - n),
+                daysLeft: last > today ? _hDiff(today, last) : 0,
+                value: Math.min(100, Math.round(n / exp * 100)), nodata: false
+            };
+        }
+
         function _habitParseGoal(txt) {
             const g = parseInt(String(txt).trim(), 10);
             return (g >= 1 && g <= 7) ? g : 7;
@@ -7925,9 +8115,24 @@ function renderHistoryTab() {
             const weekData=dates.map(d=>habits.reduce((n,h)=>n+(_habitIsDone(d,h.id)?1:0),0));
             const w=document.getElementById('habitsWeekChart');
             if(w){ if(habitsWeekChart) habitsWeekChart.destroy(); habitsWeekChart=new Chart(w.getContext('2d'),{type:'bar',data:{labels:dates.map(_habitLabel),datasets:[{label:'Hábitos concluídos',data:weekData,backgroundColor:'#FFD400',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,precision:0,ticks:{stepSize:1},grid:{color:'#1d355c'}}}}}); }
-            const rank=habits.map(h=>{const r=_habitRankValue(h); return {name:h.name,value:r.value,win:r.win};}).sort((a,b)=>b.value-a.value);
+            // Desempenho por hábito (modo Mês ou 30 dias)
+            const _mode=_habitRankMode, _curM=_habitCurMonth(), _ym=_habitRankMonth||_curM;
+            const rank=habits.map(h=>Object.assign({name:h.name},_habitRankData(h))).sort((a,b)=>(a.nodata-b.nodata)||(b.value-a.value));
+            const _sub=document.getElementById('habits-rank-subtitle');
+            if(_sub) _sub.textContent = _mode==='30d'
+                ? '% da meta nos últimos 30 dias (contado desde a criação do hábito)'
+                : (_ym===_curM ? `% da meta cumprida em ${_habitMonthLabel(_ym)}, do dia 1º até hoje` : `% da meta cumprida em ${_habitMonthLabel(_ym)} (mês completo)`);
+            const _b1=document.getElementById('btn-habrank-mes'), _b2=document.getElementById('btn-habrank-30d');
+            const _on='px-2.5 py-1 text-xs font-bold rounded-md bg-yellow-400 text-slate-900 shadow transition', _off='px-2.5 py-1 text-xs font-bold rounded-md text-gray-300 hover:text-white transition';
+            if(_b1) _b1.className=_mode==='mes'?_on:_off; if(_b2) _b2.className=_mode==='30d'?_on:_off;
+            const _nav=document.getElementById('habits-rank-month-nav'); if(_nav) _nav.classList.toggle('hidden',_mode!=='mes');
+            const _ml=document.getElementById('habits-rank-month-label'); if(_ml) _ml.textContent=_habitMonthLabel(_ym);
+            const _nx=document.getElementById('btn-habrank-next'); if(_nx){ _nx.disabled=(_ym>=_curM); _nx.style.opacity=(_ym>=_curM)?'0.35':'1'; _nx.style.cursor=(_ym>=_curM)?'default':'pointer'; }
+            const _wrap=document.getElementById('habitsRankWrap'); if(_wrap) _wrap.style.height=Math.max(208,rank.length*56)+'px';
             const r=document.getElementById('habitsRankChart');
-            if(r){ if(habitsRankChart) habitsRankChart.destroy(); habitsRankChart=new Chart(r.getContext('2d'),{type:'bar',data:{labels:rank.map(x=>x.name),datasets:[{label:'Conclusão',data:rank.map(x=>x.value),backgroundColor:'#10b981',borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.x+'% da meta · '+rank[c.dataIndex].win+(rank[c.dataIndex].win===1?' dia':' dias')}}},scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#1d355c'}},y:{grid:{display:false}}}}}); }
+            const _col=x=>x.nodata?'#475569':(x.value>=100?'#10b981':(x.value>=70?'#eab308':'#ef4444'));
+            const _lbl=x=>[x.name, x.nodata?'sem dados neste mês':`${x.n} de ${x.expected} ${x.expected===1?'dia':'dias'} · ${x.value}%`];
+            if(r){ if(habitsRankChart) habitsRankChart.destroy(); habitsRankChart=new Chart(r.getContext('2d'),{type:'bar',data:{labels:rank.map(_lbl),datasets:[{label:'Conclusão',data:rank.map(x=>x.value),backgroundColor:rank.map(_col),borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>rank[items[0].dataIndex].name,label:c=>{const x=rank[c.dataIndex]; if(x.nodata) return ' Sem dados neste mês'; const L=[` ${x.value}% da meta ${_mode==='30d'?'(últimos 30 dias)':'(ritmo até hoje)'}`,` Feitos: ${x.n} · esperado: ${x.expected} em ${x.win} ${x.win===1?'dia':'dias'}`]; if(_mode==='mes'){ L.push(` Meta do mês inteiro: ${x.target} · faltam ${x.left}`); if(x.daysLeft>0) L.push(` Dias restantes no mês: ${x.daysLeft}`);} return L;}}}},scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#1d355c'}},y:{grid:{display:false}}}}}); }
         }
 
         // --- Lembrete diário (configuração guardada neste aparelho) ---
@@ -12563,20 +12768,22 @@ function renderHistoryTab() {
             const sessionDate   = (sessionDateEl && sessionDateEl.value && sessionDateEl.value.length === 10)
                 ? brToISO(sessionDateEl.value) : todayBrazil();
 
+            const _newSessionId = Date.now();
             studyDb.history.push({
-                id: Date.now(), date: sessionDate,
+                id: _newSessionId, date: sessionDate,
                 subject, topic, duration, durationSec, type,
                 qCorrect: qC, qTotal: qT, pages, notes,
                 ...(essayScore !== null ? { essayScore } : {})
             });
 
-            advanceCycleForSubject(subject);
+            advanceCycleForSubject(subject, _newSessionId);
 
             saveDatabase();
             renderAllTabs();
             switchTab('dashboard');
 
             document.getElementById('study-session-form').reset();
+            try { renderSubjectLastSessions(); } catch (e) {}
             const _df2 = document.getElementById('form-session-date');
             if (_df2) _df2.value = isoToBR(todayBrazil());
             syncSessionDatePicker();
@@ -13159,6 +13366,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var dock,links={},current=null;
     function build(){
         dock=document.getElementById('topic-dock'); if(!dock) return;
+        var MINKEY='estudei_dock_min', tg=document.createElement('button');
+        tg.id='topic-toggle'; tg.type='button';
+        function setMin(m,save){
+            document.body.classList.toggle('dock-min',m);
+            tg.innerHTML=m?'<i class="fa-solid fa-list-ul"></i>':'<i class="fa-solid fa-angles-right"></i>';
+            tg.title=m?'Expandir menu de tópicos':'Minimizar menu de tópicos';
+            tg.setAttribute('aria-label',tg.title);
+            if(save){ try{ localStorage.setItem(MINKEY,m?'1':'0'); }catch(e){} }
+        }
+        tg.addEventListener('click',function(){ setMin(!document.body.classList.contains('dock-min'),true); });
+        dock.appendChild(tg);
+        var _m=false; try{ _m=localStorage.getItem(MINKEY)==='1'; }catch(e){}
+        setMin(_m,false);
         TOPICS.forEach(function(t){
             if(!document.getElementById(t[0])) return;
             var a=document.createElement('a'); a.href='#'+t[0]; a.title=t[1];
@@ -13200,7 +13420,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     var tick=false;
-    function sched(){ if(tick) return; tick=true; requestAnimationFrame(function(){tick=false;try{update();}catch(e){}}); }
+    function sched(){ if(tick||document.hidden) return; tick=true; requestAnimationFrame(function(){tick=false;try{update();}catch(e){}}); }
     function init(){
         try{ build(); }catch(e){ console.error('dock',e); return; }
         window.addEventListener('scroll',sched,{passive:true});
